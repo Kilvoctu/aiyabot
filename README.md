@@ -8,7 +8,11 @@
 
 
 ## Setup
-Clone the repo then in ``run.bat`` include your HuggingFace token and the Discord token for your bot, then simply execute the script.
+Clone the repo, then install the dependencies in ``requirements.txt``, then in ``run.bat`` include your HuggingFace token and the Discord token for your bot, then simply execute the script.
+
+Or, if you want to skip the batch script, you can simply run this in a terminal.
+
+``$ python . --token=DISCORD_TOKEN --hf_token=HF_TOKEN``
 
 ### Quickstart
 #### Text to Image
