@@ -1,0 +1,8 @@
+torch
+transformers
+diffusers
+numpy
+Pillow
+pydantic
+pytorch-lightning
+git+https://github.com/Pycord-Development/pycord
