@@ -15,7 +15,6 @@ class Text2Image:
     def __init__(self, use_gpu=True):
         self.device = torch.device('cuda' if use_gpu else 'cpu')
         model_name = 'CompVis/stable-diffusion-v1-4'
-        token = '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'
 
         self.vae = AutoencoderKL.from_pretrained(model_name, subfolder='vae', revision="fp16", use_auth_token=token)
         self.unet = UNet2DConditionModel.from_pretrained(model_name, subfolder="unet", revision="fp16", use_auth_token=token)
