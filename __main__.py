@@ -1,3 +1,4 @@
+import os
 import sys
 import argparse
 import asyncio
@@ -24,6 +25,8 @@ async def shutdown(bot):
 def main():
     shanghai = None
     args = parse_args()
+
+    os.environ['HF_TOKEN'] = args.hf_token
     
     try:
         shanghai = Shanghai(args)

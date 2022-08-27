@@ -1,3 +1,4 @@
+import os
 import torch
 import numpy as np
 from PIL import Image
@@ -15,7 +16,8 @@ class Text2Image:
     def __init__(self, use_gpu=True):
         self.device = torch.device('cuda' if use_gpu else 'cpu')
         model_name = 'CompVis/stable-diffusion-v1-4'
-
+        token = os.environ['HF_TOKEN']
+        
         self.vae = AutoencoderKL.from_pretrained(model_name, subfolder='vae', revision="fp16", use_auth_token=token)
         self.unet = UNet2DConditionModel.from_pretrained(model_name, subfolder="unet", revision="fp16", use_auth_token=token)
         self.tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
