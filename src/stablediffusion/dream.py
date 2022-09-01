@@ -10,6 +10,9 @@ from transformers import CLIPFeatureExtractor, CLIPTextModel, CLIPTokenizer
 from diffusers import AutoencoderKL, UNet2DConditionModel, DiffusionPipeline, DDIMScheduler, LMSDiscreteScheduler, PNDMScheduler
 
 
+from PIL import Image
+
+
 class StableDiffusionPipeline(DiffusionPipeline):
     def __init__(
         self,
@@ -40,6 +43,7 @@ class StableDiffusionPipeline(DiffusionPipeline):
         eta: Optional[float] = 0.0,
         generator: Optional[torch.Generator] = None,
         output_type: Optional[str] = "pil",
+        progress: Optional[bool] = False,
         **kwargs,
     ):
         if "torch_device" in kwargs:
@@ -118,6 +122,8 @@ class StableDiffusionPipeline(DiffusionPipeline):
         extra_step_kwargs = {}
         if accepts_eta:
             extra_step_kwargs["eta"] = eta
+        
+        images = []
 
         for i, t in tqdm(enumerate(self.scheduler.timesteps)):
             # expand the latents if we are doing classifier free guidance
@@ -139,6 +145,21 @@ class StableDiffusionPipeline(DiffusionPipeline):
                 latents = self.scheduler.step(noise_pred, i, latents, **extra_step_kwargs)["prev_sample"]
             else:
                 latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs)["prev_sample"]
+            
+            if progress:
+                latent_image = self.vae.decode(1 / 0.18215 * latents)
+                latent_image = (latent_image / 2 + 0.5).clamp(0, 1)
+                latent_image = latent_image.cpu().permute(0, 2, 3, 1).numpy()
+
+                if latent_image.ndim == 3:
+                    latent_image = latent_image[None, ...]
+                latent_image = (latent_image * 255).round().astype('uint8')
+                latent_image = [Image.fromarray(image) for image in latent_image]
+                images.append(latent_image[0])
+
+
+        if progress:
+            images[0].save(f'output.gif', save_all=True, append_images=images[1:], optimize=False, loop=0, duration=125)
 
         # scale and decode the image latents with vae
         latents = 1 / 0.18215 * latents
