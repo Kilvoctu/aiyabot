@@ -54,6 +54,7 @@ def resize_image(resize_mode, im, width, height):
 class Text2Image:
     def __init__(self, use_gpu=True):
         self.device = torch.device('cuda' if use_gpu else 'cpu')
+        self.dtype = torch.float16 if use_gpu else torch.float32
         model_name = 'CompVis/stable-diffusion-v1-4'
         token = os.environ['HF_TOKEN']
         
@@ -77,9 +78,9 @@ class Text2Image:
             skip_prk_steps=True
         )
 
-        self.vae = self.vae.half().eval().to(self.device)
-        self.text_encoder = self.text_encoder.half().eval().to(self.device)
-        self.unet = self.unet.half().eval().to(self.device)
+        self.vae = self.vae.to(self.dtype).eval().to(self.device)
+        self.text_encoder = self.text_encoder.to(self.dtype).eval().to(self.device)
+        self.unet = self.unet.to(self.dtype).eval().to(self.device)
 
         self.inpaint_pipe = StableDiffusionInpaintingPipeline(
             self.vae,
