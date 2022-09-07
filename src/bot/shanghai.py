@@ -5,7 +5,7 @@ from src.core.logging import get_logger
 
 class Shanghai(commands.Bot):
     def __init__(self, args):
-        super().__init__(command_prefix=args.prefix, intents=discord.Intents.all())
+        super().__init__(command_prefix=args.prefix)
         self.args = args
         self.logger = get_logger(__name__)
         self.load_extension('src.bot.stablecog')
@@ -15,4 +15,4 @@ class Shanghai(commands.Bot):
         await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='you over the seven seas.'))
     
     async def close(self):
-        await self.client.close()
+        await self._bot.close()

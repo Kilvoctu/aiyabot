@@ -6,6 +6,7 @@ from discord.ext import commands
 from typing import Optional
 from io import BytesIO
 from PIL import Image
+from discord import option
 
 from src.stablediffusion.text2image_diffusers import Text2Image
 
@@ -16,111 +17,86 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         self.text2image_model = Text2Image()
         self.bot = bot
 
-    @commands.slash_command(description='Create a image from a natural language query.')
-    async def dream(self, ctx: discord.ApplicationContext, *, query: str, height: Optional[int]=512, width: Optional[int]=512, guidance_scale: Optional[float] = 7.0, steps: Optional[int] = 50, seed: Optional[int] = -1, progress: Optional[bool] = False):
+    @commands.slash_command(description='Create an image.')
+    @option(
+        'prompt',
+        str,
+        description = 'A prompt to condition the model with.',
+        required=True,
+    )
+    @option(
+        'height',
+        int,
+        description = 'Height of the generated image.',
+        required = False,
+        choices = [x for x in range(192, 832, 64)]
+    )
+    @option(
+        'width',
+        int,
+        description = 'Width of the generated image.',
+        required = False,
+        choices = [x for x in range(192, 832, 64)]
+    )
+    @option(
+        'guidance_scale',
+        float,
+        description = 'Classifier-Free Guidance scale',
+        required = False,
+    )
+    @option(
+        'steps',
+        int,
+        description = 'The amount of steps to sample the model',
+        required = False,
+        choices = [x for x in range(5, 105, 5)]
+    )
+    @option(
+        'seed',
+        int,
+        description = 'The seed to use for reproduceability',
+        required = False,
+    )
+    @option(
+        'strength',
+        float,
+        description = 'The strength used to apply the prompt to the init_image/mask_image'
+    )
+    @option(
+        'init_image',
+        discord.Attachment,
+        description = 'The image to initialize the latents with for denoising',
+        required = False,
+    )
+    @option(
+        'mask_image',
+        discord.Attachment,
+        description = 'The mask image to use for inpainting',
+        required = False,
+    )
+    async def dream(self, ctx: discord.ApplicationContext, *, query: str, height: Optional[int]=512, width: Optional[int]=512, guidance_scale: Optional[float] = 7.0, steps: Optional[int] = 50, seed: Optional[int] = -1, strength: Optional[float]=0.8, init_image: Optional[discord.Attachment] = None, mask_image: Optional[discord.Attachment] = None):
         print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {query}')
         await ctx.defer()
         embed = discord.Embed()
         embed.color = embed_color
         embed.set_footer(text=query)
-
         try:
-            if steps > 100:
-                steps = 100
-            samples, seed = self.text2image_model.dream(query, steps, False, False, 0.0, 1, 1, guidance_scale, seed, height, width, progress)
+            if (init_image is None) and (mask_image is None):
+                samples, seed = self.text2image_model.dream(query, steps, False, False, 0.0, 1, 1, guidance_scale, seed, height, width, False)
+            elif (init_image is not None):
+                image = Image.open(requests.get(init_image.url, stream=True).raw).convert('RGB')
+                samples, seed = self.text2image_model.translation(query, image, steps, 0.0, 0, 0, guidance_scale, strength, seed, height, width)
+            else:
+                image = Image.open(requests.get(init_image.url, stream=True).raw).convert('RGB')
+                mask = Image.open(requests.get(mask_image.url, stream=True).raw).convert('RGB')
+                samples, seed = self.text2image_model.inpaint(query, image, mask, steps, 0.0, 1, 1, guidance_scale, denoising_strength=strength, seed=seed, height=height, width=width)
 
             with BytesIO() as buffer:
                 samples[0].save(buffer, 'PNG')
                 buffer.seek(0)
-                if progress == False:
-                    await ctx.followup.send(embed=embed, file=discord.File(fp=buffer, filename=f'{seed}.png'))
-                else:
-                    await ctx.followup.send(embed=embed, files=[discord.File(fp=buffer, filename=f'{seed}.png'), discord.File(open('output.gif', 'rb'), filename=f'{seed}.gif')])
+                await ctx.followup.send(embed=embed, file=discord.File(fp=buffer, filename=f'{seed}.png'))
         except Exception as e:
             embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}', color=embed_color)
-            await ctx.followup.send(embed=embed)
-
-    @commands.slash_command(description='Create an image from another image.')
-    async def translate(self, ctx: discord.ApplicationContext, *, query: str, image_url: str, denoising_strength: Optional[float]=0.7, height: Optional[int]=512, width: Optional[int]=512, guidance_scale: Optional[float] = 7.0, steps: Optional[int] = 50, seed: Optional[int] = -1):
-        print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {query}')
-        await ctx.defer()
-        embed = discord.Embed()
-        embed.color = embed_color
-        embed.set_footer(text=query)
-        try:
-            if steps > 100:
-                steps = 100
-            image = Image.open(requests.get(image_url, stream=True).raw).convert('RGB')
-            samples, seed = self.text2image_model.translation(query, image, steps, 0.0, 1, 1, guidance_scale, denoising_strength=denoising_strength, seed=seed, height=height, width=width)
-            with BytesIO() as buffer:
-                samples[0].save(buffer, 'PNG')
-                buffer.seek(0)
-                await ctx.followup.send(embed=embed, file=discord.File(fp=buffer, filename=f'{seed}.png'))
-        except Exception as e:
-            embed = discord.Embed(title='img2img failed', description=f'{e}\n{traceback.print_exc()}', color=embed_color)
-            await ctx.followup.send(embed=embed)
-    
-    @commands.message_command(name='Refine')
-    async def refine(self, ctx: discord.ApplicationContext, message: discord.Message):
-        await ctx.defer()
-        embed = discord.Embed()
-        embed.color = embed_color
-        try:
-            if (not message.embeds) or (not message.attachments):
-                raise Exception('Not an AI generated image')
-            query = message.embeds[0].footer.text
-            embed.set_footer(text=query)
-            image = Image.open(requests.get(message.attachments[0].url, stream=True).raw).convert('RGB')
-            samples, seed = self.text2image_model.translation(query, image, 40, 0.0, 1, 1, 7.0, denoising_strength=0.4, seed=-1, height=image.height, width=image.width)
-            with BytesIO() as buffer:
-                samples[0].save(buffer, 'PNG')
-                buffer.seek(0)
-                await ctx.followup.send(embed=embed, file=discord.File(fp=buffer, filename=f'{seed}.png'))
-        except Exception as e:
-            embed = discord.Embed(title='refinement failed', description=f'{e}\n{traceback.print_exc()}', color=embed_color)
-            await ctx.followup.send(embed=embed)
-    
-    @commands.message_command(name='Psychedelico')
-    async def butcher(self, ctx: discord.ApplicationContext, message: discord.Message):
-        await ctx.defer()
-        embed = discord.Embed()
-        embed.color = embed_color
-        try:
-            if not message.attachments:
-                raise Exception('Not an image')
-            image = Image.open(requests.get(message.attachments[0].url, stream=True).raw).convert('RGB')
-            samples, seed = self.text2image_model.translation('fractal rendered image in colorful psychedelic style. dmt lsd drugs. hallucinations bad trip.', image, 40, 0.0, 1, 1, 7.0, denoising_strength=0.75, seed=-1, height=512, width=512)
-            with BytesIO() as buffer:
-                samples[0].save(buffer, 'PNG')
-                buffer.seek(0)
-                await ctx.followup.send(file=discord.File(fp=buffer, filename=f'{seed}.png'))
-        except Exception as e:
-            embed = discord.Embed(title='trip failed', description=f'{e}\n{traceback.print_exc()}', color=embed_color)
-            await ctx.followup.send(embed=embed)
-
-    
-    @commands.slash_command(description='Fill empty gaps in an image.')
-    @commands.max_concurrency(5, per=commands.BucketType.default, wait=False)
-    async def inpaint(self, ctx: discord.ApplicationContext, *, query: str, image_url: str, mask_url: str, denoising_strength: Optional[float]=0.7, height: Optional[int]=512, width: Optional[int]=512, guidance_scale: Optional[float] = 7.0, steps: Optional[int] = 50, seed: Optional[int] = -1):
-        await ctx.defer()
-        embed = discord.Embed()
-        embed.color = embed_color
-        embed.set_footer(text=query)
-        try:
-            image = Image.open(requests.get(image_url, stream=True).raw).convert('RGBA')
-            mask_image = Image.open(requests.get(mask_url, stream=True).raw).convert('RGBA')
-            samples, seed = self.text2image_model.inpaint(query, image, mask_image, steps, 0.0, 1, 1, guidance_scale, denoising_strength=denoising_strength, seed=seed, height=height, width=width)
-
-            embed.title = None
-            embed.description = None
-            embed.set_footer(text=query)
-
-            with BytesIO() as buffer:
-                samples[0].save(buffer, 'PNG')
-                buffer.seek(0)
-                await ctx.followup.send(embed=embed, file=discord.File(fp=buffer, filename=f'{seed}.png'))
-        except Exception as e:
-            embed = discord.Embed(title='inpaint failed', description=f'{e}\n{traceback.print_exc()}', color=embed_color)
             await ctx.followup.send(embed=embed)
     
     @commands.slash_command(description='Test what an image looks like from the model\'s perspective')
