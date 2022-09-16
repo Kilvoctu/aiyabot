@@ -5,7 +5,9 @@ from src.core.logging import get_logger
 
 class Shanghai(commands.Bot):
     def __init__(self, args):
-        super().__init__(command_prefix=args.prefix)
+        intents = discord.Intents.default()
+        intents.members = True
+        super().__init__(command_prefix=args.prefix, intents=intents)
         self.args = args
         self.logger = get_logger(__name__)
         self.load_extension('src.bot.stablecog')
