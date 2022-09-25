@@ -72,7 +72,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         int,
         description='The amount of steps to sample the model',
         required=False,
-        choices=[x for x in range(5, 105, 5)]
+        choices=[x for x in range(5, 55, 5)]
     )
     @option(
         'seed',
@@ -111,28 +111,17 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     user_already_in_queue = True
                     break
             if user_already_in_queue:
-                print('User tried to use bot, but was already in queue!')
-                embed = discord.Embed(title='Already in queue!',
-                                      description=f'Please wait for your current image to finish generating before generating a new image',
-                                      color=embed_color)
-                await ctx.send_response(embed=embed, ephemeral=True)
+                await ctx.send_response(content=f'Please wait for your current image to finish generating before generating a new image', ephemeral=True)
             else:
-                print('Added to queue')
                 self.queue.append(QueueObject(ctx, query, height, width, guidance_scale, steps, seed,
                                               strength,
                                               init_image, mask_image))
-                embed = discord.Embed(title='Added to queue',
-                                      description=f'You are number {len(self.queue)} in queue',
-                                      color=embed_color)
-                await ctx.send_response(embed=embed)
+                await ctx.send_response(content=f'Dreaming for <@{ctx.author.id}> - Queue Position: ``{len(self.queue)}`` - ``{query}``')
         else:
-            print('Processing...')
             await self.process_dream(QueueObject(ctx, query, height, width, guidance_scale, steps, seed,
                                                  strength,
                                                  init_image, mask_image))
-            embed = discord.Embed(title='Generating...',
-                                  color=embed_color)
-            await ctx.send_response(embed=embed)
+            await ctx.send_response(content=f'Dreaming for <@{ctx.author.id}> - Queue Position: ``{len(self.queue)}`` - ``{query}``')
 
     async def process_dream(self, queue_object: QueueObject):
         self.dream_thread = Thread(target=self.dream,
@@ -140,11 +129,30 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         self.dream_thread.start()
 
     @commands.slash_command(description='Test what an image looks like from the model\'s perspective')
-    async def vae(self, ctx: discord.ApplicationContext, *, image_url: str, height: Optional[int] = 512,
-                  width: Optional[int] = 512):
+    @option(
+        'init_image',
+        discord.Attachment,
+        description='The image to pass through the VAE',
+        required=False,
+    )
+    @option(
+        'height',
+        int,
+        description='Height of the generated image.',
+        required=False,
+        choices = [x for x in range(192, 832, 64)]
+    )
+    @option(
+        'width',
+        int,
+        description='Width of the generated image.',
+        required=False,
+        choices = [x for x in range(192, 832, 64)]
+    )
+    async def vae(self, ctx: discord.ApplicationContext, *, init_image: Optional[discord.Attachment] = None, height: Optional[int] = 512, width: Optional[int] = 512):
         await ctx.defer()
         try:
-            image = Image.open(requests.get(image_url, stream=True).raw).convert('RGBA')
+            image = Image.open(requests.get(init_image.url, stream=True).raw).convert('RGBA')
             samples = self.text2image_model.vae_test(image, height, width)
             with BytesIO() as buffer:
                 samples[0].save(buffer, 'PNG')
@@ -155,7 +163,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             await ctx.followup.send(embed=embed)
 
     def dream(self, event_loop: AbstractEventLoop, queue_object: QueueObject):
-        print('Dreaming...')
         try:
             if (queue_object.init_image is None) and (queue_object.mask_image is None):
                 samples, seed = self.text2image_model.dream(queue_object.query, queue_object.steps, False, False, 0.0,
@@ -181,12 +188,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 buffer.seek(0)
                 embed = discord.Embed()
                 embed.color = embed_color
+                embed.add_field(name='Parameters', value=f'prompt: ``{queue_object.query}``\nseed: ``{seed}``\nresolution: ``{str(queue_object.width)}``x``{str(queue_object.height)}``\nsteps: ``{queue_object.steps}``\ncfg_scale: ``{queue_object.guidance_scale}``', inline=False)
                 embed.set_footer(
-                    text=f'{queue_object.query}\nseed: {seed}\nRequested by {queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}')
+                    text=f'{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}', icon_url=queue_object.ctx.author.avatar.url)
                 event_loop.create_task(
-                    queue_object.ctx.channel.send(embed=embed, file=discord.File(fp=buffer, filename=f'{seed}.png')))
+                    queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>', embed=embed, file=discord.File(fp=buffer, filename=f'{seed}.png')))
         except Exception as e:
-            print(e)
             embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}',
                                   color=embed_color)
             event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
