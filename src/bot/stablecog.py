@@ -52,14 +52,14 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         int,
         description='Height of the generated image.',
         required=False,
-        # choices = [x for x in range(192, 832, 64)]
+        choices = [x for x in range(192, 832, 64)]
     )
     @option(
         'width',
         int,
         description='Width of the generated image.',
         required=False,
-        # choices = [x for x in range(192, 832, 64)]
+        choices = [x for x in range(192, 832, 64)]
     )
     @option(
         'guidance_scale',
