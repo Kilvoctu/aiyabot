@@ -1,0 +1,1 @@
+from src.stablediffusion.ldm.modules.losses.contperceptual import LPIPSWithDiscriminator

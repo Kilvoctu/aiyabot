@@ -16,5 +16,3 @@ class Shanghai(commands.Bot):
         self.logger.info(f'Logged in as {self.user.name} ({self.user.id})')
         await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='drawing tutorials.'))
     
-    async def close(self):
-        await self._bot.close()
