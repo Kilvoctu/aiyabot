@@ -10,11 +10,9 @@ class Shanghai(commands.Bot):
         super().__init__(command_prefix=args.prefix, intents=intents)
         self.args = args
         self.logger = get_logger(__name__)
+        self.load_extension('src.bot.stablecog')
 
     async def on_ready(self):
         self.logger.info(f'Logged in as {self.user.name} ({self.user.id})')
-        await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='you over the seven seas.'))
-        await self.load_extension('src.bot.stablecog')
+        await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='drawing tutorials.'))
     
-    async def close(self):
-        await self._bot.close()
