@@ -110,8 +110,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     )
     async def dream_handler(self, ctx: discord.ApplicationContext, *, prompt: str, height: Optional[int] = 512,
                             width: Optional[int] = 512, guidance_scale: Optional[float] = 7.0,
-                            steps: Optional[int] = 50,
-                            sampler: Optional[str] = 'ddim',
+                            steps: Optional[int] = 40,
+                            sampler: Optional[str] = 'k_euler_a',
                             seed: Optional[int] = -1, strength: Optional[float] = None,
                             init_image: Optional[discord.Attachment] = None,
                             mask_image: Optional[discord.Attachment] = None):
