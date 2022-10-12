@@ -43,6 +43,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         self.queue = []
         self.bot = bot
 
+
     @commands.slash_command(name='dream', description='Create an image.')
     @option(
         'prompt',
@@ -110,7 +111,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     )
     async def dream_handler(self, ctx: discord.ApplicationContext, *, prompt: str, height: Optional[int] = 512,
                             width: Optional[int] = 512, guidance_scale: Optional[float] = 7.0,
-                            steps: Optional[int] = 40,
+                            steps: Optional[int] = 30,
                             sampler: Optional[str] = 'k_euler_a',
                             seed: Optional[int] = -1, strength: Optional[float] = None,
                             init_image: Optional[discord.Attachment] = None,
@@ -184,10 +185,11 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 samples[0].save(buffer, 'PNG')
                 buffer.seek(0)
                 embed = discord.Embed()
-                embed.color = embed_color
+                embed.colour = embed_color
                 embed.add_field(name='command', value=f'``{queue_object.command_str}``', inline=False)
                 embed.add_field(name='compute used', value='``{0:.3f}`` seconds'.format(end_time - start_time),
                                 inline=False)
+                embed.add_field(name='delete', value='React with ❌ to delete your own generation')
                 # fix errors if user doesn't have pfp
                 if queue_object.ctx.author.avatar is None:
                     embed.set_footer(
