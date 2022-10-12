@@ -1,3 +1,6 @@
+storage/outputs/*.png
+storage/init/*.png
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
