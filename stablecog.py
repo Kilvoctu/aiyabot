@@ -20,7 +20,7 @@ embed_color = discord.Colour.from_rgb(222, 89, 28)
 
 
 class QueueObject:
-    def __init__(self, ctx, prompt, negative_prompt, steps, height, width, guidance_scale, seed):
+    def __init__(self, ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed):
         self.ctx = ctx
         self.prompt = prompt
         self.negative_prompt = negative_prompt
@@ -28,6 +28,7 @@ class QueueObject:
         self.height = height
         self.width = width
         self.guidance_scale = guidance_scale
+        self.sampler = sampler
         self.seed = seed
 
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
@@ -45,6 +46,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         self.resy_ind = 0
         self.resx_ind = 0
         self.conform_ind = 0
+        self.sampling_methods_ind = 0
         self.seed_ind = 0
 
     @commands.slash_command(name = "draw", description = "Create an image")
@@ -88,6 +90,14 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         required=False,
     )
     @option(
+        'sampler',
+        str,
+        description='The sampler to use for generation. Default: Euler a',
+        required=False,
+        choices=['Euler a', 'Euler', 'LMS', 'Heun', 'DPM2', 'DPM2 a', 'DPM fast', 'DPM adaptive', 'LMS Karras', 'DPM2 Karras', 'DPM2 a Karras', 'DDIM', 'PLMS'],
+        default='Euler a'
+    )
+    @option(
         'seed',
         int,
         description='The seed to use for reproduceability',
@@ -98,11 +108,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             steps: Optional[int] = 30,
                             height: Optional[int] = 512, width: Optional[int] = 512,
                             guidance_scale: Optional[float] = 7.0,
+                            sampler: Optional[str] = 'Euler a',
                             seed: Optional[int] = -1):
         print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
         #apply indices from PayloadFormatter and confirm
         PayloadFormatter.do_format(self, PayloadFormatter.PayloadFormat.TXT2IMG)
-        print(f'Indices-prompt:{self.prompt_ind}, exclude:{self.exclude_ind}, steps:{self.sample_ind}, height:{self.resy_ind}, width:{self.resx_ind}, cfg scale:{self.conform_ind}, seed:{self.seed_ind}')
+        print(f'Indices-prompt:{self.prompt_ind}, exclude:{self.exclude_ind}, steps:{self.sample_ind}, height:{self.resy_ind}, width:{self.resx_ind}, cfg scale:{self.conform_ind}, sampler:{self.sampling_methods_ind}, seed:{self.seed_ind}')
 
         if seed == -1: seed = random.randint(0, 0xFFFFFFFF)
         #increment number of times command is used
@@ -116,16 +127,17 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             message_row_count = len(message_data) - 1
             for row in message_data: self.wait_message.append( row[0] )
         
-        #log the command
-        copy_command = f'/draw prompt:{prompt} negative_prompt:{negative_prompt} steps:{steps} height:{str(height)} width:{width} guidance_scale:{guidance_scale} seed:{seed}'
+        #log the command. can replace bot reply with {copy_command} for easy copy-pasting
+        copy_command = f'/draw prompt:{prompt} negative_prompt:{negative_prompt} steps:{steps} height:{str(height)} width:{width} guidance_scale:{guidance_scale} sampler:{sampler} seed:{seed}'
         print(copy_command)
         
         #formatting bot initial reply
         append_options = ""
         if negative_prompt != '': append_options = append_options + "\nNegative Prompt: ``" + str(negative_prompt) + "``"
-        if height != 512: append_options = append_options + "\nChanged height: ``" + str(height) + "``"
-        if width != 512: append_options = append_options + "\nChanged width: ``" + str(width) + "``"
-        if guidance_scale != 7.0: append_options = append_options + "\nChanged Guidance Scale: ``" + str(guidance_scale) + "``"
+        if height != 512: append_options = append_options + "\nHeight: ``" + str(height) + "``"
+        if width != 512: append_options = append_options + "\nWidth: ``" + str(width) + "``"
+        if guidance_scale != 7.0: append_options = append_options + "\nGuidance Scale: ``" + str(guidance_scale) + "``"
+        if sampler != 'Euler a': append_options = append_options + "\nSampler: ``" + str(sampler) + "``"
         
         #bot's initial reply
         initial_response = f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(self.queue)}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}'
@@ -140,10 +152,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             if user_already_in_queue:
                 await ctx.send_response(content=f'You\'re in queue.', ephemeral=True)
             else:   
-                self.queue.append(QueueObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, seed))
+                self.queue.append(QueueObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed))
                 await ctx.send_response(initial_response)
         else:
-            await self.process_dream(QueueObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, seed))
+            await self.process_dream(QueueObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed))
             await ctx.send_response(initial_response)
 
     async def process_dream(self, queue_object: QueueObject):
@@ -165,6 +177,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             postObj['data'][self.resy_ind] = queue_object.height
             postObj['data'][self.resx_ind] = queue_object.width
             postObj['data'][self.conform_ind] = queue_object.guidance_scale
+            postObj['data'][self.sampling_methods_ind] = queue_object.sampler
             postObj['data'][self.seed_ind] = queue_object.seed
 
             #send payload to webui

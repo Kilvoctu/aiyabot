@@ -12,7 +12,8 @@ To generate an image from text, use the /draw command and include your prompt as
 - negative prompts
 - sampling steps
 - height/width (up to 768)
-- config/guidance scale
+- CFG scale
+- Sampling method
 - seed
 
 ### Setup requirements

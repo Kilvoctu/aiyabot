@@ -102,49 +102,34 @@ def do_format(StableCog, payload_format: PayloadFormat):
     for i in range(0, len(labelvaluetuplelist)):
         if labelvaluetuplelist[i][0] == "Prompt":
             StableCog.prompt_ind = i
-            print(f'prompt: {str(i)}')
         elif labelvaluetuplelist[i][0] == "Negative prompt":
             StableCog.exclude_ind = i
-            print(f'negprompt: {str(i)}')
         elif labelvaluetuplelist[i][0] == "Sampling Steps":
             StableCog.sample_ind = i
-            print(f'samples: {str(i)}')
         elif labelvaluetuplelist[i][0] == "Batch count":
             StableCog.num_ind = i
-            print(f'num: {str(i)}')
         elif labelvaluetuplelist[i][0] == "CFG Scale":
             StableCog.conform_ind = i
-            print(f'conform: {str(i)}')
         elif labelvaluetuplelist[i][0] == "Seed":
             StableCog.seed_ind = i
-            print(f'seed: {str(i)}')
         elif labelvaluetuplelist[i][0] == "Height":
             StableCog.resy_ind = i
-            print(f'resy: {str(i)}')
         elif labelvaluetuplelist[i][0] == "Width":
             StableCog.resx_ind = i
-            print(f'resx: {str(i)}')
         elif labelvaluetuplelist[i][0] == "Denoising strength":
             StableCog.denoise_ind = i
-            print(f'dn: {str(i)}')
         elif labelvaluetuplelist[i][0] == "Image for img2img":
             StableCog.data_ind = i
-            print(f'data: {str(i)}')
         elif labelvaluetuplelist[i][0] == "Source":
             StableCog.data_ind = i
-            print(f'data: {str(i)}')
         elif labelvaluetuplelist[i][0] == "Resize":
             StableCog.resize_ind = i
-            print(f'resize: {str(i)}')
         elif labelvaluetuplelist[i][0] == "Scripts":
             StableCog.script_ind = i
-            print(f'script: {str(i)}')
         elif labelvaluetuplelist[i][0] == "Loops":
             StableCog.loop_ind = i
-            print(f'loops: {str(i)}')
         elif labelvaluetuplelist[i][0] == "Sampling method":
             StableCog.sampling_methods_ind = i
-            print(f'sampling method: {str(i)}')
 
     data = []
     for i in labelvaluetuplelist:
