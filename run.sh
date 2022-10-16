@@ -1,1 +1,0 @@
-python3 . --token="" --model_path="./models/model-epoch06-full.ckpt"

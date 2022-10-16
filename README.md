@@ -1,41 +1,29 @@
-# Shanghai - AI Powered Art in a Discord Bot!
+# AIYA
+A Discord bot interface for Stable Diffusion
 
-<img src=https://cdn.discordapp.com/attachments/971549874514444358/1012400070559277086/1502073419.png?3867929 width=50% height=50%>
+![](preview.png)
 
-### Any questions or need help? Come hop on by to our Discord server!
+### Usage
+To generate an image from text, use the /draw command and include your prompt as the query.
 
-[![Discord Server](https://discordapp.com/api/guilds/930499730843250783/widget.png?style=banner2)](https://discord.gg/Sx6Spmsgx7)
+![](preview2.png)
 
+##### Currently supported options
+- negative prompts
+- sampling steps
+- height/width (up to 768)
+- config/guidance scale
+- seed
 
-## Setup
-Clone the repo, then install the dependencies in ``requirements.txt``, then in ``run.bat`` include your HuggingFace token and the Discord token for your bot, then simply execute the script.
+### Setup requirements
+- Set up [AUTOMATIC1111's Stable Diffusion AI Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui).
+- Run the Web UI as local host (`COMMANDLINE_ARGS= --listen`).
+- Clone this repo, then install dependencies in `requirements.txt` in your Python environment.
+- Invite Discord bot with `bot` and `application.commands` scope. Make sure intents are enabled.
+- Create a text file in your cloned repo called ".env", containing `TOKEN = [your bot token]`
+- Run the bot by typing "python bot.py" in the repository directory
 
-Or, if you want to skip the batch script, you can simply run this in a terminal.
-
-``$ python . --token=DISCORD_TOKEN --hf_token=HF_TOKEN``
-
-### Quickstart
-#### Text to Image
-
-To generate an image from text, use the ``/dream`` command and include your prompt as the query. There's tons of parameters to play with so go wild!
-
-![image](https://user-images.githubusercontent.com/26317155/186722689-3cbca12a-531c-47f7-b87f-99918e9ed232.png)
-
-![image](https://user-images.githubusercontent.com/26317155/186721768-3684f629-90c3-4ef2-82b8-1310200df437.png)
-
-
-#### Image to Image
-
-To generate an image from another image, use the ``/translate`` command and include a prompt and an image URL.
-
-![image](https://user-images.githubusercontent.com/26317155/186722463-ec3a6d24-36c1-48f8-b09a-57651706848c.png)
-
-![image](https://user-images.githubusercontent.com/26317155/186722528-7e652a21-fd02-4071-9fc1-87a31dfb6e63.png)
-
-
-#### (Experimental) Inpainting
-
-To fill in a mask in an image, supply a prompt, an image url, and a url to a mask of black pixels in a transparent image
-
-![image](https://user-images.githubusercontent.com/26317155/186722970-71a662dc-16a8-4bb4-8696-3bafb3e08e65.png)
-
+This bot is heavily based on:
+https://github.com/harubaru/discord-stable-diffusion
+with interfacing from:
+https://github.com/gingivere0/dalebot
