@@ -1,19 +1,19 @@
 # AIYA
 A Discord bot interface for Stable Diffusion
 
-![](preview.png)
+<img src=https://raw.githubusercontent.com/Kilvoctu/kilvoctu.github.io/master/pics/preview.png  width=50% height=50%>
 
 ### Usage
 To generate an image from text, use the /draw command and include your prompt as the query.
 
-![](preview2.png)
+<img src=https://raw.githubusercontent.com/Kilvoctu/kilvoctu.github.io/master/pics/preview2.png>
 
 ##### Currently supported options
 - negative prompts
 - sampling steps
 - height/width (up to 768)
 - CFG scale
-- Sampling method
+- sampling method
 - seed
 
 ### Setup requirements
