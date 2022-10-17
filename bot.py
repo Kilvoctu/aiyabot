@@ -21,6 +21,7 @@ if file_exists is False:
     with open('resources/stats.txt', 'w') as f: f.write('0')
 
 self.load_extension('stablecog')
+self.load_extension('core.tipscog')
 
 @self.event
 async def on_ready():
