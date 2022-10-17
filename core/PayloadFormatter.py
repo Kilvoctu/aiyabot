@@ -2,7 +2,7 @@ import requests
 import json
 from enum import Enum
 import platform
-
+from core import stablecog
 responsestr = {}
 
 
@@ -130,6 +130,8 @@ def do_format(StableCog, payload_format: PayloadFormat):
             StableCog.loop_ind = i
         elif labelvaluetuplelist[i][0] == "Sampling method":
             StableCog.sampling_methods_ind = i
+        elif labelvaluetuplelist[i][0] == "Stable Diffusion checkpoint":
+            StableCog.checkpoint_ind = i
 
     data = []
     for i in labelvaluetuplelist:

@@ -48,6 +48,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         self.conform_ind = 0
         self.sampling_methods_ind = 0
         self.seed_ind = 0
+        self.checkpoint_ind = 0
 
     @commands.slash_command(name = "draw", description = "Create an image")
     @option(
@@ -114,6 +115,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         #apply indices from PayloadFormatter and confirm
         PayloadFormatter.do_format(self, PayloadFormatter.PayloadFormat.TXT2IMG)
         print(f'Indices-prompt:{self.prompt_ind}, exclude:{self.exclude_ind}, steps:{self.sample_ind}, height:{self.resy_ind}, width:{self.resx_ind}, cfg scale:{self.conform_ind}, sampler:{self.sampling_methods_ind}, seed:{self.seed_ind}')
+        print(f'Indices-checkpoint{self.checkpoint_ind}')
 
         if seed == -1: seed = random.randint(0, 0xFFFFFFFF)
         #increment number of times command is used

@@ -20,7 +20,7 @@ if file_exists is False:
     self.logger.info(f'stats.txt missing. Creating new file.')
     with open('resources/stats.txt', 'w') as f: f.write('0')
 
-self.load_extension('stablecog')
+self.load_extension('core.stablecog')
 self.load_extension('core.tipscog')
 
 @self.event
