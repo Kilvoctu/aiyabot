@@ -140,9 +140,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if guidance_scale != 7.0: append_options = append_options + "\nGuidance Scale: ``" + str(guidance_scale) + "``"
         if sampler != 'Euler a': append_options = append_options + "\nSampler: ``" + str(sampler) + "``"
         
-        #bot's initial reply
-        initial_response = f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(self.queue)}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}'
-        
         #setup the queue
         if self.dream_thread.is_alive():
             user_already_in_queue = False
@@ -151,13 +148,13 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     user_already_in_queue = True
                     break
             if user_already_in_queue:
-                await ctx.send_response(content=f'You\'re in queue.', ephemeral=True)
+                await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
             else:   
                 self.queue.append(QueueObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed))
-                await ctx.send_response(initial_response)
+                await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(self.queue)}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
         else:
             await self.process_dream(QueueObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed))
-            await ctx.send_response(initial_response)
+            await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(self.queue)}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
 
     async def process_dream(self, queue_object: QueueObject):
         self.dream_thread = Thread(target=self.dream,
