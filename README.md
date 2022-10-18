@@ -15,6 +15,8 @@ To generate an image from text, use the /draw command and include your prompt as
 - CFG scale
 - sampling method
 - seed
+- img2img
+- denoising strength
 
 ### Setup requirements
 - Set up [AUTOMATIC1111's Stable Diffusion AI Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui).

@@ -23,6 +23,12 @@ if file_exists is False:
 self.load_extension('core.stablecog')
 self.load_extension('core.tipscog')
 
+@self.slash_command(name = "stats", description = "How many images has the bot generated?")
+async def stats(ctx):
+    with open("resources/stats.txt", 'r') as f: data = list(map(int, f.readlines()))
+    embed = discord.Embed(title='Art generated', description=f'I have created {data[0]} pictures!', color=embed_color)
+    await ctx.respond(embed=embed)
+
 @self.event
 async def on_ready():
     PayloadFormatter.setup()
@@ -33,7 +39,6 @@ async def on_ready():
 async def on_message(message):
     if message.author == self.user:
         try:
-            # Check if the message from Shanghai was actually a generation
             if message.embeds[0].fields[0].name == 'command':
                 await message.add_reaction('❌')
         except:
@@ -44,15 +49,8 @@ async def on_raw_reaction_add(ctx):
     if ctx.emoji.name == '❌':
         message = await self.get_channel(ctx.channel_id).fetch_message(ctx.message_id)
         if message.embeds:
-            # look at the message footer to see if the generation was by the user who reacted
             if message.embeds[0].footer.text == f'{ctx.member.name}#{ctx.member.discriminator}':
                 await message.delete()
-
-@self.slash_command(name = "stats", description = "How many images has the bot generated?")
-async def stats(ctx):
-    with open("resources/stats.txt", 'r') as f: data = list(map(int, f.readlines()))
-    embed = discord.Embed(title='Art generated', description=f'I have created {data[0]} pictures!', color=embed_color)
-    await ctx.respond(embed=embed)
 
 async def shutdown(bot):
     await bot.close()
