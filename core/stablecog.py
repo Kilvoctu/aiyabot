@@ -115,7 +115,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         #apply indices from PayloadFormatter and confirm
         PayloadFormatter.do_format(self, PayloadFormatter.PayloadFormat.TXT2IMG)
         print(f'Indices-prompt:{self.prompt_ind}, exclude:{self.exclude_ind}, steps:{self.sample_ind}, height:{self.resy_ind}, width:{self.resx_ind}, cfg scale:{self.conform_ind}, sampler:{self.sampling_methods_ind}, seed:{self.seed_ind}')
-        print(f'Indices-checkpoint{self.checkpoint_ind}')
 
         if seed == -1: seed = random.randint(0, 0xFFFFFFFF)
         #increment number of times command is used
@@ -193,8 +192,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             embed.color = embed_color
             embed.add_field(name='My drawing of', value=f'``{queue_object.prompt}``', inline=False)
             embed.add_field(name='took me', value='``{0:.3f}`` seconds'.format(end_time-start_time), inline=False)
-            embed.set_footer(
-                text=f'{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}', icon_url=queue_object.ctx.author.avatar.url)
+            if queue_object.ctx.author.avatar is None:
+                embed.set_footer(text=f'{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}')
+            else:
+                embed.set_footer(text=f'{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}', icon_url=queue_object.ctx.author.avatar.url)
             event_loop.create_task(
                 queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>', embed=embed, file=picture))
 

@@ -11,7 +11,7 @@ embed_color = discord.Colour.from_rgb(222, 89, 28)
     
 load_dotenv()
 self = discord.Bot()
-intents = discord.Intents.all()
+intents = discord.Intents.default()
 intents.members = True
 self.logger = get_logger(__name__)
 
@@ -28,6 +28,25 @@ async def on_ready():
     PayloadFormatter.setup()
     self.logger.info(f'Logged in as {self.user.name} ({self.user.id})')
     await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='drawing tutorials.'))
+
+@self.event
+async def on_message(message):
+    if message.author == self.user:
+        try:
+            # Check if the message from Shanghai was actually a generation
+            if message.embeds[0].fields[0].name == 'command':
+                await message.add_reaction('❌')
+        except:
+            pass
+
+@self.event
+async def on_raw_reaction_add(ctx):
+    if ctx.emoji.name == '❌':
+        message = await self.get_channel(ctx.channel_id).fetch_message(ctx.message_id)
+        if message.embeds:
+            # look at the message footer to see if the generation was by the user who reacted
+            if message.embeds[0].footer.text == f'{ctx.member.name}#{ctx.member.discriminator}':
+                await message.delete()
 
 @self.slash_command(name = "stats", description = "How many images has the bot generated?")
 async def stats(ctx):
