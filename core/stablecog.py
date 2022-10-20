@@ -127,7 +127,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             guidance_scale: Optional[float] = 7.0,
                             sampler: Optional[str] = 'Euler a',
                             seed: Optional[int] = -1,
-                            strength: Optional[float] = None,
+                            strength: Optional[float] = 0.75,
                             init_image: Optional[discord.Attachment] = None,):
         print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
         #apply indices from PayloadFormatter and confirm
