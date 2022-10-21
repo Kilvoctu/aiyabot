@@ -1,3 +1,4 @@
+import os
 import requests
 import json
 from enum import Enum
@@ -8,8 +9,19 @@ responsestr = {}
 
 # only need to get the schema once
 def setup():
+    port = os.getenv('port')
     global responsestr
-    response_format = requests.get("http://127.0.0.1:7860/config")
+    formdata = {
+        'username': os.getenv('USERNAME'),
+        'password': os.getenv('PWD')
+    };
+
+    try:
+        response_format = requests.get(f"http://127.0.0.1:{port}/config")
+    except:
+        requests.post(f'http://127.0.0.1:{port}', data=formdata)
+        response_format = requests.get(f"http://127.0.0.1:{port}/config")
+        
     responsestr = response_format.json()
 
 
