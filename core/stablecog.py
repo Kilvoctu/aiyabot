@@ -15,6 +15,8 @@ import random
 import time
 import csv
 
+import os
+
 from core import PayloadFormatter
 
 embed_color = discord.Colour.from_rgb(222, 89, 28)
@@ -42,7 +44,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         self.queue = []
         self.wait_message = []
         self.bot = bot
-        self.url = 'http://127.0.0.1:7860/api/predict'
+        global URL
+        if os.environ.get('URL')=='':
+            URL = 'http://127.0.0.1:7860'
+        else:
+            URL = os.environ.get('URL')
+        self.url = URL + '/api/predict'
         #initialize indices for PayloadFormatter
         self.prompt_ind = 0
         self.exclude_ind = 0
@@ -209,7 +216,17 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             postObj['data'][self.seed_ind] = queue_object.seed
 
             #send payload to webui
-            response = requests.post(self.url, json=postObj)
+            global s
+            with requests.Session() as s:
+                if os.environ.get('USER'):
+                    LogInPayload = {
+                    'username': os.getenv('USER'),
+                    'password': os.getenv('PASS')
+                    }
+                    p = s.post(URL + '/login', data=LogInPayload)
+                else:
+                    p = s.post(URL + '/login')
+                response = s.post(self.url, json=postObj)
 
             end_time = time.time()
 

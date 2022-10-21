@@ -22,7 +22,8 @@ To generate an image from text, use the /draw command and include your prompt as
 - Set up [AUTOMATIC1111's Stable Diffusion AI Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui).
 - Run the Web UI as local host (`COMMANDLINE_ARGS= --listen`).
 - Clone this repo, then install dependencies in `requirements.txt` in your Python environment.
-- Create a text file in your cloned repo called ".env", containing `TOKEN = [your bot token]`
+- Create a text file in your cloned repo called ".env", formatted like so:
+  - <img src=https://raw.githubusercontent.com/Kilvoctu/kilvoctu.github.io/master/pics/envfile.png>
 - Run the bot by typing "python bot.py" in the repository directory.
 
 Note: Ensure your bot has `bot` and `application.commands` scopes when inviting to your Discord server, and intents are enabled.
