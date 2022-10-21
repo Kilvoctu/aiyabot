@@ -1,6 +1,7 @@
 import traceback
 from asyncio import AbstractEventLoop
 from threading import Thread
+import os
 
 import requests
 import json
@@ -37,12 +38,13 @@ class QueueObject:
 
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
     def __init__(self, bot):
+        port = os.getenv('port')
         self.dream_thread = Thread()
         self.event_loop = asyncio.get_event_loop()
         self.queue = []
         self.wait_message = []
         self.bot = bot
-        self.url = 'http://127.0.0.1:7860/api/predict'
+        self.url = f'http://127.0.0.1:{port}/api/predict'
         #initialize indices for PayloadFormatter
         self.prompt_ind = 0
         self.exclude_ind = 0
