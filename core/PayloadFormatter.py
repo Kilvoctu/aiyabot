@@ -11,16 +11,29 @@ responsestr = {}
 def setup():
     global responsestr
     global s
-    LogInPayload = {
-    'username': os.getenv('USER'),
-    'password': os.getenv('PASS')
-    }
+    global URL
+    if os.environ.get('URL')=='':
+        URL = 'http://127.0.0.1:7860'
+        print("Using Default URL: http://127.0.0.1:7860")
+    else:
+        URL = os.environ.get('URL')
     with requests.Session() as s:
-        p = s.post(os.getenv('URL') + '/login', data=LogInPayload)
-        r = s.get(os.getenv('URL') + '/config')
-        print('----------------------------------------------------------')
-        response_format = s.get(os.getenv('URL') + "/config")
-        print(response_format)
+        if os.environ.get('USER'):
+            if os.environ.get('PASS')=='':
+                raise SystemExit("There is no password set. Please set a password in the .env file.")
+            else:
+                LogInPayload = {
+                'username': os.getenv('USER'),
+                'password': os.getenv('PASS')
+                }
+            print('Logging into the API')
+            p = s.post(URL + '/login', data=LogInPayload)
+        else:
+            print('No Username Set')
+            p = s.post(URL + '/login')
+        r = s.get(URL + '/config')
+
+        response_format = s.get(URL + "/config")
         responsestr = response_format.json()
         print(responsestr)
 
