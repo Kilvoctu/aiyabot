@@ -1,2 +1,5 @@
 __pycache__
 /.env
+/pydata
+start.bat
+resources/stats.txt

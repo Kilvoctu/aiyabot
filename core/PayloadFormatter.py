@@ -3,15 +3,26 @@ import json
 from enum import Enum
 import platform
 from core import stablecog
+import os
 responsestr = {}
 
 
 # only need to get the schema once
 def setup():
     global responsestr
-    response_format = requests.get("http://127.0.0.1:7860/config")
-    responsestr = response_format.json()
-
+    global s
+    LogInPayload = {
+    'username': os.getenv('USER'),
+    'password': os.getenv('PASS')
+    }
+    with requests.Session() as s:
+        p = s.post(os.getenv('URL') + '/login', data=LogInPayload)
+        r = s.get(os.getenv('URL') + '/config')
+        print('----------------------------------------------------------')
+        response_format = s.get(os.getenv('URL') + "/config")
+        print(response_format)
+        responsestr = response_format.json()
+        print(responsestr)
 
 # prob don't need to do this lmao
 class PayloadFormat(Enum):

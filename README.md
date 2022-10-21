@@ -24,6 +24,8 @@ To generate an image from text, use the /draw command and include your prompt as
 - Clone this repo, then install dependencies in `requirements.txt` in your Python environment.
 - Create a text file in your cloned repo called ".env", containing `TOKEN = [your bot token]`
 - Run the bot by typing "python bot.py" in the repository directory.
+- If you have a user name and password, inside .env add `USER = username` and `PASS = password` as seperate lines
+- Set the URL/IP (required) with `URL = http://127.0.0.1` (Another example: `URL = https://redacted.gradio.app`)
 
 Note: Ensure your bot has `bot` and `application.commands` scopes when inviting to your Discord server, and intents are enabled.
 
