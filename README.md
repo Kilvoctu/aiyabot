@@ -24,7 +24,7 @@ To generate an image from text, use the /draw command and include your prompt as
 - Clone this repo.
 - Create a text file in your cloned repo called ".env", formatted like so:
   - <img src=https://raw.githubusercontent.com/Kilvoctu/kilvoctu.github.io/master/pics/envfile.png>
-- Run the bot by executing launch.bat
+- Run the bot by running launch.bat
 
 Note: Ensure your bot has `bot` and `application.commands` scopes when inviting to your Discord server, and intents are enabled.
 
