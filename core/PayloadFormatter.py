@@ -35,39 +35,14 @@ def setup():
 
         response_format = s.get(URL + "/config")
         responsestr = response_format.json()
-        print(responsestr)
+        print('Payload Formatter initialized')
 
-# prob don't need to do this lmao
 class PayloadFormat(Enum):
     TXT2IMG = 0
     IMG2IMG = 1
     UPSCALE = 2
 
-
 def do_format(StableCog, payload_format: PayloadFormat):
-
-    # dependencies have ids that point to components. these components (usually) have a label (like "Sampling steps")
-    # and a default value (like "20"). we find the dependency we want (key "js" must have value "submit" for txt2img,
-    # "submit_img2img" for img2img, and "get_extras_tab_index" for upscale).
-    # then iterate through the ids in that dependency and match them with the corresponding id in the components.
-    # store the label:value pairs in txt2imgjson.
-    # example:
-    # {"components":[
-    #               { "id": 6,
-    #                 "props":{
-    #                           "label":"Prompt",
-    #                           "value":""
-    #                          }
-    #                 }, etc ],
-    #   "dependencies":[
-    #                  { "inputs":{
-    #                       6,etc
-    #                              },
-    #                     "js":"submit", etc
-    #                   }]
-    # }
-    #
-    # dict["dependencies"]["input"][0] equals 6 which is the id of the component for Prompt
     dependenciesjson = responsestr["dependencies"]
     componentsjson = responsestr["components"]
     dependencylist = []
@@ -85,9 +60,7 @@ def do_format(StableCog, payload_format: PayloadFormat):
                     dependencylist.append(i.copy())
                 except:
                     dependencylist.append(i)
-        # later on, json payload uses the function index to determine what parameters to accept.
-        # function index is the position in dependencies in the schema that the function appears,
-        # so txt2img is the 13th function (in this version, could change in the future)
+
         if dependenciesjson[dep]["js"] == "submit" and txt2img_fn_index == 0:
             # not sure if it's different on linux but this is a guess
             txt2img_fn_index = dep
@@ -122,7 +95,6 @@ def do_format(StableCog, payload_format: PayloadFormat):
                     labelvaluetuplelist.append((component["props"].get("label"), component["props"].get("value")))
                 break
 
-    # iterate through txt2imgjson, find a label you're looking for, and store the index for later use by StableCog
     for i in range(0, len(labelvaluetuplelist)):
         if labelvaluetuplelist[i][0] == "Prompt":
             StableCog.prompt_ind = i
