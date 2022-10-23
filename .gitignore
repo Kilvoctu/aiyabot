@@ -4,3 +4,5 @@ __pycache__
 start.bat
 resources/stats.txt
 /venv
+/data.json
+/imgdata.json
