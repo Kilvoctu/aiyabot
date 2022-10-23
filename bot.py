@@ -5,7 +5,6 @@ import discord
 import asyncio
 from dotenv import load_dotenv
 from core.logging import get_logger
-from core import PayloadFormatter
 
 embed_color = discord.Colour.from_rgb(222, 89, 28)
     
@@ -31,7 +30,6 @@ async def stats(ctx):
 
 @self.event
 async def on_ready():
-    PayloadFormatter.setup()
     self.logger.info(f'Logged in as {self.user.name} ({self.user.id})')
     await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='drawing tutorials.'))
 
@@ -58,13 +56,13 @@ async def shutdown(bot):
 try:
     self.run(os.getenv('TOKEN'))
 except KeyboardInterrupt:
-    logger.info('Keyboard interrupt received. Exiting.')
+    self.logger.info('Keyboard interrupt received. Exiting.')
     asyncio.run(shutdown(self))
 except SystemExit:
-    logger.info('System exit received. Exiting.')
+    self.logger.info('System exit received. Exiting.')
     asyncio.run(shutdown(self))
 except Exception as e:
-    logger.error(e)
+    self.logger.error(e)
     asyncio.run(shutdown(self))
 finally:
     sys.exit(0)

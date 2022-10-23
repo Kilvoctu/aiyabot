@@ -1,11 +1,9 @@
-import requests
 import json
-from enum import Enum
-import platform
-from core import stablecog
 import os
-responsestr = {}
+from enum import Enum
+import requests
 
+responsestr = {}
 
 # only need to get the schema once
 def setup():

@@ -7,7 +7,6 @@ import json
 import asyncio
 import discord
 from discord.ext import commands
-from discord.commands import OptionChoice
 from typing import Optional
 import base64
 from discord import option
@@ -20,7 +19,11 @@ import os
 from core import PayloadFormatter
 
 embed_color = discord.Colour.from_rgb(222, 89, 28)
-
+global URL
+if os.environ.get('URL')=='':
+    URL = 'http://127.0.0.1:7860'
+else:
+    URL = os.environ.get('URL')
 
 class QueueObject:
     def __init__(self, ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed,
@@ -44,13 +47,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         self.queue = []
         self.wait_message = []
         self.bot = bot
-        global URL
-        if os.environ.get('URL')=='':
-            URL = 'http://127.0.0.1:7860'
-        else:
-            URL = os.environ.get('URL')
         self.url = URL + '/api/predict'
-        #initialize indices for PayloadFormatter
+        #initialize indices for PayloadFormatter then format
         self.prompt_ind = 0
         self.exclude_ind = 0
         self.sample_ind = 0
@@ -61,6 +59,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         self.seed_ind = 0
         self.denoise_ind = 0
         self.data_ind = 0
+        PayloadFormatter.setup()
+        PayloadFormatter.do_format(self, PayloadFormatter.PayloadFormat.TXT2IMG)
 
     @commands.slash_command(name = "draw", description = "Create an image")
     @option(
@@ -113,7 +113,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     @option(
         'seed',
         int,
-        description='The seed to use for reproduceability',
+        description='The seed to use for reproducibility',
         required=False,
     )
     @option(
@@ -137,8 +137,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             strength: Optional[float] = 0.75,
                             init_image: Optional[discord.Attachment] = None,):
         print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
-        #apply indices from PayloadFormatter and confirm
-        PayloadFormatter.do_format(self, PayloadFormatter.PayloadFormat.TXT2IMG)
+        #confirm indices from PayloadFormatter
         print(f'Indices-prompt:{self.prompt_ind}, exclude:{self.exclude_ind}, steps:{self.sample_ind}, height:{self.resy_ind}, width:{self.resx_ind}, cfg scale:{self.conform_ind}, sampler:{self.sampling_methods_ind}, seed:{self.seed_ind}')
         if init_image:
             PayloadFormatter.do_format(self, PayloadFormatter.PayloadFormat.IMG2IMG)
@@ -233,7 +232,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             #post to discord
             picture = discord.File(response.json()['data'][0][0]['name'])
             embed = discord.Embed()
-            embed.color = embed_color
+            embed.colour = embed_color
             embed.add_field(name='My drawing of', value=f'``{queue_object.prompt}``', inline=False)
             embed.add_field(name='took me', value='``{0:.3f}`` seconds'.format(end_time-start_time), inline=False)
             if queue_object.ctx.author.avatar is None:
