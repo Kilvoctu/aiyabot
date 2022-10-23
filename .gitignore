@@ -3,3 +3,4 @@ __pycache__
 /pydata
 start.bat
 resources/stats.txt
+/venv
