@@ -176,13 +176,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     def dream(self, event_loop: AbstractEventLoop, queue_object: QueueObject):
         try:
             start_time = time.time()
-            #load copy of payload into memory
-            if queue_object.init_image is not None:
-                f = open('imgdata.json')
-                post_obj = json.load(f)
-                image = base64.b64encode(requests.get(queue_object.init_image.url, stream=True).content).decode('utf-8')
-                #post_obj['data'][IndexKeeper.denoise_ind] = queue_object.strength
-                #post_obj['data'][IndexKeeper.data_ind] = 'data:image/png;base64,' + image
 
             #construct the payload
             payload = {
@@ -195,6 +188,16 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 "sampler_index": queue_object.sampler,
                 "seed": queue_object.seed
             }
+            if queue_object.init_image is not None:
+                image = base64.b64encode(requests.get(queue_object.init_image.url, stream=True).content).decode('utf-8')
+                img_payload = {
+                    "init_images": [
+                        'data:image/png;base64,' + image
+                    ],
+                    "denoising_strength": queue_object.strength
+                }
+                payload.update(img_payload)
+
             payload_json = json.dumps(payload)
 
             #send payload to webui
@@ -208,7 +211,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     p = s.post(URL + '/login', data=login_payload)
                 else:
                     p = s.post(URL + '/login')
-                response = requests.post(url=f'{self.url}/sdapi/v1/txt2img', data=payload_json).json()
+                if queue_object.init_image is not None:
+                    response = requests.post(url=f'{self.url}/sdapi/v1/img2img', data=payload_json).json()
+                else:
+                    response = requests.post(url=f'{self.url}/sdapi/v1/txt2img', data=payload_json).json()
 
             end_time = time.time()
 

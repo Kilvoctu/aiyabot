@@ -8,5 +8,3 @@ resources/stats.txt
 
 .env
 start.bat
-data.json
-imgdata.json

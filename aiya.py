@@ -7,6 +7,11 @@ import requests
 from dotenv import load_dotenv
 from core.logging import get_logger
 
+#todo - save pngs with decorated filenames
+#todo - save pngs with metadata
+#todo - allow select where to save pngs
+#todo - probably some other stuff
+
 #start up initialization stuff
 global URL
 self = discord.Bot()

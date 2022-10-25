@@ -27,6 +27,3 @@ To generate an image from text, use the /draw command and include your prompt as
 - Run the bot by running launch.bat
 
 Note: Ensure your bot has `bot` and `application.commands` scopes when inviting to your Discord server, and intents are enabled.
-
-This bot is heavily based on:
-https://github.com/harubaru/discord-stable-diffusion
