@@ -1,7 +1,7 @@
 import traceback
 from asyncio import AbstractEventLoop
 from threading import Thread
-
+import os
 import requests
 import json
 import asyncio
@@ -14,14 +14,15 @@ import random
 import time
 import csv
 
-import os
+import aiya
+from aiya import IndexKeeper
 
-from core import PayloadFormatter
 
 embed_color = discord.Colour.from_rgb(222, 89, 28)
 global URL
-if os.environ.get('URL')=='':
+if os.environ.get('URL') == '':
     URL = 'http://127.0.0.1:7860'
+    print('Using Default URL: http://127.0.0.1:7860')
 else:
     URL = os.environ.get('URL')
 
@@ -48,21 +49,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         self.wait_message = []
         self.bot = bot
         self.url = URL + '/api/predict'
-        #initialize indices for PayloadFormatter then format
-        self.prompt_ind = 0
-        self.exclude_ind = 0
-        self.sample_ind = 0
-        self.resy_ind = 0
-        self.resx_ind = 0
-        self.conform_ind = 0
-        self.sampling_methods_ind = 0
-        self.seed_ind = 0
-        self.denoise_ind = 0
-        self.data_ind = 0
-        PayloadFormatter.setup()
-        PayloadFormatter.do_format(self, PayloadFormatter.PayloadFormat.TXT2IMG)
 
-    @commands.slash_command(name = "draw", description = "Create an image")
+    @commands.slash_command(name = 'draw', description = 'Create an image')
     @option(
         'prompt',
         str,
@@ -137,17 +125,19 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             strength: Optional[float] = 0.75,
                             init_image: Optional[discord.Attachment] = None,):
         print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
-        #confirm indices from PayloadFormatter
-        print(f'Indices-prompt:{self.prompt_ind}, exclude:{self.exclude_ind}, steps:{self.sample_ind}, height:{self.resy_ind}, width:{self.resx_ind}, cfg scale:{self.conform_ind}, sampler:{self.sampling_methods_ind}, seed:{self.seed_ind}')
+        #reformat indices
+        aiya.do_format(aiya.PayloadFormat.TXT2IMG)
         if init_image:
-            PayloadFormatter.do_format(self, PayloadFormatter.PayloadFormat.IMG2IMG)
-            print(f'Indices-denoising strength:{self.denoise_ind}, init image:{self.data_ind}')
+            aiya.do_format(aiya.PayloadFormat.IMG2IMG)
+            print(f'Indices-denoising strength:{IndexKeeper.denoise_ind}, init image:{IndexKeeper.data_ind}')
+        print(
+            f'Indices-prompt:{IndexKeeper.prompt_ind}, exclude:{IndexKeeper.exclude_ind}, steps:{IndexKeeper.sample_ind}, height:{IndexKeeper.resy_ind}, width:{IndexKeeper.resx_ind}, cfg scale:{IndexKeeper.conform_ind}, sampler:{IndexKeeper.sampling_methods_ind}, seed:{IndexKeeper.seed_ind}')
 
         if seed == -1: seed = random.randint(0, 0xFFFFFFFF)
         #increment number of times command is used
-        with open("resources/stats.txt", 'r') as f: data = list(map(int, f.readlines()))
+        with open('resources/stats.txt', 'r') as f: data = list(map(int, f.readlines()))
         data[0] = data[0] + 1
-        with open("resources/stats.txt", 'w') as f: f.write('\n'.join(str(x) for x in data))
+        with open('resources/stats.txt', 'w') as f: f.write('\n'.join(str(x) for x in data))
         
         #random messages for bot to say
         with open('resources/messages.csv') as csv_file:
@@ -197,35 +187,35 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             #load copy of payload into memory
             if queue_object.init_image is not None:
                 f = open('imgdata.json')
-                postObj = json.load(f)
+                post_obj = json.load(f)
                 image = base64.b64encode(requests.get(queue_object.init_image.url, stream=True).content).decode('utf-8')
-                postObj['data'][self.denoise_ind] = queue_object.strength
-                postObj['data'][self.data_ind] = "data:image/png;base64," + image
+                post_obj['data'][IndexKeeper.denoise_ind] = queue_object.strength
+                post_obj['data'][IndexKeeper.data_ind] = 'data:image/png;base64,' + image
             else:
                 f = open('data.json')
-                postObj = json.load(f)
+                post_obj = json.load(f)
 
-            postObj['data'][self.prompt_ind] = queue_object.prompt
-            postObj['data'][self.exclude_ind] = queue_object.negative_prompt
-            postObj['data'][self.sample_ind] = queue_object.steps
-            postObj['data'][self.resy_ind] = queue_object.height
-            postObj['data'][self.resx_ind] = queue_object.width
-            postObj['data'][self.conform_ind] = queue_object.guidance_scale
-            postObj['data'][self.sampling_methods_ind] = queue_object.sampler
-            postObj['data'][self.seed_ind] = queue_object.seed
+            post_obj['data'][IndexKeeper.prompt_ind] = queue_object.prompt
+            post_obj['data'][IndexKeeper.exclude_ind] = queue_object.negative_prompt
+            post_obj['data'][IndexKeeper.sample_ind] = queue_object.steps
+            post_obj['data'][IndexKeeper.resy_ind] = queue_object.height
+            post_obj['data'][IndexKeeper.resx_ind] = queue_object.width
+            post_obj['data'][IndexKeeper.conform_ind] = queue_object.guidance_scale
+            post_obj['data'][IndexKeeper.sampling_methods_ind] = queue_object.sampler
+            post_obj['data'][IndexKeeper.seed_ind] = queue_object.seed
 
             #send payload to webui
             global s
             with requests.Session() as s:
                 if os.environ.get('USER'):
-                    LogInPayload = {
+                    login_payload = {
                     'username': os.getenv('USER'),
                     'password': os.getenv('PASS')
                     }
-                    p = s.post(URL + '/login', data=LogInPayload)
+                    p = s.post(URL + '/login', data=login_payload)
                 else:
                     p = s.post(URL + '/login')
-                response = s.post(self.url, json=postObj)
+                response = s.post(self.url, json=post_obj)
 
             end_time = time.time()
 
