@@ -1,9 +1,10 @@
+.idea
 __pycache__
-/.env
-/pydata
-start.bat
+pydata
+venv
+
+outputs/*.png
 resources/stats.txt
-/venv
-/data.json
-/imgdata.json
-/.idea
+
+.env
+start.bat
