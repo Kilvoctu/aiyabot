@@ -7,10 +7,7 @@ import requests
 from dotenv import load_dotenv
 from core.logging import get_logger
 
-#todo - save pngs with decorated filenames
-#todo - save pngs with metadata
-#todo - allow select where to save pngs
-#todo - probably some other stuff
+#todo - make PNG metadata compatible with Web UI PNG Info
 
 #start up initialization stuff
 global URL
@@ -64,7 +61,7 @@ async def on_ready():
     self.logger.info(f'Logged in as {self.user.name} ({self.user.id})')
     await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='drawing tutorials.'))
 
-#feature to delete generations. give bot "Add Reactions" permission (or not, to hide the ❌)
+#feature to delete generations. give bot 'Add Reactions' permission (or not, to hide the ❌)
 @self.event
 async def on_message(message):
     if message.author == self.user:

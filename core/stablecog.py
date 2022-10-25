@@ -9,7 +9,7 @@ import asyncio
 import discord
 from discord.ext import commands
 from typing import Optional
-from PIL import Image
+from PIL import Image, PngImagePlugin
 import base64
 from discord import option
 import random
@@ -19,6 +19,13 @@ import csv
 
 embed_color = discord.Colour.from_rgb(222, 89, 28)
 global URL
+global DIR
+
+if os.environ.get('DIR') == '':
+    DIR = "outputs"
+    print('Using outputs directory: outputs')
+else:
+    DIR = os.environ.get('DIR')
 if os.environ.get('URL') == '':
     URL = 'http://127.0.0.1:7860'
     print('Using Default URL: http://127.0.0.1:7860')
@@ -221,7 +228,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             #save local copy of image
             for i in response['images']:
                 image = Image.open(io.BytesIO(base64.b64decode(i)))
-                image.save("outputs\output.png")
+                pnginfo = PngImagePlugin.PngInfo()
+                epoch_time = int(time.time())
+                pnginfo.add_text("parameters", str(payload_json))
+                image.save(f'{DIR}\{epoch_time}-{queue_object.seed}-{queue_object.prompt[0:120]}.png', pnginfo=pnginfo)
 
             #post to discord
             with io.BytesIO() as buffer:
