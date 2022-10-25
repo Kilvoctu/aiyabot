@@ -226,11 +226,13 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             end_time = time.time()
 
             #save local copy of image
+            metadata = json.dumps(response['info']).strip('"')
+            formatted_metadata = metadata.replace('\\n', '\n')
             for i in response['images']:
                 image = Image.open(io.BytesIO(base64.b64decode(i)))
                 pnginfo = PngImagePlugin.PngInfo()
                 epoch_time = int(time.time())
-                pnginfo.add_text("parameters", str(payload_json))
+                pnginfo.add_text("parameters", str(formatted_metadata))
                 image.save(f'{DIR}\{epoch_time}-{queue_object.seed}-{queue_object.prompt[0:120]}.png', pnginfo=pnginfo)
 
             #post to discord

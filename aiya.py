@@ -7,7 +7,6 @@ import requests
 from dotenv import load_dotenv
 from core.logging import get_logger
 
-#todo - make PNG metadata compatible with Web UI PNG Info
 
 #start up initialization stuff
 global URL
