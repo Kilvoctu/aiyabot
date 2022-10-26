@@ -15,7 +15,6 @@ intents = discord.Intents.default()
 intents.members = True
 load_dotenv()
 embed_color = discord.Colour.from_rgb(222, 89, 28)
-responsestr = {}
 self.logger = get_logger(__name__)
 
 file_exists = exists('resources/stats.txt')
@@ -34,16 +33,15 @@ with requests.Session() as s:
         if os.environ.get('PASS') == '':
             raise SystemExit('There is no password set. Please set a password in the .env file.')
         else:
-            LogInPayload = {
+            login_payload = {
                 'username': os.getenv('USER'),
                 'password': os.getenv('PASS')
             }
         print('Logging into the API')
-        p = s.post(URL + '/login', data=LogInPayload)
+        s.post(URL + '/login', data=login_payload)
     else:
         print('No Username Set')
-        p = s.post(URL + '/login')
-    r = s.get(URL + '/config')
+        s.post(URL + '/login')
 
 self.load_extension('core.stablecog')
 self.load_extension('core.tipscog')

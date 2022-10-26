@@ -211,16 +211,15 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             payload_json = json.dumps(payload)
 
             #send payload to webui
-            global s
             with requests.Session() as s:
                 if os.environ.get('USER'):
                     login_payload = {
                     'username': os.getenv('USER'),
                     'password': os.getenv('PASS')
                     }
-                    p = s.post(URL + '/login', data=login_payload)
+                    s.post(URL + '/login', data=login_payload)
                 else:
-                    p = s.post(URL + '/login')
+                    s.post(URL + '/login')
                 if queue_object.init_image is not None:
                     response = requests.post(url=f'{self.url}/sdapi/v1/img2img', data=payload_json).json()
                 else:
