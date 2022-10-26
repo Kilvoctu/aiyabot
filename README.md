@@ -33,4 +33,6 @@ PASS = your password
 ```
 - Run the bot by running launch.bat
 
-Note: Ensure your bot has `bot` and `application.commands` scopes when inviting to your Discord server, and intents are enabled.
+#### Notes
+- Ensure your bot has `bot` and `application.commands` scopes when inviting to your Discord server, and intents are enabled.
+- `URL =` and `DIR = ` are required, but can be left blank to automatically go to defaults.

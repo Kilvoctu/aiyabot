@@ -21,16 +21,22 @@ embed_color = discord.Colour.from_rgb(222, 89, 28)
 global URL
 global DIR
 
+#check .env variables
 if os.environ.get('DIR') == '':
     DIR = "outputs"
-    print('Using outputs directory: outputs')
+    print('Using default outputs directory: outputs')
 else:
     DIR = os.environ.get('DIR')
+dir_exists = os.path.exists(DIR)
+if dir_exists is False:
+    print(f'The folder for DIR doesn\'t exist! Creating folder at {DIR}.')
+    os.mkdir(DIR)
+
 if os.environ.get('URL') == '':
     URL = 'http://127.0.0.1:7860'
     print('Using Default URL: http://127.0.0.1:7860')
 else:
-    URL = os.environ.get('URL')
+    URL = os.environ.get('URL').rstrip("/")
 
 class QueueObject:
     def __init__(self, ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed,
@@ -234,6 +240,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 epoch_time = int(time.time())
                 metadata.add_text("parameters", str(response['info']))
                 image.save(f'{DIR}\{epoch_time}-{queue_object.seed}-{queue_object.prompt[0:120]}.png', pnginfo=metadata)
+                print(f'Saved image: {DIR}\{epoch_time}-{queue_object.seed}-{queue_object.prompt[0:120]}.png')
 
             #post to discord
             with io.BytesIO() as buffer:

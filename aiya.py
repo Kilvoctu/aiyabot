@@ -9,7 +9,6 @@ from core.logging import get_logger
 
 
 #start up initialization stuff
-global URL
 self = discord.Bot()
 intents = discord.Intents.default()
 intents.members = True
@@ -21,27 +20,6 @@ file_exists = exists('resources/stats.txt')
 if file_exists is False:
     self.logger.info(f'stats.txt missing. Creating new file.')
     with open('resources/stats.txt', 'w') as f: f.write('0')
-
-if os.environ.get('URL') == '':
-    URL = 'http://127.0.0.1:7860'
-    print('Using Default URL: http://127.0.0.1:7860')
-else:
-    URL = os.environ.get('URL')
-
-with requests.Session() as s:
-    if os.environ.get('USER'):
-        if os.environ.get('PASS') == '':
-            raise SystemExit('There is no password set. Please set a password in the .env file.')
-        else:
-            login_payload = {
-                'username': os.getenv('USER'),
-                'password': os.getenv('PASS')
-            }
-        print('Logging into the API')
-        s.post(URL + '/login', data=login_payload)
-    else:
-        print('No Username Set')
-        s.post(URL + '/login')
 
 self.load_extension('core.stablecog')
 self.load_extension('core.tipscog')
