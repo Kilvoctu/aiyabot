@@ -193,7 +193,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 "width": queue_object.width,
                 "cfg_scale": queue_object.guidance_scale,
                 "sampler_index": queue_object.sampler,
-                "seed": queue_object.seed
+                "seed": queue_object.seed,
+                "seed_resize_from_h": 0,
+                "seed_resize_from_w": 0,
+                "denoising_strength": None
             }
             if queue_object.init_image is not None:
                 image = base64.b64encode(requests.get(queue_object.init_image.url, stream=True).content).decode('utf-8')
@@ -226,14 +229,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             end_time = time.time()
 
             #save local copy of image
-            metadata = json.dumps(response['info']).strip('"')
-            formatted_metadata = metadata.replace('\\n', '\n')
             for i in response['images']:
                 image = Image.open(io.BytesIO(base64.b64decode(i)))
-                pnginfo = PngImagePlugin.PngInfo()
+                metadata = PngImagePlugin.PngInfo()
                 epoch_time = int(time.time())
-                pnginfo.add_text("parameters", str(formatted_metadata))
-                image.save(f'{DIR}\{epoch_time}-{queue_object.seed}-{queue_object.prompt[0:120]}.png', pnginfo=pnginfo)
+                metadata.add_text("parameters", str(response['info']))
+                image.save(f'{DIR}\{epoch_time}-{queue_object.seed}-{queue_object.prompt[0:120]}.png', pnginfo=metadata)
 
             #post to discord
             with io.BytesIO() as buffer:
