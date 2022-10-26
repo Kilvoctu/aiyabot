@@ -63,7 +63,7 @@ async def on_ready():
 async def on_message(message):
     if message.author == self.user:
         try:
-            if message.embeds[0].fields[0].name == 'command':
+            if message.embeds[0].fields[0].name == 'My drawing of':
                 await message.add_reaction('❌')
         except:
             pass
