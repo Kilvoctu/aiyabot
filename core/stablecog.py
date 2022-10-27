@@ -30,6 +30,7 @@ if os.getenv("URL") is not None:
 else:
     URL = 'http://127.0.0.1:7860'
     print('Using Default URL: http://127.0.0.1:7860')
+samplers = ['Euler a', 'Euler', 'LMS', 'Heun', 'DPM2', 'DPM2 a', 'DPM fast', 'DPM adaptive', 'LMS Karras', 'DPM2 Karras', 'DPM2 a Karras', 'DDIM', 'PLMS']
 
 if os.getenv("DIR") is not None:
     DIR = os.environ.get('DIR')
