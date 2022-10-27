@@ -31,6 +31,7 @@ TOKEN = put your bot token here
 
 #### Notes
 - Ensure your bot has `bot` and `application.commands` scopes when inviting to your Discord server, and intents are enabled.
+- React to generated images with ❌ to delete them.
 - Optional .env variables you can set:
 ```
 URL = set URL if yours is not default (http://127.0.0.1:7860) 
