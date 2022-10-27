@@ -10,6 +10,8 @@ import discord
 from discord.ext import commands
 from typing import Optional
 from PIL import Image, PngImagePlugin
+from discord.utils import get
+from core import settings
 import base64
 from discord import option
 import random
@@ -22,6 +24,8 @@ global URL
 global DIR
 
 #check .env variables
+samplers = ['Euler a', 'Euler', 'LMS', 'Heun', 'DPM2', 'DPM2 a', 'DPM fast', 'DPM adaptive', 'LMS Karras', 'DPM2 Karras', 'DPM2 a Karras', 'DDIM', 'PLMS']
+
 if os.environ.get('DIR') == '':
     DIR = "outputs"
     print('Using default outputs directory: outputs')
@@ -61,6 +65,73 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         self.wait_message = []
         self.bot = bot
         self.url = URL
+
+
+    @commands.slash_command(name = "currentoptions")
+    async def currentoptions(self, ctx):
+        guild = '% s' % ctx.guild_id
+        try:
+            await ctx.respond(settings.read(guild)) #output is ugly
+        except FileNotFoundError:
+            settings.build(guild)
+            await ctx.respond('Config file not found, building...')
+
+    @commands.slash_command(name = "setdefaultsteps")
+    async def setdefaultsteps(self, ctx, setting):
+        guild_id = '% s' % ctx.guild_id
+        value = int(setting)
+        sett= 'default_steps'
+        maxsteps = settings.read(guild_id)
+        if value > maxsteps['max_steps']:
+            await ctx.respond('default steps cant go beyond max steps')
+            await ctx.respond('CURRENT MAXSTEPS:'+str(maxsteps['max_steps']))
+        else:
+            try:
+                settings.update(guild_id, sett, value)
+                await ctx.respond('New default steps value Set')
+            except FileNotFoundError:
+                settings.build(guild_id)
+                await ctx.respond('Config file not found, building...')
+
+    @commands.slash_command(name = "setdefaultnegativeprompt")
+    async def setnegativeprompt(self, ctx, value: str):
+        guild_id = '% s' % ctx.guild_id
+        sett = 'negative_prompt'
+        try:
+            settings.update(guild_id, sett, value)
+            await ctx.respond('New default negative prompts Set')
+        except FileNotFoundError:
+            settings.build(guild_id)
+            await ctx.respond('Config file not found, building...')
+
+    @commands.slash_command(name = "setdefaultsampler")
+    async def defaultsampler(self, ctx, value:str):
+        guild_id = '% s' % ctx.guild_id
+        sett = 'sampler'
+        #Disclaimer: I know there's a more sophisticated way to do this but pycord hates me so I'm not risking it right now
+        samplers = {'Euler a', 'Euler', 'LMS', 'Heun', 'DPM2', 'DPM2 a', 'DPM fast', 'DPM adaptive', 'LMS Karras', 'DPM2 Karras', 'DPM2 a Karras', 'DDIM', 'PLMS'}
+        if value in samplers:
+            try:
+                settings.update(guild_id, sett, value)
+                await ctx.respond('New default sampler Set')
+            except FileNotFoundError:
+                settings.build(guild_id)
+                await ctx.respond('Config file not found, building...')
+        else:
+            await ctx.respond('Please use one of the following options: ' + ' , '.join(samplers) )
+
+    @commands.slash_command(name = "setmaxsteps")
+    async def setmaxsteps(self, ctx, setting):
+        guild_id = '% s' % ctx.guild_id
+        value = int(setting)
+        sett= 'max_steps'
+        maxsteps = settings.read(guild_id)
+        try:
+            settings.update(guild_id, sett, value)
+            await ctx.respond('New max steps value Set')
+        except FileNotFoundError:
+            settings.build(guild_id)
+            await ctx.respond('Config file not found, building...')
 
     @commands.slash_command(name = 'draw', description = 'Create an image')
     @option(
@@ -128,15 +199,24 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         required=False,
     )
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
-                            prompt: str, negative_prompt: str = '',
-                            steps: Optional[int] = 30,
+                            prompt: str, negative_prompt: str = 'unset',
+                            steps: Optional[int] = -1,
                             height: Optional[int] = 512, width: Optional[int] = 512,
                             guidance_scale: Optional[float] = 7.0,
-                            sampler: Optional[str] = 'Euler a',
+                            sampler: Optional[str] = 'unset',
                             seed: Optional[int] = -1,
                             strength: Optional[float] = 0.75,
                             init_image: Optional[discord.Attachment] = None,):
         print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
+
+        guild = '% s' % ctx.guild_id
+        sett = settings.read(guild)
+        if negative_prompt == 'unset':
+            negative_prompt = sett['negative_prompt']
+        if steps == -1 or steps > sett['max_steps']:
+            steps = sett['default_steps']
+        if sampler == 'unset':
+            sampler = sett['sampler']
 
         if seed == -1: seed = random.randint(0, 0xFFFFFFFF)
         #increment number of times command is used
@@ -240,7 +320,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 epoch_time = int(time.time())
                 metadata.add_text("parameters", str(response['info']))
                 image.save(f'{DIR}\{epoch_time}-{queue_object.seed}-{queue_object.prompt[0:120]}.png', pnginfo=metadata)
-                print(f'Saved image: {DIR}\{epoch_time}-{queue_object.seed}-{queue_object.prompt[0:120]}.png')
 
             #post to discord
             with io.BytesIO() as buffer:
