@@ -324,6 +324,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 epoch_time = int(time.time())
                 metadata.add_text("parameters", str(response['info']))
                 image.save(f'{DIR}\{epoch_time}-{queue_object.seed}-{queue_object.prompt[0:120]}.png', pnginfo=metadata)
+                print(f'Saved image: {DIR}\{epoch_time}-{queue_object.seed}-{queue_object.prompt[0:120]}.png')
 
             #post to discord
             with io.BytesIO() as buffer:
