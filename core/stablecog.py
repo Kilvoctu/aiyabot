@@ -22,14 +22,14 @@ global URL
 global DIR
 
 #check .env for URL and DIR. if they don't exist, ignore it and go with defaults.
-if os.getenv("URL") is not None:
+if os.getenv("URL") == '':
     URL = os.environ.get('URL').rstrip("/")
     print(f'Using URL: {URL}')
 else:
     URL = 'http://127.0.0.1:7860'
     print('Using Default URL: http://127.0.0.1:7860')
 
-if os.getenv("DIR") is not None:
+if os.getenv("DIR") == '':
     DIR = os.environ.get('DIR')
     print(f'Using outputs directory: {DIR}')
 else:
@@ -38,7 +38,7 @@ else:
 #if directory in DIR doesn't exist, create it
 dir_exists = os.path.exists(DIR)
 if dir_exists is False:
-    print(f'The folder for DIR doesn\'t exist! Creating folder at {DIR}.')
+    print(f'The folder for DIR is missing! Creating folder at {DIR}.')
     os.mkdir(DIR)
 
 class QueueObject:
