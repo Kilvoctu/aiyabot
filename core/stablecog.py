@@ -21,22 +21,25 @@ embed_color = discord.Colour.from_rgb(222, 89, 28)
 global URL
 global DIR
 
-#check .env variables
-if os.environ.get('DIR') == '':
+#check .env for URL and DIR. if they don't exist, ignore it and go with defaults.
+if os.getenv("URL") is not None:
+    URL = os.environ.get('URL').rstrip("/")
+    print(f'Using URL: {URL}')
+else:
+    URL = 'http://127.0.0.1:7860'
+    print('Using Default URL: http://127.0.0.1:7860')
+
+if os.getenv("DIR") is not None:
+    DIR = os.environ.get('DIR')
+    print(f'Using outputs directory: {DIR}')
+else:
     DIR = "outputs"
     print('Using default outputs directory: outputs')
-else:
-    DIR = os.environ.get('DIR')
+#if directory in DIR doesn't exist, create it
 dir_exists = os.path.exists(DIR)
 if dir_exists is False:
     print(f'The folder for DIR doesn\'t exist! Creating folder at {DIR}.')
     os.mkdir(DIR)
-
-if os.environ.get('URL') == '':
-    URL = 'http://127.0.0.1:7860'
-    print('Using Default URL: http://127.0.0.1:7860')
-else:
-    URL = os.environ.get('URL').rstrip("/")
 
 class QueueObject:
     def __init__(self, ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed,
