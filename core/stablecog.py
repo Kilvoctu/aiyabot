@@ -213,7 +213,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
 
         guild = '% s' % ctx.guild_id
-        sett = settings.read(guild)
+        try:
+            sett = settings.read(guild)
+        except FileNotFoundError:
+            settings.build(guild)
+            sett = settings.read(guild)
+
         if negative_prompt == 'unset':
             negative_prompt = sett['negative_prompt']
         if steps == -1 or steps > sett['max_steps']:
