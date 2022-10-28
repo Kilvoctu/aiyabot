@@ -64,29 +64,5 @@ class SettingsCog(commands.Cog):
             else:
                 await ctx.respond('Please use one of the following options: ' + ' , '.join(samplers) )
         
-
-
-
-    # @commands.slash_command(name = "setdefaultnegativeprompt")
-    # async def setnegativeprompt(self, ctx, value: str):
-    #     guild_id = '% s' % ctx.guild_id
-    #     sett = 'negative_prompt'
-
-
-    # @commands.slash_command(name = "setdefaultsampler")
-    # async def defaultsampler(self, ctx, value:str):
-    #     guild_id = '% s' % ctx.guild_id
-    #     sett = 'sampler'
-
-
-    # @commands.slash_command(name = "setmaxsteps")
-    # async def setmaxsteps(self, ctx, setting):
-    #     guild_id = '% s' % ctx.guild_id
-    #     value = int(setting)
-    #     sett= 'max_steps'
-    #     maxsteps = settings.read(guild_id)
-
-
-
 def setup(bot:commands.Bot):
     bot.add_cog(SettingsCog(bot))
