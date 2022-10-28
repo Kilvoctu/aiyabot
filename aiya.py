@@ -2,11 +2,11 @@ import asyncio
 import os
 import sys
 from os.path import exists
-import discord
-import requests
-from dotenv import load_dotenv
-from core.logging import get_logger
 
+import discord
+from dotenv import load_dotenv
+
+from core.logging import get_logger
 
 #start up initialization stuff
 self = discord.Bot()
@@ -50,10 +50,14 @@ async def on_message(message):
 @self.event
 async def on_raw_reaction_add(ctx):
     if ctx.emoji.name == '❌':
-        message = await self.get_channel(ctx.channel_id).fetch_message(ctx.message_id)
-        if message.embeds:
-            if message.embeds[0].footer.text == f'{ctx.member.name}#{ctx.member.discriminator}':
-                await message.delete()
+        try:
+            message = await self.get_channel(ctx.channel_id).fetch_message(ctx.message_id)
+            if message.embeds:
+                if message.embeds[0].footer.text == f'{ctx.member.name}#{ctx.member.discriminator}':
+                    await message.delete()
+        except:
+            #todo: I need to add a way for bot to delete DM generations
+            pass
 
 async def shutdown(bot):
     await bot.close()
