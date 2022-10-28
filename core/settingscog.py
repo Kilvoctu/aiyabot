@@ -54,9 +54,9 @@ class SettingsCog(commands.Cog):
         if setsampler != 'unset':
             #Disclaimer: I know there's a more sophisticated way to do this but pycord hates me so I'm not risking it right now
             samplers = {'Euler a', 'Euler', 'LMS', 'Heun', 'DPM2', 'DPM2 a', 'DPM fast', 'DPM adaptive', 'LMS Karras', 'DPM2 Karras', 'DPM2 a Karras', 'DDIM', 'PLMS'}
-            if value in samplers:
+            if samplers in samplers:
                 try:
-                    settings.update(guild_id, sett, value)
+                    settings.update(guild_id, 'sampler', setsampler)
                     await ctx.respond('New default sampler Set')
                 except FileNotFoundError:
                     settings.build(guild_id)
