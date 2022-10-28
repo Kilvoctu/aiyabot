@@ -23,6 +23,7 @@ if file_exists is False:
 
 self.load_extension('core.stablecog')
 self.load_extension('core.tipscog')
+self.load_extension('core.settingscog')
 
 #stats slash command
 @self.slash_command(name = 'stats', description = 'How many images has the bot generated?')
