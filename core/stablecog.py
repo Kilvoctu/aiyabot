@@ -10,7 +10,6 @@ import discord
 from discord.ext import commands
 from typing import Optional
 from PIL import Image, PngImagePlugin
-from discord.utils import get
 from core import settings
 import base64
 from discord import option
