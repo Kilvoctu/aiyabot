@@ -21,7 +21,7 @@ To generate an image from text, use the /draw command and include your prompt as
 ##### Bonus features
 - /settings command - set per-server defaults for negative prompts, sampling steps, max steps, sampling method (_see Notes!_).
 - /stat command - showing how many /draw commands have been used.
-- /tips command - basic tips writing prompts
+- /tips command - basic tips for writing prompts.
 
 ### Setup requirements
 - Set up [AUTOMATIC1111's Stable Diffusion AI Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui).
