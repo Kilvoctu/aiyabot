@@ -10,9 +10,9 @@ path = 'resources/'.format(dir_path)
 
 template = {
             "default_steps": 30,
-            "sampler": "Euler",
+            "sampler": "Euler a",
             "negative_prompt": "",
-            "max_steps": 30
+            "max_steps": 50
         }
 
 #initialize global variables here
