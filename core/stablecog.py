@@ -10,6 +10,7 @@ import discord
 from discord.ext import commands
 from typing import Optional
 from PIL import Image, PngImagePlugin
+from core import settings
 import base64
 from discord import option
 import random
@@ -132,15 +133,29 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         required=False,
     )
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
-                            prompt: str, negative_prompt: str = '',
-                            steps: Optional[int] = 30,
+                            prompt: str, negative_prompt: str = 'unset',
+                            steps: Optional[int] = -1,
                             height: Optional[int] = 512, width: Optional[int] = 512,
                             guidance_scale: Optional[float] = 7.0,
-                            sampler: Optional[str] = 'Euler a',
+                            sampler: Optional[str] = 'unset',
                             seed: Optional[int] = -1,
                             strength: Optional[float] = 0.75,
                             init_image: Optional[discord.Attachment] = None,):
         print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
+
+        guild = '% s' % ctx.guild_id
+        try:
+            sett = settings.read(guild)
+        except FileNotFoundError:
+            settings.build(guild)
+            sett = settings.read(guild)
+
+        if negative_prompt == 'unset':
+            negative_prompt = sett['negative_prompt']
+        if steps == -1 or steps > sett['max_steps']:
+            steps = sett['default_steps']
+        if sampler == 'unset':
+            sampler = sett['sampler']
 
         if seed == -1: seed = random.randint(0, 0xFFFFFFFF)
         #increment number of times command is used
