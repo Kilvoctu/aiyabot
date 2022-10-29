@@ -56,8 +56,7 @@ async def on_raw_reaction_add(ctx):
             channel = await self.fetch_user(ctx.user_id)
             message = await channel.fetch_message(ctx.message_id)
             if message.embeds:
-                if message.embeds[0].footer.text == f'{ctx.member.name}#{ctx.member.discriminator}':
-                    await message.delete()
+                await message.delete()
 
 @self.event
 async def on_guild_join(guild):

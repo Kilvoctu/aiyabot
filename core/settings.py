@@ -42,10 +42,14 @@ def update(guild_id:str, sett:str, value):
 
 def files_check(self):
     # creating files if they don't exist
-    file_exists = exists('resources/stats.txt')
-    if file_exists is False:
+    stats_exists = exists('resources/stats.txt')
+    if stats_exists is False:
         print(f'Uh oh, stats.txt missing. Creating a new one.')
         with open('resources/stats.txt', 'w') as f: f.write('0')
+    dm_exists = exists('resources/None.json')
+    if dm_exists is False:
+        print(f'Setting up settings for DMs, called None.json')
+        build("None")
 
     # guild settings files
     for guild in self.guilds:

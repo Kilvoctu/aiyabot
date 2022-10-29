@@ -54,7 +54,7 @@ class SettingsCog(commands.Cog):
         if current_settings:
             cur_set = settings.read(guild)
             for key, value in cur_set.items():
-                reply = reply + str(key) + ": ``" + str(value) + "``, "
+                reply = reply + str(key) + ": " + str(value) + ", "
 
         #run through each command and update the defaults user selects
         if set_nprompt != 'unset':
