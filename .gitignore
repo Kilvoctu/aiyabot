@@ -3,9 +3,9 @@ __pycache__
 pydata
 venv
 
-core/generated/*
 outputs/*.png
 resources/stats.txt
+resources/*.json
 
 .env
 start.bat

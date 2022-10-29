@@ -1,68 +1,87 @@
-import discord
+from discord import option
 from discord.ext import commands
-from discord import Option
+from typing import Optional
 from core import settings
+
 
 class SettingsCog(commands.Cog):
     def __init__(self, bot:commands.Bot):
         self.bot = bot
-    
-    @commands.slash_command(name = "currentoptions")
-    async def currentoptions(self, ctx):
-        guild = '% s' % ctx.guild_id
-        try:
-            await ctx.respond(settings.read(guild)) #output is ugly
-        except FileNotFoundError:
-            settings.build(guild)
-            await ctx.respond('Config file not found, building...')
 
-    @commands.slash_command(name = "changesettings", description = 'Change Server Defaults for /draw')
-    async def setdefaultsettings(
-        self,
-        ctx,
-        setsteps: Option(int, "Set Steps", min_value= 1, default=1),
-        setnprompt: Option(str, "Set Negative Prompt", default='unset'),
-        setmaxsteps: Option(int, "Set Max Steps", min_value= 1, default=1),
-        setsampler: Option(str, "Set Sampler", default='unset')
-    ):
-        guild_id = '% s' % ctx.guild_id
-        maxsteps = settings.read(guild_id)
-        if setsteps > maxsteps['max_steps']:
-            await ctx.respond('default steps cant go beyond max steps')
-            await ctx.send_message('CURRENT MAXSTEPS:'+str(maxsteps['max_steps']))
-        elif setsteps != 1:
-            try:
-                settings.update(guild_id, 'default_steps', setsteps)
-                await ctx.respond('New default steps value Set')
-            except FileNotFoundError:
-                settings.build(guild_id)
-                await ctx.respond('Config file not found, building...')
-        if setnprompt != 'unset':
-            try:
-                settings.update(guild_id, 'negative_prompt', setnprompt)
-                await ctx.respond('New default negative prompts Set')
-            except FileNotFoundError:
-                settings.build(guild_id)
-                await ctx.respond('Config file not found, building...')
-        if setmaxsteps != 1:
-            try:
-                settings.update(guild_id, 'max_steps', setmaxsteps)
-                await ctx.respond('New max steps value Set')
-            except FileNotFoundError:
-                settings.build(guild_id)
-                await ctx.respond('Config file not found, building...')
-        if setsampler != 'unset':
-            #Disclaimer: I know there's a more sophisticated way to do this but pycord hates me so I'm not risking it right now
-            samplers = {'Euler a', 'Euler', 'LMS', 'Heun', 'DPM2', 'DPM2 a', 'DPM fast', 'DPM adaptive', 'LMS Karras', 'DPM2 Karras', 'DPM2 a Karras', 'DDIM', 'PLMS'}
-            if setsampler in samplers:
-                try:
-                    settings.update(guild_id, 'sampler', setsampler)
-                    await ctx.respond('New default sampler Set')
-                except FileNotFoundError:
-                    settings.build(guild_id)
-                    await ctx.respond('Config file not found, building...')
-            else:
-                await ctx.respond('Please use one of the following options: ' + ' , '.join(samplers) )
-        
-def setup(bot:commands.Bot):
+    @commands.slash_command(name = 'settings', description = 'Review and change server defaults')
+    @option(
+        'current_settings',
+        bool,
+        description='Show the current defaults for the server.',
+        required=False,
+    )
+    @option(
+        'set_nprompt',
+        str,
+        description='Set default negative prompt for the server',
+        required=False,
+    )
+    @option(
+        'set_steps',
+        int,
+        description='Set default amount of steps for the server',
+        min_value=1,
+        required=False,
+    )
+    @option(
+        'set_maxsteps',
+        int,
+        description='Set default maximum steps for the server',
+        min_value=1,
+        required=False,
+    )
+    @option(
+        'set_sampler',
+        str,
+        description='Set default sampler for the server',
+        required=False,
+        choices=['Euler a', 'Euler', 'LMS', 'Heun', 'DPM2', 'DPM2 a', 'DPM fast', 'DPM adaptive', 'LMS Karras', 'DPM2 Karras', 'DPM2 a Karras', 'DDIM', 'PLMS'],
+    )
+    async def settings_handler(self, ctx,
+                               current_settings: Optional[bool] = False,
+                               set_nprompt: Optional[str] = 'unset',
+                               set_steps: Optional[int] = 1,
+                               set_maxsteps: Optional[int] = 1,
+                               set_sampler: Optional[str] = 'unset'):
+        guild = '% s' % ctx.guild_id
+        reviewer = settings.read(guild)
+        reply = 'Summary:\n'
+        if current_settings:
+            cur_set = settings.read(guild)
+            for key, value in cur_set.items():
+                reply = reply + str(key) + ": ``" + str(value) + "``, "
+
+        #run through each command and update the defaults user selects
+        if set_nprompt != 'unset':
+            settings.update(guild, 'negative_prompt', set_nprompt)
+            reply = reply + '\nNew default negative prompts is "' + str(set_nprompt) + '".'
+
+        if set_sampler != 'unset':
+            settings.update(guild, 'sampler', set_sampler)
+            reply = reply + '\nNew default sampler is "' + str(set_sampler) + '".'
+
+        if set_maxsteps != 1:
+            settings.update(guild, 'max_steps', set_maxsteps)
+            reply = reply + '\nNew max steps value is ' + str(set_maxsteps) + '.'
+            #automatically lower default steps if max steps goes below it
+            if set_maxsteps < reviewer['default_steps']:
+                settings.update(guild, 'default_steps', set_maxsteps)
+                reply = reply + '\nDefault steps value is too high! Lowering to ' + str(set_maxsteps) + '.'
+
+        #review settings again in case user is trying to set steps and max steps simultaneously
+        reviewer = settings.read(guild)
+        if set_steps > reviewer['max_steps']:
+            reply = reply + '\nMax steps is ' + str(reviewer["max_steps"]) + '! You can\'t go beyond it!'
+        elif set_steps != 1:
+            settings.update(guild, 'default_steps', set_steps)
+            reply = reply + '\nNew default steps value is ' + str(set_steps) + '.'
+
+        await ctx.send_response(reply)
+
+def setup(bot):
     bot.add_cog(SettingsCog(bot))

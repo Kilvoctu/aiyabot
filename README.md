@@ -18,6 +18,10 @@ To generate an image from text, use the /draw command and include your prompt as
 - img2img
 - denoising strength
 
+##### Bonus features
+- /settings command - set per server defaults for negative prompts, sampling steps, max steps, sampling method (see Notes).
+- Stat showing how many /draw commands are used.
+
 ### Setup requirements
 - Set up [AUTOMATIC1111's Stable Diffusion AI Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui).
 - Run the Web UI as local host with api (`COMMANDLINE_ARGS= --listen --api`).
@@ -31,6 +35,7 @@ TOKEN = put your bot token here
 
 #### Notes
 - Ensure your bot has `bot` and `application.commands` scopes when inviting to your Discord server, and intents are enabled.
+- As /settings can be abused, consider reviewing who can access the command. This can be done through Apps -> Integrations in your Server Settings.
 - React to generated images with ❌ to delete them.
 - Optional .env variables you can set:
 ```
