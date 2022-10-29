@@ -22,7 +22,8 @@ self.load_extension('core.tipscog')
 #stats slash command
 @self.slash_command(name = 'stats', description = 'How many images has the bot generated?')
 async def stats(ctx):
-    with open('resources/stats.txt', 'r') as f: data = list(map(int, f.readlines()))
+    with open('resources/stats.txt', 'r') as f:
+        data = list(map(int, f.readlines()))
     embed = discord.Embed(title='Art generated', description=f'I have created {data[0]} pictures!', color=settings.global_var.embed_color)
     await ctx.respond(embed=embed)
 

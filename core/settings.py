@@ -1,6 +1,5 @@
-import os
-from os.path import exists
 import json
+import os
 import discord
 
 self = discord.Bot()
@@ -42,12 +41,14 @@ def update(guild_id:str, sett:str, value):
 
 def files_check(self):
     # creating files if they don't exist
-    stats_exists = exists('resources/stats.txt')
-    if stats_exists is False:
+    if os.path.isfile('resources/stats.txt'):
+        pass
+    else:
         print(f'Uh oh, stats.txt missing. Creating a new one.')
         with open('resources/stats.txt', 'w') as f: f.write('0')
-    dm_exists = exists('resources/None.json')
-    if dm_exists is False:
+    if os.path.isfile('resources/None.json'):
+        pass
+    else:
         print(f'Setting up settings for DMs, called None.json')
         build("None")
 
