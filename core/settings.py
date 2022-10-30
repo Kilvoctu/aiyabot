@@ -39,6 +39,10 @@ def update(guild_id:str, sett:str, value):
     with open(path + guild_id + '.json', 'w') as configfile:
         json.dump(settings, configfile)
 
+def get_env_var_with_default(var: str, default: str) -> str:
+    ret = os.getenv(var)
+    return ret if ret is not None else default
+
 def files_check(self):
     # creating files if they don't exist
     if os.path.isfile('resources/stats.txt'):
@@ -61,20 +65,13 @@ def files_check(self):
             build(str(guild.id))
             print(f'Creating new settings file for {guild.id} a.k.a {guild}.')
 
-    #check .env for URL and DIR. if they don't exist, ignore it and go with defaults.
-    if os.getenv("URL") == '':
-        global_var.url = os.environ.get('URL').rstrip("/")
-        print(f'Using URL: {global_var.url}')
-    else:
-        global_var.url = 'http://127.0.0.1:7860'
-        print('Using default URL: http://127.0.0.1:7860')
+    #check .env for parameters. if they don't exist, ignore it and go with defaults.
+    global_var.url = get_env_var_with_default('URL', 'http://127.0.0.1:7860').rstrip("/")
+    print(f'Using URL: {global_var.url}')
 
-    if os.getenv("DIR") == '':
-        global_var.dir = os.environ.get('DIR')
-        print(f'Using outputs directory: {global_var.dir}')
-    else:
-        global_var.dir = "outputs"
-        print('Using default outputs directory: outputs')
+    global_var.dir = get_env_var_with_default('DIR', 'outputs')
+    print(f'Using outputs directory: {global_var.dir}')
+
     #if directory in DIR doesn't exist, create it
     dir_exists = os.path.exists(global_var.dir)
     if dir_exists is False:
