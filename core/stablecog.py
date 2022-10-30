@@ -123,7 +123,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             seed: Optional[int] = -1,
                             strength: Optional[float] = 0.75,
                             init_image: Optional[discord.Attachment] = None,
-                            count: Optional[int] = 1):
+                            count: Optional[int] = None):
         print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
 
         #update defaults with any new defaults from settingscog
@@ -132,6 +132,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             negative_prompt = settings.read(guild)['negative_prompt']
         if steps == -1:
             steps = settings.read(guild)['default_steps']
+        if count == None:
+            count = settings.read(guild)['default_count']
         if sampler == 'unset':
             sampler = settings.read(guild)['sampler']
 

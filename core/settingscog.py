@@ -36,6 +36,13 @@ class SettingsCog(commands.Cog):
         required=False,
     )
     @option(
+        'set_count',
+        int,
+        description='Set default count for the server',
+        min_value=1,
+        required=False,
+    )
+    @option(
         'set_sampler',
         str,
         description='Set default sampler for the server',
@@ -47,6 +54,7 @@ class SettingsCog(commands.Cog):
                                set_nprompt: Optional[str] = 'unset',
                                set_steps: Optional[int] = 1,
                                set_maxsteps: Optional[int] = 1,
+                               set_count: Optional[int] = 1,
                                set_sampler: Optional[str] = 'unset'):
         guild = '% s' % ctx.guild_id
         reviewer = settings.read(guild)
@@ -72,6 +80,10 @@ class SettingsCog(commands.Cog):
             if set_maxsteps < reviewer['default_steps']:
                 settings.update(guild, 'default_steps', set_maxsteps)
                 reply = reply + '\nDefault steps value is too high! Lowering to ' + str(set_maxsteps) + '.'
+
+        if set_count != 1:
+            settings.update(guild, 'default_count', set_count)
+            reply = reply + '\nNew default count is ' + str(set_count) + '.'
 
         #review settings again in case user is trying to set steps and max steps simultaneously
         reviewer = settings.read(guild)

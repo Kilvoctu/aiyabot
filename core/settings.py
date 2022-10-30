@@ -11,7 +11,8 @@ template = {
             "default_steps": 30,
             "sampler": "Euler a",
             "negative_prompt": "",
-            "max_steps": 50
+            "max_steps": 50,
+            "default_count": 1,
         }
 
 #initialize global variables here
