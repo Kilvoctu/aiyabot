@@ -218,8 +218,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 }
                 payload.update(img_payload)
 
-            payload_json = json.dumps(payload)
-
             #send payload to webui
             with requests.Session() as s:
                 if os.environ.get('USER'):
@@ -231,18 +229,18 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 else:
                     s.post(settings.global_var.url + '/login')
                 if queue_object.init_image is not None:
-                    response = requests.post(url=f'{settings.global_var.url}/sdapi/v1/img2img', data=payload_json).json()
+                    response = requests.post(url=f'{settings.global_var.url}/sdapi/v1/img2img', json=payload)
                 else:
-                    response = requests.post(url=f'{settings.global_var.url}/sdapi/v1/txt2img', data=payload_json).json()
-
+                    response = requests.post(url=f'{settings.global_var.url}/sdapi/v1/txt2img', json=payload)
+            response_data = response.json()
             end_time = time.time()
 
             #save local copy of image
-            for i in response['images']:
-                image = Image.open(io.BytesIO(base64.b64decode(i)))
+            for i in response_data['images']:
+                image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[1])))
                 metadata = PngImagePlugin.PngInfo()
                 epoch_time = int(time.time())
-                metadata.add_text("parameters", str(response['info']))
+                metadata.add_text("parameters", str(response_data['info']))
                 image.save(f'{settings.global_var.dir}\{epoch_time}-{queue_object.seed}-{queue_object.prompt[0:120]}.png', pnginfo=metadata)
                 print(f'Saved image: {settings.global_var.dir}\{epoch_time}-{queue_object.seed}-{queue_object.prompt[0:120]}.png')
 
