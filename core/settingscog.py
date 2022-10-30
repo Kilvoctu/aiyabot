@@ -54,7 +54,7 @@ class SettingsCog(commands.Cog):
                                set_nprompt: Optional[str] = 'unset',
                                set_steps: Optional[int] = 1,
                                set_maxsteps: Optional[int] = 1,
-                               set_count: Optional[int] = 1,
+                               set_count: Optional[int] = None,
                                set_sampler: Optional[str] = 'unset'):
         guild = '% s' % ctx.guild_id
         reviewer = settings.read(guild)
@@ -81,7 +81,7 @@ class SettingsCog(commands.Cog):
                 settings.update(guild, 'default_steps', set_maxsteps)
                 reply = reply + '\nDefault steps value is too high! Lowering to ' + str(set_maxsteps) + '.'
 
-        if set_count != 1:
+        if set_count is not None:
             settings.update(guild, 'default_count', set_count)
             reply = reply + '\nNew default count is ' + str(set_count) + '.'
 
