@@ -29,7 +29,8 @@ def build(guild_id):
 
 def read(guild_id):
     with open(path + guild_id + '.json', 'r') as configfile:
-        settings = json.load(configfile)
+        settings = dict(template)
+        settings.update(json.load(configfile))
     return settings
 
 def update(guild_id:str, sett:str, value):
