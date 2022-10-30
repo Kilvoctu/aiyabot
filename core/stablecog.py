@@ -3,6 +3,7 @@ import base64
 import csv
 import discord
 import io
+import json
 import os
 import random
 import requests
@@ -249,6 +250,9 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             response_data = response.json()
             end_time = time.time()
 
+            #grab png info
+            load_r = json.loads(response_data['info'])
+            meta = load_r["infotexts"][0]
             #create safe/sanitized filename
             keep_chars = (' ', '.', '_')
             file_name = "".join(c for c in queue_object.prompt if c.isalnum() or c in keep_chars).rstrip()
@@ -261,7 +265,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
                 metadata = PngImagePlugin.PngInfo()
                 epoch_time = int(time.time())
-                metadata.add_text("parameters", str(response_data['info']))
+                metadata.add_text("parameters", meta)
                 file_path = f'{settings.global_var.dir}\{epoch_time}-{queue_object.seed}-{file_name[0:120]}-{i}.png'
                 image.save(file_path, pnginfo=metadata)
                 print(f'Saved image: {file_path}')
