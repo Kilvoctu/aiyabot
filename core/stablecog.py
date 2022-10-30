@@ -239,10 +239,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
             #send payload to webui
             with requests.Session() as s:
-                if os.environ.get('USER'):
+                if settings.global_var.username is not None:
                     login_payload = {
-                    'username': os.getenv('USER'),
-                    'password': os.getenv('PASS')
+                    'username': settings.global_var.username,
+                    'password': settings.global_var.password
                     }
                     s.post(settings.global_var.url + '/login', data=login_payload)
                 else:
@@ -283,10 +283,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
                 image_count = len(pil_images)
                 noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
-                if os.getenv("COPY") is not None:
-                    embed.add_field(name=f'My {noun_descriptor} of', value=f'``{queue_object.copy_command}``', inline=False)
-                else:
-                    embed.add_field(name=f'My {noun_descriptor} of', value=f'``{queue_object.prompt}``', inline=False)
+                value = queue_object.copy_command if settings.global_var.copy_command else queue_object.prompt
+                embed.add_field(name=f'My {noun_descriptor} of', value=f'``{value}``', inline=False)
 
                 embed.add_field(name='took me', value='``{0:.3f}`` seconds'.format(end_time-start_time), inline=False)
 
