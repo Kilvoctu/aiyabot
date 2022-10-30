@@ -133,14 +133,14 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         data[0] = data[0] + 1
         with open('resources/stats.txt', 'w') as f:
             f.write('\n'.join(str(x) for x in data))
-        
+
         #random messages for bot to say
         with open('resources/messages.csv') as csv_file:
             message_data = list(csv.reader(csv_file, delimiter='|'))
             message_row_count = len(message_data) - 1
             for row in message_data:
                 self.wait_message.append( row[0] )
-        
+
         #formatting bot initial reply
         append_options = ''
         #lower step value to highest setting if user goes over max steps
@@ -167,7 +167,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if init_image:
             copy_command = copy_command + f' strength:{strength}'
         print(copy_command)
-        
+
         #setup the queue
         if self.dream_thread.is_alive():
             user_already_in_queue = False
@@ -177,7 +177,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     break
             if user_already_in_queue:
                 await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
-            else:   
+            else:
                 self.queue.append(QueueObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command))
                 await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(self.queue)}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
         else:
@@ -220,10 +220,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
             #send payload to webui
             with requests.Session() as s:
-                if os.environ.get('USER'):
+                if settings.global_var.username is not None:
                     login_payload = {
-                    'username': os.getenv('USER'),
-                    'password': os.getenv('PASS')
+                    'username': settings.global_var.username,
+                    'password': settings.global_var.password
                     }
                     s.post(settings.global_var.url + '/login', data=login_payload)
                 else:
@@ -253,7 +253,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 buffer.seek(0)
                 embed = discord.Embed()
                 embed.colour = settings.global_var.embed_color
-                if os.getenv("COPY") is not None:
+                if settings.global_var.copy_command:
                     embed.add_field(name='My drawing of', value=f'``{queue_object.copy_command}``', inline=False)
                 else:
                     embed.add_field(name='My drawing of', value=f'``{queue_object.prompt}``', inline=False)

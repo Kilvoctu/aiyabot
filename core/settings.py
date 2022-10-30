@@ -1,5 +1,6 @@
 import json
 import os
+from typing import Optional
 import discord
 
 self = discord.Bot()
@@ -19,6 +20,9 @@ class GlobalVar:
     url = ""
     dir = ""
     embed_color = discord.Colour.from_rgb(222, 89, 28)
+    username: Optional[str] = None
+    password: Optional[str] = None
+    copy_command: bool = False
 
 global_var = GlobalVar()
 
@@ -71,6 +75,10 @@ def files_check(self):
 
     global_var.dir = get_env_var_with_default('DIR', 'outputs')
     print(f'Using outputs directory: {global_var.dir}')
+
+    global_var.username = os.getenv("USER")
+    global_var.password = os.getenv("PASS")
+    global_var.copy_command = os.getenv("COPY") is not None
 
     #if directory in DIR doesn't exist, create it
     dir_exists = os.path.exists(global_var.dir)
