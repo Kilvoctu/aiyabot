@@ -13,6 +13,7 @@ template = {
             "negative_prompt": "",
             "max_steps": 50,
             "default_count": 1,
+            "max_count": 1,
         }
 
 #initialize global variables here

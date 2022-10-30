@@ -172,6 +172,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if init_image:
             append_options = append_options + '\nStrength: ``' + str(strength) + '``'
         if count != 1:
+            max_count = settings.read(guild)['max_count']
+            if count > max_count:
+                count = max_count
+                append_options = append_options + '\nExceeded maximum of ``' + str(count) + '`` images! This is the best I can do...'
             append_options = append_options + '\nCount: ``' + str(count) + '``'
 
         # log the command. can replace bot reply with {copy_command} for easy copy-pasting
