@@ -20,10 +20,15 @@ To generate an image from text, use the /draw command and include your prompt as
 - seed
 - img2img
 - denoising strength
+- batch count
 
 #### Bonus features
 
-- /settings command - set per-server defaults for negative prompts, sampling steps, max steps, sampling method (_see Notes!_).
+- /settings command - set per-server defaults for the following (_also see Notes!_):
+  - negative prompts
+  - sampling steps / max steps
+  - sampling method
+  - batch count / max batch count
 - /stats command - shows how many /draw commands have been used.
 - /tips command - basic tips for writing prompts.
 
