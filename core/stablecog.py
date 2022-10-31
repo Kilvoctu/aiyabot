@@ -10,6 +10,7 @@ import requests
 import time
 import traceback
 import contextlib
+from io import BytesIO
 from asyncio import AbstractEventLoop
 from discord import option
 from discord.ext import commands
@@ -124,7 +125,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             seed: Optional[int] = -1,
                             strength: Optional[float] = 0.75,
                             init_image: Optional[discord.Attachment] = None,
-                            count: Optional[int] = None):
+                            count: Optional[int] = None,
+                            url_image: Optional[str]):
         print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
 
         #update defaults with any new defaults from settingscog
@@ -139,6 +141,14 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             sampler = settings.read(guild)['sampler']
 
         if seed == -1: seed = random.randint(0, 0xFFFFFFFF)
+
+        #url *will* override init image for compatibility, can be changed here
+        if(url_image):
+            try: 
+                init_image = requests.get(url_image)
+            except:
+                await ctx.send_response('url image not found! \nI will do my best without it!')
+
         #increment number of times command is used
         with open('resources/stats.txt', 'r') as f:
             data = list(map(int, f.readlines()))
