@@ -12,7 +12,9 @@ template = {
             "default_steps": 30,
             "sampler": "Euler a",
             "negative_prompt": "",
-            "max_steps": 50
+            "max_steps": 50,
+            "default_count": 1,
+            "max_count": 1,
         }
 
 #initialize global variables here
@@ -33,7 +35,8 @@ def build(guild_id):
 
 def read(guild_id):
     with open(path + guild_id + '.json', 'r') as configfile:
-        settings = json.load(configfile)
+        settings = dict(template)
+        settings.update(json.load(configfile))
     return settings
 
 def update(guild_id:str, sett:str, value):
