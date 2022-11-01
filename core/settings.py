@@ -28,7 +28,6 @@ class GlobalVar:
     password: Optional[str] = None
     copy_command: bool = False
     model_fn_index = 0
-    default_model = ""
 
 global_var = GlobalVar()
 
@@ -62,14 +61,24 @@ def files_check():
         print(f'Uh oh, stats.txt missing. Creating a new one.')
         with open('resources/stats.txt', 'w') as f:
             f.write('0')
+
+    header = ['display_name', 'model_full_name']
+    unset_model = ['Default', '']
+    make_model_file = True
+    #if models.csv exists and has data, assume it's good to go
     if os.path.isfile('resources/models.csv'):
-        pass
-    else:
-        print(f'Uh oh, models.csv missing. Creating a new one.')
-        header = ['display_name', 'model_full_name']
+        with open('resources/models.csv', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            for i, row in enumerate(reader):
+                if i == 1:
+                    make_model_file = False
+    #otherwise create/reformat it
+    if make_model_file:
+        print(f'Uh oh, missing models.csv data. Creating a new one.')
         with open('resources/models.csv', 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f, delimiter = "|")
             writer.writerow(header)
+            writer.writerow(unset_model)
 
     #check .env for parameters. if they don't exist, ignore it and go with defaults.
     global_var.url = get_env_var_with_default('URL', 'http://127.0.0.1:7860').rstrip("/")
@@ -108,13 +117,6 @@ def guilds_check(self):
 def old_api_check():
     config_url = requests.get(global_var.url + "/config")
     old_config = config_url.json()
-
-    #get the model currently selected in web ui, set as global fallback model
-    current_model = old_config["components"][1]["props"]["value"]
-    global_var.default_model = current_model
-    print("Fallback model set to " + str(current_model) + "!")
-
-    global model_fn_index
     #check all dependencies in config to see if there's a target value
     #and if there is, match the target value to the id value of component we want
     #this provides the fn_index needed for the payload to old api

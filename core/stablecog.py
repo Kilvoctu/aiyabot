@@ -45,9 +45,9 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         self.wait_message = []
         self.bot = bot
         self.post_model = ""
+        self.send_model = False
 
     with open('resources/models.csv', encoding='utf-8') as csv_file:
-        #include a check here if user does not fill out csv
         model_data = list(csv.reader(csv_file, delimiter='|'))
 
     @commands.slash_command(name = 'draw', description = 'Create an image')
@@ -140,12 +140,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             count: Optional[int] = None):
         print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
 
-        #fallback model if not selected
-        if data_model is None:
+        #if a model is not selected, do nothing
+        if data_model is None or data_model == '':
             model_name = "Default"
-            self.post_model = settings.global_var.default_model
         else:
             self.post_model = data_model
+            self.send_model = True
         #get the selected model's display name
         with open('resources/models.csv', 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter='|')
@@ -269,8 +269,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 }
                 payload.update(img_payload)
 
-            #send payload to webui, starting with model
-            requests.post(url=f'{settings.global_var.url}/api/predict', json=model_payload)
+            #only send model payload if one is defined
+            if self.send_model:
+                requests.post(url=f'{settings.global_var.url}/api/predict', json=model_payload)
+            #send normal payload to webui
             with requests.Session() as s:
                 if settings.global_var.username is not None:
                     login_payload = {
