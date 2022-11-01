@@ -66,9 +66,8 @@ def files_check():
         pass
     else:
         print(f'Uh oh, models.csv missing. Creating a new one.')
-        header = ['model display name', 'model name in web ui']
+        header = ['display_name', 'model_full_name']
         with open('resources/models.csv', 'w', newline='', encoding='utf-8') as f:
-            f.write("#Enter your list of models following the format. Don't remove these first two rows!\n")
             writer = csv.writer(f, delimiter = "|")
             writer.writerow(header)
 

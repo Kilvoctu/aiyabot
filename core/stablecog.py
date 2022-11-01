@@ -68,7 +68,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         str,
         description='Select the dataset for image generation',
         required=False,
-        choices=[OptionChoice(name=row[0], value=row[1]) for row in model_data[2:]]
+        choices=[OptionChoice(name=row[0], value=row[1]) for row in model_data[1:]]
     )
     @option(
         'steps',
@@ -142,7 +142,16 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
         #fallback model if not selected
         if data_model is None:
+            model_name = "Default"
             self.post_model = settings.global_var.default_model
+        else:
+            self.post_model = data_model
+        #get the selected model's display name
+        with open('resources/models.csv', 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f, delimiter='|')
+            for row in reader:
+                if row['model_full_name'] == data_model:
+                    model_name = row['display_name']
 
         #update defaults with any new defaults from settingscog
         guild = '% s' % ctx.guild_id
@@ -214,10 +223,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
             else:
                 self.queue.append(QueueObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count))
-                await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(self.queue)}`` - ``{prompt}``\nDataset: ``{data_model}`` - Steps: ``{steps}`` - Seed: ``{seed}``{append_options}')
+                await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(self.queue)}`` - ``{prompt}``\nDataset: ``{model_name}`` - Steps: ``{steps}`` - Seed: ``{seed}``{append_options}')
         else:
             await self.process_dream(QueueObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count))
-            await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(self.queue)}`` - ``{prompt}``\nDataset: ``{data_model}`` - Steps: ``{steps}`` - Seed: ``{seed}``{append_options}')
+            await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(self.queue)}`` - ``{prompt}``\nDataset: ``{model_name}`` - Steps: ``{steps}`` - Seed: ``{seed}``{append_options}')
 
     async def process_dream(self, queue_object: QueueObject):
         self.dream_thread = Thread(target=self.dream,
