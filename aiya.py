@@ -33,6 +33,7 @@ async def on_ready():
     await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='drawing tutorials.'))
     #check files and global variables
     settings.files_check(self)
+    settings.old_api_check()
 
 #feature to delete generations. give bot 'Add Reactions' permission (or not, to hide the ❌)
 @self.event

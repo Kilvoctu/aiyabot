@@ -1,5 +1,6 @@
 import json
 import os
+import requests
 from typing import Optional
 import discord
 
@@ -25,6 +26,7 @@ class GlobalVar:
     username: Optional[str] = None
     password: Optional[str] = None
     copy_command: bool = False
+    model_fn_index = 0
 
 global_var = GlobalVar()
 
@@ -88,3 +90,21 @@ def files_check(self):
     if dir_exists is False:
         print(f'The folder for DIR doesn\'t exist! Creating folder at {global_var.dir}.')
         os.mkdir(global_var.dir)
+
+#iterate through the old api at /config to get things we need that don't exist in new api
+def old_api_check():
+    config_url = requests.get(global_var.url + "/config")
+    old_config = config_url.json()
+    global model_fn_index
+    for d in range(len(old_config["dependencies"])):
+        #check all dependencies in config to see if there's a target value
+        #and if there is, match the target value to the id value of component we want
+        #this provides the fn_index needed for the payload to old api
+        try:
+            for c in old_config["components"]:
+                if old_config["dependencies"][d]["targets"][0] == c["id"] and c["props"].get(
+                        "label") == "Stable Diffusion checkpoint":
+                    model_fn_index = d
+                    print("The fn_index for the model is " + str(model_fn_index) + "!")
+        except:
+            pass
