@@ -15,8 +15,12 @@ load_dotenv()
 self.logger = get_logger(__name__)
 
 #load extensions
-self.load_extension('core.stablecog')
 self.load_extension('core.settingscog')
+# check files and global variables
+settings.files_check(self)
+settings.old_api_check()
+
+self.load_extension('core.stablecog')
 self.load_extension('core.tipscog')
 
 #stats slash command
@@ -31,9 +35,6 @@ async def stats(ctx):
 async def on_ready():
     self.logger.info(f'Logged in as {self.user.name} ({self.user.id})')
     await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='drawing tutorials.'))
-    #check files and global variables
-    settings.files_check(self)
-    settings.old_api_check()
 
 #feature to delete generations. give bot 'Add Reactions' permission (or not, to hide the ❌)
 @self.event

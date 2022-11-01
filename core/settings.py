@@ -1,3 +1,4 @@
+import csv
 import json
 import os
 import requests
@@ -58,7 +59,17 @@ def files_check(self):
         pass
     else:
         print(f'Uh oh, stats.txt missing. Creating a new one.')
-        with open('resources/stats.txt', 'w') as f: f.write('0')
+        with open('resources/stats.txt', 'w') as f:
+            f.write('0')
+    if os.path.isfile('resources/models.csv'):
+        pass
+    else:
+        print(f'Uh oh, models.csv missing. Creating a new one.')
+        header = ['model display name', 'model name in web ui']
+        with open('resources/models.csv', 'w', newline='', encoding='utf-8') as f:
+            f.write("#Enter your list of models following the format. Don't remove these first two rows!\n")
+            writer = csv.writer(f, delimiter = "|")
+            writer.writerow(header)
     if os.path.isfile('resources/None.json'):
         pass
     else:
