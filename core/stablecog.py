@@ -1,21 +1,22 @@
 import asyncio
 import base64
+import contextlib
 import csv
-import discord
 import io
 import json
-import os
 import random
-import requests
 import time
 import traceback
-import contextlib
 from asyncio import AbstractEventLoop
-from discord import option
-from discord.ext import commands
-from PIL import Image, PngImagePlugin
 from threading import Thread
 from typing import Optional
+
+import discord
+import requests
+from PIL import Image, PngImagePlugin
+from discord import option
+from discord.commands import OptionChoice
+from discord.ext import commands
 
 from core import settings
 
@@ -45,6 +46,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         self.wait_message = []
         self.bot = bot
 
+    with open('resources/models.csv', encoding='utf-8') as csv_file:
+        #include a check here if user does not fill out csv
+        model_data = list(csv.reader(csv_file, delimiter='|'))
+
     @commands.slash_command(name = 'draw', description = 'Create an image')
     @option(
         'prompt',
@@ -57,6 +62,13 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         str,
         description='Negative prompts to exclude from output.',
         required=False,
+    )
+    @option(
+        'data_model',
+        str,
+        description='Select the dataset for image generation',
+        required=False,
+        choices=[OptionChoice(name=row[0], value=row[1]) for row in model_data[2:]]
     )
     @option(
         'steps',
@@ -117,6 +129,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     )
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
                             prompt: str, negative_prompt: str = 'unset',
+                            data_model: str = None,
                             steps: Optional[int] = -1,
                             height: Optional[int] = 512, width: Optional[int] = 512,
                             guidance_scale: Optional[float] = 7.0,
@@ -127,6 +140,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             count: Optional[int] = None):
         print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
 
+        self.post_model = data_model
         #update defaults with any new defaults from settingscog
         guild = '% s' % ctx.guild_id
         if negative_prompt == 'unset':
@@ -197,10 +211,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
             else:
                 self.queue.append(QueueObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count))
-                await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(self.queue)}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
+                await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(self.queue)}`` - ``{prompt}``\nDataset: ``{data_model}`` - Steps: ``{steps}`` - Seed: ``{seed}``{append_options}')
         else:
             await self.process_dream(QueueObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count))
-            await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(self.queue)}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
+            await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(self.queue)}`` - ``{prompt}``\nDataset: ``{data_model}`` - Steps: ``{steps}`` - Seed: ``{seed}``{append_options}')
 
     async def process_dream(self, queue_object: QueueObject):
         self.dream_thread = Thread(target=self.dream,
@@ -212,7 +226,13 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         try:
             start_time = time.time()
 
-            #construct the payload
+            # construct a payload for data model, then the normal payload
+            model_payload = {
+                "fn_index": settings.global_var.model_fn_index,
+                "data": [
+                    self.post_model
+                ]
+            }
             payload = {
                 "prompt": queue_object.prompt,
                 "negative_prompt": queue_object.negative_prompt,
@@ -237,7 +257,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 }
                 payload.update(img_payload)
 
-            #send payload to webui
+            #send payload to webui, starting with model
+            requests.post(url=f'{settings.global_var.url}/api/predict', json=model_payload)
             with requests.Session() as s:
                 if settings.global_var.username is not None:
                     login_payload = {
