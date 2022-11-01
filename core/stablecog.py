@@ -111,6 +111,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         required=False,
     )
     @option(
+        'url_image',
+        discord.Attachment,
+        description='The starter URL image for generation. This overrides init_image!',
+        required=False,
+    )
+    @option(
         'count',
         int,
         description='The number of images to generate. This is "Batch count", not "Batch size".',
@@ -125,8 +131,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             seed: Optional[int] = -1,
                             strength: Optional[float] = 0.75,
                             init_image: Optional[discord.Attachment] = None,
-                            count: Optional[int] = None,
-                            url_image: Optional[str]):
+                            url_image: Optional[str],
+                            count: Optional[int] = None):
         print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
 
         #update defaults with any new defaults from settingscog
@@ -147,7 +153,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             try: 
                 init_image = requests.get(url_image)
             except:
-                await ctx.send_response('url image not found! \nI will do my best without it!')
+                await ctx.send_response('URL image not found!\nI will do my best without it!')
 
         #increment number of times command is used
         with open('resources/stats.txt', 'r') as f:
