@@ -1,5 +1,7 @@
+import csv
 from discord import option
 from discord.ext import commands
+from discord.commands import OptionChoice
 from typing import Optional
 from core import settings
 
@@ -7,6 +9,9 @@ from core import settings
 class SettingsCog(commands.Cog):
     def __init__(self, bot:commands.Bot):
         self.bot = bot
+
+    with open('resources/models.csv', encoding='utf-8') as csv_file:
+        model_data = list(csv.reader(csv_file, delimiter='|'))
 
     @commands.slash_command(name = 'settings', description = 'Review and change server defaults')
     @option(
@@ -20,6 +25,13 @@ class SettingsCog(commands.Cog):
         str,
         description='Set default negative prompt for the server',
         required=False,
+    )
+    @option(
+        'set_model',
+        str,
+        description='Set default dataset for image generation',
+        required=False,
+        choices=[OptionChoice(name=row[0], value=row[1]) for row in model_data[1:]]
     )
     @option(
         'set_steps',
@@ -59,6 +71,7 @@ class SettingsCog(commands.Cog):
     async def settings_handler(self, ctx,
                                current_settings: Optional[bool] = False,
                                set_nprompt: Optional[str] = 'unset',
+                               set_model: Optional[str] = None,
                                set_steps: Optional[int] = 1,
                                set_maxsteps: Optional[int] = 1,
                                set_count: Optional[int] = None,
@@ -76,6 +89,10 @@ class SettingsCog(commands.Cog):
         if set_nprompt != 'unset':
             settings.update(guild, 'negative_prompt', set_nprompt)
             reply = reply + '\nNew default negative prompts is "' + str(set_nprompt) + '".'
+
+        if set_model is not None:
+            settings.update(guild, 'data_model', set_model)
+            reply = reply + '\nNew default data model is "' + str(set_model) + '".'
 
         if set_sampler != 'unset':
             settings.update(guild, 'sampler', set_sampler)

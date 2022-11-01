@@ -1,22 +1,23 @@
 import asyncio
 import base64
+import contextlib
 import csv
-import discord
 import io
 import json
-import os
 import random
-import requests
 import time
 import traceback
 import contextlib
 from io import BytesIO
 from asyncio import AbstractEventLoop
-from discord import option
-from discord.ext import commands
-from PIL import Image, PngImagePlugin
 from threading import Thread
 from typing import Optional
+import discord
+import requests
+from PIL import Image, PngImagePlugin
+from discord import option
+from discord.commands import OptionChoice
+from discord.ext import commands
 
 from core import settings
 
@@ -45,6 +46,11 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         self.queue = []
         self.wait_message = []
         self.bot = bot
+        self.post_model = ""
+        self.send_model = False
+
+    with open('resources/models.csv', encoding='utf-8') as csv_file:
+        model_data = list(csv.reader(csv_file, delimiter='|'))
 
     @commands.slash_command(name = 'draw', description = 'Create an image')
     @option(
@@ -58,6 +64,13 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         str,
         description='Negative prompts to exclude from output.',
         required=False,
+    )
+    @option(
+        'data_model',
+        str,
+        description='Select the data model for image generation',
+        required=False,
+        choices=[OptionChoice(name=row[0], value=row[1]) for row in model_data[1:]]
     )
     @option(
         'steps',
@@ -124,6 +137,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     )
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
                             prompt: str, negative_prompt: str = 'unset',
+                            data_model: Optional[str] = None,
                             steps: Optional[int] = -1,
                             height: Optional[int] = 512, width: Optional[int] = 512,
                             guidance_scale: Optional[float] = 7.0,
@@ -141,10 +155,23 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             negative_prompt = settings.read(guild)['negative_prompt']
         if steps == -1:
             steps = settings.read(guild)['default_steps']
-        if count == None:
+        if count is None:
             count = settings.read(guild)['default_count']
         if sampler == 'unset':
             sampler = settings.read(guild)['sampler']
+        # if a model is not selected, do nothing
+        model_name = 'Default'
+        if data_model is None:
+            data_model = settings.read(guild)['data_model']
+        else:
+            self.post_model = data_model
+            self.send_model = True
+        # get the selected model's display name
+        with open('resources/models.csv', 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f, delimiter='|')
+            for row in reader:
+                if row['model_full_name'] == data_model:
+                    model_name = row['display_name']
 
         if seed == -1: seed = random.randint(0, 0xFFFFFFFF)
 
@@ -171,10 +198,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
         #formatting bot initial reply
         append_options = ''
-        #lower step value to highest setting if user goes over max steps
+        #lower step value to the highest setting if user goes over max steps
         if steps > settings.read(guild)['max_steps']:
             steps = settings.read(guild)['max_steps']
             append_options = append_options + '\nExceeded maximum of ``' + str(steps) + '`` steps! This is the best I can do...'
+        if model_name != 'Default':
+            append_options = append_options + '\nModel: ``' + str(model_name) + '``'
         if negative_prompt != '':
             append_options = append_options + '\nNegative Prompt: ``' + str(negative_prompt) + '``'
         if height != 512:
@@ -194,10 +223,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 append_options = append_options + '\nExceeded maximum of ``' + str(count) + '`` images! This is the best I can do...'
             append_options = append_options + '\nCount: ``' + str(count) + '``'
 
-        # log the command. can replace bot reply with {copy_command} for easy copy-pasting
+        #log the command
         copy_command = f'/draw prompt:{prompt} steps:{steps} height:{str(height)} width:{width} guidance_scale:{guidance_scale} sampler:{sampler} seed:{seed} count:{count}'
         if negative_prompt != '':
             copy_command = copy_command + f' negative_prompt:{negative_prompt}'
+        if data_model:
+            copy_command = copy_command + f' data_model:{model_name}'
         if init_image:
             copy_command = copy_command + f' strength:{strength}'
         print(copy_command)
@@ -228,7 +259,13 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         try:
             start_time = time.time()
 
-            #construct the payload
+            #construct a payload for data model, then the normal payload
+            model_payload = {
+                "fn_index": settings.global_var.model_fn_index,
+                "data": [
+                    self.post_model
+                ]
+            }
             payload = {
                 "prompt": queue_object.prompt,
                 "negative_prompt": queue_object.negative_prompt,
@@ -253,7 +290,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 }
                 payload.update(img_payload)
 
-            #send payload to webui
+            #only send model payload if one is defined
+            if self.send_model:
+                requests.post(url=f'{settings.global_var.url}/api/predict', json=model_payload)
+            #send normal payload to webui
             with requests.Session() as s:
                 if settings.global_var.username is not None:
                     login_payload = {

@@ -1,5 +1,7 @@
+import csv
 import json
 import os
+import requests
 from typing import Optional
 import discord
 
@@ -15,6 +17,7 @@ template = {
             "max_steps": 50,
             "default_count": 1,
             "max_count": 1,
+            "data_model": ""
         }
 
 #initialize global variables here
@@ -25,6 +28,7 @@ class GlobalVar:
     username: Optional[str] = None
     password: Optional[str] = None
     copy_command: bool = False
+    model_fn_index = 0
 
 global_var = GlobalVar()
 
@@ -50,27 +54,32 @@ def get_env_var_with_default(var: str, default: str) -> str:
     ret = os.getenv(var)
     return ret if ret is not None else default
 
-def files_check(self):
-    # creating files if they don't exist
+def files_check():
+    #creating files if they don't exist
     if os.path.isfile('resources/stats.txt'):
         pass
     else:
         print(f'Uh oh, stats.txt missing. Creating a new one.')
-        with open('resources/stats.txt', 'w') as f: f.write('0')
-    if os.path.isfile('resources/None.json'):
-        pass
-    else:
-        print(f'Setting up settings for DMs, called None.json')
-        build("None")
+        with open('resources/stats.txt', 'w') as f:
+            f.write('0')
 
-    # guild settings files
-    for guild in self.guilds:
-        try:
-            read(str(guild.id))
-            print(f'I\'m using local settings for {guild.id} a.k.a {guild}.')
-        except FileNotFoundError:
-            build(str(guild.id))
-            print(f'Creating new settings file for {guild.id} a.k.a {guild}.')
+    header = ['display_name', 'model_full_name']
+    unset_model = ['Default', '']
+    make_model_file = True
+    #if models.csv exists and has data, assume it's good to go
+    if os.path.isfile('resources/models.csv'):
+        with open('resources/models.csv', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            for i, row in enumerate(reader):
+                if i == 1:
+                    make_model_file = False
+    #otherwise create/reformat it
+    if make_model_file:
+        print(f'Uh oh, missing models.csv data. Creating a new one.')
+        with open('resources/models.csv', 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f, delimiter = "|")
+            writer.writerow(header)
+            writer.writerow(unset_model)
 
     #check .env for parameters. if they don't exist, ignore it and go with defaults.
     global_var.url = get_env_var_with_default('URL', 'http://127.0.0.1:7860').rstrip("/")
@@ -88,3 +97,36 @@ def files_check(self):
     if dir_exists is False:
         print(f'The folder for DIR doesn\'t exist! Creating folder at {global_var.dir}.')
         os.mkdir(global_var.dir)
+
+def guilds_check(self):
+    #guild settings files. has to be done after on_ready
+    for guild in self.guilds:
+        try:
+            read(str(guild.id))
+            print(f'I\'m using local settings for {guild.id} a.k.a {guild}.')
+        except FileNotFoundError:
+            build(str(guild.id))
+            print(f'Creating new settings file for {guild.id} a.k.a {guild}.')
+
+    if os.path.isfile('resources/None.json'):
+        pass
+    else:
+        print(f'Setting up settings for DMs, called None.json')
+        build("None")
+
+#iterate through the old api at /config to get things we need that don't exist in new api
+def old_api_check():
+    config_url = requests.get(global_var.url + "/config")
+    old_config = config_url.json()
+    #check all dependencies in config to see if there's a target value
+    #and if there is, match the target value to the id value of component we want
+    #this provides the fn_index needed for the payload to old api
+    for d in range(len(old_config["dependencies"])):
+        try:
+            for c in old_config["components"]:
+                if old_config["dependencies"][d]["targets"][0] == c["id"] and c["props"].get(
+                        "label") == "Stable Diffusion checkpoint":
+                    global_var.model_fn_index = d
+        except:
+            pass
+    print("The fn_index for the model is " + str(global_var.model_fn_index) + "!")
