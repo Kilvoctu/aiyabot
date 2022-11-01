@@ -66,7 +66,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     @option(
         'data_model',
         str,
-        description='Select the dataset for image generation',
+        description='Select the data model for image generation',
         required=False,
         choices=[OptionChoice(name=row[0], value=row[1]) for row in model_data[1:]]
     )
@@ -186,7 +186,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             steps = settings.read(guild)['max_steps']
             append_options = append_options + '\nExceeded maximum of ``' + str(steps) + '`` steps! This is the best I can do...'
         if model_name != 'Default':
-            append_options = append_options + '\nDataset: ``' + str(model_name) + '``'
+            append_options = append_options + '\nModel: ``' + str(model_name) + '``'
         if negative_prompt != '':
             append_options = append_options + '\nNegative Prompt: ``' + str(negative_prompt) + '``'
         if height != 512:
