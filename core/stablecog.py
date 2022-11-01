@@ -7,6 +7,8 @@ import json
 import random
 import time
 import traceback
+import contextlib
+from io import BytesIO
 from asyncio import AbstractEventLoop
 from threading import Thread
 from typing import Optional
@@ -122,6 +124,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         required=False,
     )
     @option(
+        'url_image',
+        discord.Attachment,
+        description='The starter URL image for generation. This overrides init_image!',
+        required=False,
+    )
+    @option(
         'count',
         int,
         description='The number of images to generate. This is "Batch count", not "Batch size".',
@@ -137,6 +145,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             seed: Optional[int] = -1,
                             strength: Optional[float] = 0.75,
                             init_image: Optional[discord.Attachment] = None,
+                            url_image: Optional[str],
                             count: Optional[int] = None):
         print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
 
@@ -165,6 +174,14 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     model_name = row['display_name']
 
         if seed == -1: seed = random.randint(0, 0xFFFFFFFF)
+
+        #url *will* override init image for compatibility, can be changed here
+        if(url_image):
+            try: 
+                init_image = requests.get(url_image)
+            except:
+                await ctx.send_response('URL image not found!\nI will do my best without it!')
+
         #increment number of times command is used
         with open('resources/stats.txt', 'r') as f:
             data = list(map(int, f.readlines()))
