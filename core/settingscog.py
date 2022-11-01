@@ -29,7 +29,7 @@ class SettingsCog(commands.Cog):
     @option(
         'set_model',
         str,
-        description='Set default dataset for image generation',
+        description='Set default data model for image generation',
         required=False,
         choices=[OptionChoice(name=row[0], value=row[1]) for row in model_data[1:]]
     )

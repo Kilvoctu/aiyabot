@@ -125,7 +125,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     )
     @option(
         'url_image',
-        discord.Attachment,
+        str,
         description='The starter URL image for generation. This overrides init_image!',
         required=False,
     )
