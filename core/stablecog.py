@@ -10,7 +10,6 @@ import traceback
 from asyncio import AbstractEventLoop
 from threading import Thread
 from typing import Optional
-
 import discord
 import requests
 from PIL import Image, PngImagePlugin
@@ -45,6 +44,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         self.queue = []
         self.wait_message = []
         self.bot = bot
+        self.post_model = ""
 
     with open('resources/models.csv', encoding='utf-8') as csv_file:
         #include a check here if user does not fill out csv
@@ -129,7 +129,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     )
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
                             prompt: str, negative_prompt: str = 'unset',
-                            data_model: str = None,
+                            data_model: Optional[str] = None,
                             steps: Optional[int] = -1,
                             height: Optional[int] = 512, width: Optional[int] = 512,
                             guidance_scale: Optional[float] = 7.0,
@@ -140,14 +140,17 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             count: Optional[int] = None):
         print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
 
-        self.post_model = data_model
+        #fallback model if not selected
+        if data_model is None:
+            self.post_model = settings.global_var.default_model
+
         #update defaults with any new defaults from settingscog
         guild = '% s' % ctx.guild_id
         if negative_prompt == 'unset':
             negative_prompt = settings.read(guild)['negative_prompt']
         if steps == -1:
             steps = settings.read(guild)['default_steps']
-        if count == None:
+        if count is None:
             count = settings.read(guild)['default_count']
         if sampler == 'unset':
             sampler = settings.read(guild)['sampler']
@@ -169,7 +172,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
         #formatting bot initial reply
         append_options = ''
-        #lower step value to highest setting if user goes over max steps
+        #lower step value to the highest setting if user goes over max steps
         if steps > settings.read(guild)['max_steps']:
             steps = settings.read(guild)['max_steps']
             append_options = append_options + '\nExceeded maximum of ``' + str(steps) + '`` steps! This is the best I can do...'
@@ -226,7 +229,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         try:
             start_time = time.time()
 
-            # construct a payload for data model, then the normal payload
+            #construct a payload for data model, then the normal payload
             model_payload = {
                 "fn_index": settings.global_var.model_fn_index,
                 "data": [
