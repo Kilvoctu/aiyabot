@@ -74,3 +74,15 @@ SD 1.5|v1-5-pruned-emaonly.ckpt [81761151]
 WD 1.3|wd-v1-3-float32.ckpt [4470c325]
 ```
 - In the Web UI, there is a setting named "Checkpoints to cache in RAM". If you have enough RAM, this value can be increased to speed up swapping.
+
+## Credits
+
+AIYA only exists thanks to these awesome people:
+- AUTOMATIC1111, and all the contributors to the Web UI repo.
+  - https://github.com/AUTOMATIC1111/stable-diffusion-webui
+- harubaru, my entryway into Stable Diffusion (with Waifu Diffusion) and foundation for the AIYA Discord bot.
+  - https://github.com/harubaru/waifu-diffusion
+  - https://github.com/harubaru/discord-stable-diffusion
+- gingivere0, for PayloadFormatter class for the original API. Without that, I'd have given up from the start. Also has a great Discord bot as a no-slash-command alternative.
+  - https://github.com/gingivere0/dalebot
+- You, for using AIYA and contributing with PRs, bug reports, feedback, and more!
