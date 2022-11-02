@@ -222,6 +222,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             append_options = append_options + '\nSampler: ``' + str(sampler) + '``'
         if init_image:
             append_options = append_options + '\nStrength: ``' + str(strength) + '``'
+            append_options = append_options + '\nURL Init Image: ``' + str(init_image.url) + '``'
         if count != 1:
             max_count = settings.read(guild)['max_count']
             if count > max_count:
@@ -236,7 +237,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if data_model:
             copy_command = copy_command + f' data_model:{model_name}'
         if init_image:
-            copy_command = copy_command + f' strength:{strength}'
+            copy_command = copy_command + f' strength:{strength} url_image:{init_image.url}'
         print(copy_command)
 
         #setup the queue
