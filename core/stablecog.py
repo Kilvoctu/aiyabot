@@ -177,7 +177,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
         #url *will* override init image for compatibility, can be changed here
         if(url_image):
-            try: 
+            try:
                 init_image = requests.get(url_image)
             except:
                 await ctx.send_response('URL image not found!\nI will do my best without it!')
@@ -290,9 +290,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 }
                 payload.update(img_payload)
 
-            #only send model payload if one is defined
-            if self.send_model:
-                requests.post(url=f'{settings.global_var.url}/api/predict', json=model_payload)
             #send normal payload to webui
             with requests.Session() as s:
                 if settings.global_var.username is not None:
@@ -303,10 +300,14 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     s.post(settings.global_var.url + '/login', data=login_payload)
                 else:
                     s.post(settings.global_var.url + '/login')
+
+                #only send model payload if one is defined
+                if self.send_model:
+                    s.post(url=f'{settings.global_var.url}/api/predict', json=model_payload)
                 if queue_object.init_image is not None:
-                    response = requests.post(url=f'{settings.global_var.url}/sdapi/v1/img2img', json=payload)
+                    response = s.post(url=f'{settings.global_var.url}/sdapi/v1/img2img', json=payload)
                 else:
-                    response = requests.post(url=f'{settings.global_var.url}/sdapi/v1/txt2img', json=payload)
+                    response = s.post(url=f'{settings.global_var.url}/sdapi/v1/txt2img', json=payload)
             response_data = response.json()
             end_time = time.time()
 
