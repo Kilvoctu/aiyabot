@@ -237,7 +237,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if data_model:
             copy_command = copy_command + f' data_model:{model_name}'
         if init_image:
-            copy_command = copy_command + f' strength:{strength} url_image:{init_image.url}'
+            copy_command = copy_command + f' strength:{strength} init_url:{init_image.url}'
         print(copy_command)
 
         #setup the queue
