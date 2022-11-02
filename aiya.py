@@ -45,7 +45,7 @@ async def on_message(message):
         try:
             if message.embeds[0].fields[1].name == 'took me':
                 await message.add_reaction('❌')
-        except:
+        except(Exception,):
             pass
 
 @self.event
@@ -57,7 +57,7 @@ async def on_raw_reaction_add(ctx):
                 if message.embeds[0].footer.text == f'{ctx.member.name}#{ctx.member.discriminator}':
                     await message.delete()
         # this is for deleting generations in DMs
-        except:
+        except(Exception,):
             channel = await self.fetch_user(ctx.user_id)
             message = await channel.fetch_message(ctx.message_id)
             if message.embeds:

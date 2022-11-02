@@ -7,11 +7,10 @@ import json
 import random
 import time
 import traceback
-import contextlib
-from io import BytesIO
 from asyncio import AbstractEventLoop
 from threading import Thread
 from typing import Optional
+
 import discord
 import requests
 from PIL import Image, PngImagePlugin
@@ -176,10 +175,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if seed == -1: seed = random.randint(0, 0xFFFFFFFF)
 
         #url *will* override init image for compatibility, can be changed here
-        if(url_image):
+        if url_image:
             try:
                 init_image = requests.get(url_image)
-            except:
+            except(Exception,):
                 await ctx.send_response('URL image not found!\nI will do my best without it!')
 
         #increment number of times command is used
@@ -303,6 +302,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
                 #only send model payload if one is defined
                 if self.send_model:
+                    print(f'Requesting to change model to {model_payload["data"]}.')
                     s.post(url=f'{settings.global_var.url}/api/predict', json=model_payload)
                 if queue_object.init_image is not None:
                     response = s.post(url=f'{settings.global_var.url}/sdapi/v1/img2img', json=payload)

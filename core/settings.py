@@ -137,6 +137,6 @@ def old_api_check():
                     if old_config["dependencies"][d]["targets"][0] == c["id"] and c["props"].get(
                             "label") == "Stable Diffusion checkpoint":
                         global_var.model_fn_index = d
-            except:
+            except(Exception,):
                 pass
         print("The fn_index for the model is " + str(global_var.model_fn_index) + "!")
