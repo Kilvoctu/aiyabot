@@ -320,7 +320,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             # save local copy of image and prepare PIL images
             pil_images = []
             for i, image_base64 in enumerate(response_data['images']):
-                image = Image.open(io.BytesIO(base64.b64decode(image_base64.split(",",1)[1])))
+                image = Image.open(io.BytesIO(base64.b64decode(image_base64.split(",",1)[0])))
                 pil_images.append(image)
 
                 metadata = PngImagePlugin.PngInfo()
