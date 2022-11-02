@@ -104,6 +104,13 @@ def guilds_check(self):
         try:
             read(str(guild.id))
             print(f'I\'m using local settings for {guild.id} a.k.a {guild}.')
+            #if models.csv has the blank "Default" data, update guild settings
+            with open('resources/models.csv', 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f, delimiter='|')
+                for row in reader:
+                    if row['display_name'] == 'Default' and row['model_full_name'] == '':
+                        update(str(guild.id), 'data_model', '')
+                        print('I see models.csv is on defaults. Updating guild model settings to default.')
         except FileNotFoundError:
             build(str(guild.id))
             print(f'Creating new settings file for {guild.id} a.k.a {guild}.')

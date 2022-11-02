@@ -146,7 +146,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             init_image: Optional[discord.Attachment] = None,
                             url_image: Optional[str],
                             count: Optional[int] = None):
-        print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
 
         #update defaults with any new defaults from settingscog
         guild = '% s' % ctx.guild_id
@@ -162,6 +161,9 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         model_name = 'Default'
         if data_model is None:
             data_model = settings.read(guild)['data_model']
+            if data_model != '':
+                self.post_model = data_model
+                self.send_model = True
         else:
             self.post_model = data_model
             self.send_model = True
@@ -171,6 +173,11 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             for row in reader:
                 if row['model_full_name'] == data_model:
                     model_name = row['display_name']
+
+        if not self.send_model:
+            print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
+        else:
+            print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt} -- Using model: {data_model}.')
 
         if seed == -1: seed = random.randint(0, 0xFFFFFFFF)
 
@@ -302,7 +309,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
                 #only send model payload if one is defined
                 if self.send_model:
-                    print(f'Requesting to change model to {model_payload["data"]}.')
                     s.post(url=f'{settings.global_var.url}/api/predict', json=model_payload)
                 if queue_object.init_image is not None:
                     response = s.post(url=f'{settings.global_var.url}/sdapi/v1/img2img', json=payload)
