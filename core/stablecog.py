@@ -123,7 +123,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         required=False,
     )
     @option(
-        'url_image',
+        'init_url',
         str,
         description='The starter URL image for generation. This overrides init_image!',
         required=False,
@@ -144,7 +144,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             seed: Optional[int] = -1,
                             strength: Optional[float] = 0.75,
                             init_image: Optional[discord.Attachment] = None,
-                            url_image: Optional[str],
+                            init_url: Optional[str],
                             count: Optional[int] = None):
 
         #update defaults with any new defaults from settingscog
@@ -182,9 +182,9 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if seed == -1: seed = random.randint(0, 0xFFFFFFFF)
 
         #url *will* override init image for compatibility, can be changed here
-        if url_image:
+        if init_url:
             try:
-                init_image = requests.get(url_image)
+                init_image = requests.get(init_url)
             except(Exception,):
                 await ctx.send_response('URL image not found!\nI will do my best without it!')
 
@@ -222,6 +222,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             append_options = append_options + '\nSampler: ``' + str(sampler) + '``'
         if init_image:
             append_options = append_options + '\nStrength: ``' + str(strength) + '``'
+            append_options = append_options + '\nURL Init Image: ``' + str(init_image.url) + '``'
         if count != 1:
             max_count = settings.read(guild)['max_count']
             if count > max_count:
@@ -236,7 +237,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if data_model:
             copy_command = copy_command + f' data_model:{model_name}'
         if init_image:
-            copy_command = copy_command + f' strength:{strength}'
+            copy_command = copy_command + f' strength:{strength} init_url:{init_image.url}'
         print(copy_command)
 
         #setup the queue
