@@ -2,12 +2,8 @@ import asyncio
 from threading import Thread
 
 
-class GlobalQueue:
-    dream_thread = Thread()
-    event_loop = asyncio.get_event_loop()
-    queue = []
-
-class QueueObject:
+#the queue object for txt2image and img2img
+class DrawObject:
     def __init__(self, ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed,
                  strength, init_image, copy_command, batch_count, facefix):
         self.ctx = ctx
@@ -25,7 +21,12 @@ class QueueObject:
         self.batch_count = batch_count
         self.facefix = facefix
 
-async def process_dream(self, queue_object: QueueObject):
+#any command that needs to wait on processing should use the dream thread
+class GlobalQueue:
+    dream_thread = Thread()
+    event_loop = asyncio.get_event_loop()
+    queue = []
+async def process_dream(self, queue_object):
     GlobalQueue.dream_thread = Thread(target=self.dream,
                                args=(GlobalQueue.event_loop, queue_object))
     GlobalQueue.dream_thread.start()
