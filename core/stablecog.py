@@ -23,7 +23,7 @@ from core import settings
 
 class QueueObject:
     def __init__(self, ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed,
-                 strength, init_image, copy_command, batch_count):
+                 strength, init_image, copy_command, batch_count, facefix):
         self.ctx = ctx
         self.prompt = prompt
         self.negative_prompt = negative_prompt
@@ -37,6 +37,7 @@ class QueueObject:
         self.init_image = init_image
         self.copy_command = copy_command
         self.batch_count = batch_count
+        self.facefix = facefix
 
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
     def __init__(self, bot):
@@ -134,6 +135,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         description='The number of images to generate. This is "Batch count", not "Batch size".',
         required=False,
     )
+    @option(
+        'facefix',
+        bool,
+        description='Tries to improve faces in pictures.',
+        required=False,
+    )
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
                             prompt: str, negative_prompt: str = 'unset',
                             data_model: Optional[str] = None,
@@ -145,7 +152,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             strength: Optional[float] = 0.75,
                             init_image: Optional[discord.Attachment] = None,
                             init_url: Optional[str],
-                            count: Optional[int] = None):
+                            count: Optional[int] = None,
+                            facefix: Optional[bool] = False):
 
         #update defaults with any new defaults from settingscog
         guild = '% s' % ctx.guild_id
@@ -229,6 +237,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 count = max_count
                 append_options = append_options + '\nExceeded maximum of ``' + str(count) + '`` images! This is the best I can do...'
             append_options = append_options + '\nCount: ``' + str(count) + '``'
+        if facefix:
+            append_options = append_options + '\nFace restoration: ``' + str(facefix) + '``'
 
         #log the command
         copy_command = f'/draw prompt:{prompt} steps:{steps} height:{str(height)} width:{width} guidance_scale:{guidance_scale} sampler:{sampler} seed:{seed} count:{count}'
@@ -238,6 +248,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             copy_command = copy_command + f' data_model:{model_name}'
         if init_image:
             copy_command = copy_command + f' strength:{strength} init_url:{init_image.url}'
+        if facefix:
+            copy_command = copy_command + f' facefix:{facefix}'
         print(copy_command)
 
         #setup the queue
@@ -250,10 +262,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             if user_already_in_queue:
                 await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
             else:
-                self.queue.append(QueueObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count))
+                self.queue.append(QueueObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, facefix))
                 await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(self.queue)}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
         else:
-            await self.process_dream(QueueObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count))
+            await self.process_dream(QueueObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, facefix))
             await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(self.queue)}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
 
     async def process_dream(self, queue_object: QueueObject):
@@ -296,6 +308,11 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     "denoising_strength": queue_object.strength
                 }
                 payload.update(img_payload)
+            if queue_object.facefix:
+                facefix_payload = {
+                    "restore_faces": True
+                }
+                payload.update(facefix_payload)
 
             #send normal payload to webui
             with requests.Session() as s:
