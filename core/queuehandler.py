@@ -26,7 +26,6 @@ class QueueObject:
         self.facefix = facefix
 
 async def process_dream(self, queue_object: QueueObject):
-    dream_thread = Thread(target=self.dream,
+    GlobalQueue.dream_thread = Thread(target=self.dream,
                                args=(GlobalQueue.event_loop, queue_object))
-    dream_thread.start()
-    print('Starting dream')
+    GlobalQueue.dream_thread.start()
