@@ -1,4 +1,3 @@
-import asyncio
 import base64
 import contextlib
 import csv
@@ -8,9 +7,7 @@ import random
 import time
 import traceback
 from asyncio import AbstractEventLoop
-from threading import Thread
 from typing import Optional
-
 import discord
 import requests
 from PIL import Image, PngImagePlugin
@@ -18,32 +15,12 @@ from discord import option
 from discord.commands import OptionChoice
 from discord.ext import commands
 
+from core import queuehandler
 from core import settings
 
 
-class QueueObject:
-    def __init__(self, ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed,
-                 strength, init_image, copy_command, batch_count, facefix):
-        self.ctx = ctx
-        self.prompt = prompt
-        self.negative_prompt = negative_prompt
-        self.steps = steps
-        self.height = height
-        self.width = width
-        self.guidance_scale = guidance_scale
-        self.sampler = sampler
-        self.seed = seed
-        self.strength = strength
-        self.init_image = init_image
-        self.copy_command = copy_command
-        self.batch_count = batch_count
-        self.facefix = facefix
-
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
     def __init__(self, bot):
-        self.dream_thread = Thread()
-        self.event_loop = asyncio.get_event_loop()
-        self.queue = []
         self.wait_message = []
         self.bot = bot
         self.post_model = ""
@@ -253,28 +230,23 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         print(copy_command)
 
         #setup the queue
-        if self.dream_thread.is_alive():
+        if queuehandler.GlobalQueue.dream_thread.is_alive():
             user_already_in_queue = False
-            for queue_object in self.queue:
+            for queue_object in queuehandler.GlobalQueue.queue:
                 if queue_object.ctx.author.id == ctx.author.id:
                     user_already_in_queue = True
                     break
             if user_already_in_queue:
                 await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
             else:
-                self.queue.append(QueueObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, facefix))
-                await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(self.queue)}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
+                queuehandler.GlobalQueue.queue.append(self, queuehandler.QueueObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, facefix))
+                await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
         else:
-            await self.process_dream(QueueObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, facefix))
-            await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(self.queue)}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
-
-    async def process_dream(self, queue_object: QueueObject):
-        self.dream_thread = Thread(target=self.dream,
-                                   args=(self.event_loop, queue_object))
-        self.dream_thread.start()
+            await queuehandler.process_dream(self, queuehandler.QueueObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, facefix))
+            await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
 
     #generate the image
-    def dream(self, event_loop: AbstractEventLoop, queue_object: QueueObject):
+    def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.QueueObject):
         try:
             start_time = time.time()
 
@@ -385,8 +357,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}',
                                   color=settings.global_var.embed_color)
             event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
-        if self.queue:
-            event_loop.create_task(self.process_dream(self.queue.pop(0)))
+        if queuehandler.GlobalQueue.queue:
+            event_loop.create_task(queuehandler.process_dream(self, queuehandler.GlobalQueue.queue.pop(0)))
 
 def setup(bot):
     bot.add_cog(StableCog(bot))
