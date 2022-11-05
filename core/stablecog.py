@@ -23,7 +23,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     def __init__(self, bot):
         self.wait_message = []
         self.bot = bot
-        self.post_model = ""
         self.send_model = False
 
     with open('resources/models.csv', encoding='utf-8') as csv_file:
@@ -142,16 +141,16 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             count = settings.read(guild)['default_count']
         if sampler == 'unset':
             sampler = settings.read(guild)['sampler']
+
         # if a model is not selected, do nothing
         model_name = 'Default'
         if data_model is None:
             data_model = settings.read(guild)['data_model']
             if data_model != '':
-                self.post_model = data_model
                 self.send_model = True
         else:
-            self.post_model = data_model
             self.send_model = True
+
         # get the selected model's display name
         with open('resources/models.csv', 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter='|')
@@ -239,10 +238,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             if user_already_in_queue:
                 await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
             else:
-                queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, facefix))
+                queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, facefix))
                 await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
         else:
-            await queuehandler.process_dream(self, queuehandler.DrawObject(ctx, prompt, negative_prompt, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, facefix))
+            await queuehandler.process_dream(self, queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, facefix))
             await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
 
     #generate the image
@@ -254,7 +253,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             model_payload = {
                 "fn_index": settings.global_var.model_fn_index,
                 "data": [
-                    self.post_model
+                    queue_object.data_model
                 ]
             }
             payload = {
