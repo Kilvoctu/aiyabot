@@ -10,7 +10,10 @@ from asyncio import AbstractEventLoop
 from typing import Optional
 from discord import option
 from discord.ext import commands
+from os.path import splitext, basename
 from PIL import Image
+from urllib.parse import urlparse
+
 
 from core import queuehandler
 from core import settings
@@ -20,18 +23,13 @@ class UpscaleCog(commands.Cog):
     def __init__(self, bot):
         self.wait_message = []
         self.bot = bot
+        self.file_name = ''
 
     @commands.slash_command(name = 'upscale', description = 'Upscale an image')
     @option(
-        'resize',
-        float,
-        description='The amount to upscale the image by (1.0 to 4.0).',
-        required=True,
-    )
-    @option(
         'init_image',
         discord.Attachment,
-        description='The starter image to  upscale',
+        description='The starter image to upscale',
         required=False,
     )
     @option(
@@ -41,23 +39,58 @@ class UpscaleCog(commands.Cog):
         required=False,
     )
     @option(
+        'resize',
+        float,
+        description='The amount to upscale the image by (1.0 to 4.0).',
+        min_value=1,
+        max_value=4,
+        required=True,
+    )
+    @option(
         'upscaler_1',
         str,
         description='The upscaler model to use.',
         required=True,
     )
+    @option(
+        'upscaler_2',
+        str,
+        description='The 2nd upscaler model to use.',
+        required=False,
+    )
+    @option(
+        'upscaler_2_strength',
+        float,
+        description='The visibility of the 2nd upscaler model. (0.0 to 1.0)',
+        required=False,
+    )
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
-                            resize: float = 2.0,
                             init_image: Optional[discord.Attachment] = None,
                             init_url: Optional[str],
-                            upscaler_1: str = "None"):
+                            resize: float = 2.0,
+                            upscaler_1: str = "None",
+                            upscaler_2: Optional[str] = "None",
+                            upscaler_2_strength: Optional[float] = 0.5):
 
+        has_image = True
         #url *will* override init image for compatibility, can be changed here
         if init_url:
             try:
                 init_image = requests.get(init_url)
             except(Exception,):
-                await ctx.send_response('URL image not found!\nI will do my best without it!')
+                await ctx.send_response('URL image not found!\nI have nothing to work with...', ephemeral=True)
+                has_image = False
+
+        #fail if no image is provided
+        if init_url is None:
+            if init_image is None:
+                await ctx.send_response('I need an image to upscale!', ephemeral=True)
+                has_image = False
+
+        #pull the name from the image
+        disassembled = urlparse(init_image.url)
+        filename, file_ext = splitext(basename(disassembled.path))
+        self.file_name = filename
 
         #random messages for bot to say
         with open('resources/messages.csv') as csv_file:
@@ -68,22 +101,26 @@ class UpscaleCog(commands.Cog):
 
         #formatting bot initial reply
         append_options = ''
+        if upscaler_2:
+            append_options = append_options + '\nUpscaler 2: ``' + str(upscaler_2) + '``'
+            append_options = append_options + ' - Strength: ``' + str(upscaler_2_strength) + '``'
 
-        #setup the queue
-        if queuehandler.GlobalQueue.dream_thread.is_alive():
-            user_already_in_queue = False
-            for queue_object in queuehandler.GlobalQueue.queue:
-                if queue_object.ctx.author.id == ctx.author.id:
-                    user_already_in_queue = True
-                    break
-            if user_already_in_queue:
-                await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
+        #set up the queue if an image was found
+        if has_image:
+            if queuehandler.GlobalQueue.dream_thread.is_alive():
+                user_already_in_queue = False
+                for queue_object in queuehandler.GlobalQueue.queue:
+                    if queue_object.ctx.author.id == ctx.author.id:
+                        user_already_in_queue = True
+                        break
+                if user_already_in_queue:
+                    await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
+                else:
+                    queuehandler.GlobalQueue.queue.append(queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength))
+                    await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{append_options}')
             else:
-                queuehandler.GlobalQueue.queue.append(queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1))
-                await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - Resize: ``{resize}``{append_options}')
-        else:
-            await queuehandler.process_dream(self, queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1))
-            await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - Resize: ``{resize}``{append_options}')
+                await queuehandler.process_dream(self, queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength))
+                await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{append_options}')
 
     #generate the image
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.UpscaleObject):
@@ -97,6 +134,12 @@ class UpscaleCog(commands.Cog):
                 "upscaler_1": queue_object.upscaler_1,
                 "image": 'data:image/png;base64,' + image
             }
+            if queue_object.upscaler_2 is not None:
+                up2_payload = {
+                    "upscaler_2": queue_object.upscaler_2,
+                    "extras_upscaler_2_visibility": queue_object.upscaler_2_strength
+                }
+                payload.update(up2_payload)
 
             #send normal payload to webui
             with requests.Session() as s:
@@ -114,10 +157,8 @@ class UpscaleCog(commands.Cog):
             end_time = time.time()
 
             #create safe/sanitized filename
-            #keep_chars = (' ', '.', '_')
             epoch_time = int(time.time())
-            #file_name = "".join(c for c in queue_object.init_image if c.isalnum() or c in keep_chars).rstrip()
-            file_path = f'{settings.global_var.dir}\{epoch_time}-x{queue_object.resize}-Upscale.png'
+            file_path = f'{settings.global_var.dir}/{epoch_time}-x{queue_object.resize}-{self.file_name[0:120]}.png'
 
             # save local copy of image
             image_data = response_data['image']
@@ -133,7 +174,7 @@ class UpscaleCog(commands.Cog):
                 embed = discord.Embed()
 
                 embed.colour = settings.global_var.embed_color
-                embed.add_field(name=f'Upscale by', value=f'``{queue_object.resize}``', inline=False)
+                embed.add_field(name=f'My upscale of', value=f'``{queue_object.resize}``x', inline=False)
                 embed.add_field(name='took me', value='``{0:.3f}`` seconds'.format(end_time-start_time), inline=False)
 
                 footer_args = dict(text=f'{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}')
@@ -142,7 +183,7 @@ class UpscaleCog(commands.Cog):
                 embed.set_footer(**footer_args)
 
                 event_loop.create_task(queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>', embed=embed,
-                                                  file=discord.File(fp=buffer, filename=f'Upscale.png')))
+                                                  file=discord.File(fp=buffer, filename=file_path)))
 
         except Exception as e:
             embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}',

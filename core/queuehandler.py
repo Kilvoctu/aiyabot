@@ -24,11 +24,13 @@ class DrawObject:
 
 #the queue object for extras - upscale
 class UpscaleObject:
-    def __init__(self, ctx, resize, init_image, upscaler_1):
+    def __init__(self, ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength):
         self.ctx = ctx
         self.resize = resize
         self.init_image = init_image
         self.upscaler_1 = upscaler_1
+        self.upscaler_2 = upscaler_2
+        self.upscaler_2_strength = upscaler_2_strength
 
 #any command that needs to wait on processing should use the dream thread
 class GlobalQueue:
