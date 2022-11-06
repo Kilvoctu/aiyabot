@@ -28,7 +28,7 @@ class GlobalVar:
     username: Optional[str] = None
     password: Optional[str] = None
     sampler_names = []
-    style_names = []
+    style_names = {}
     copy_command: bool = False
     model_fn_index = 0
 
@@ -114,12 +114,11 @@ def files_check():
             s.post(global_var.url + '/login')
             r = s.get(global_var.url + "/sdapi/v1/samplers")
             r2 = s.get(global_var.url + "/sdapi/v1/prompt-styles")
-        for s in r.json():
-            sampler = s['name']
+        for s1 in r.json():
+            sampler = s1['name']
             global_var.sampler_names.append(sampler)
-        for s in r2.json():
-            style = s['name']
-            global_var.style_names.append(style)
+        for s2 in r2.json():
+            global_var.style_names[s2['name']] = s2['prompt']
 
 def guilds_check(self):
     #guild settings files. has to be done after on_ready
