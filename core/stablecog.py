@@ -112,6 +112,13 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         required=False,
     )
     @option(
+        'style',
+        str,
+        description='Apply a predefined style to the generation.',
+        required=False,
+        choices=settings.global_var.style_names,
+    )
+    @option(
         'facefix',
         bool,
         description='Tries to improve faces in pictures.',
@@ -129,6 +136,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             init_image: Optional[discord.Attachment] = None,
                             init_url: Optional[str],
                             count: Optional[int] = None,
+                            style: Optional[str] = 'None',
                             facefix: Optional[bool] = False):
 
         #update defaults with any new defaults from settingscog
@@ -213,6 +221,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 count = max_count
                 append_options = append_options + '\nExceeded maximum of ``' + str(count) + '`` images! This is the best I can do...'
             append_options = append_options + '\nCount: ``' + str(count) + '``'
+        if style != 'None':
+            append_options = append_options + '\nStyle: ``' + str(style) + '``'
         if facefix:
             append_options = append_options + '\nFace restoration: ``' + str(facefix) + '``'
 
@@ -224,6 +234,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             copy_command = copy_command + f' data_model:{model_name}'
         if init_image:
             copy_command = copy_command + f' strength:{strength} init_url:{init_image.url}'
+        if style != 'None':
+            copy_command = copy_command + f' style:{style}'
         if facefix:
             copy_command = copy_command + f' facefix:{facefix}'
         print(copy_command)
@@ -238,10 +250,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             if user_already_in_queue:
                 await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
             else:
-                queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, facefix))
+                queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, style, facefix))
                 await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
         else:
-            await queuehandler.process_dream(self, queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, facefix))
+            await queuehandler.process_dream(self, queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, style, facefix))
             await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
 
     #generate the image
@@ -268,7 +280,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 "seed_resize_from_h": 0,
                 "seed_resize_from_w": 0,
                 "denoising_strength": None,
-                "n_iter": queue_object.batch_count
+                "n_iter": queue_object.batch_count,
+                "styles": [
+                    queue_object.style
+                ]
             }
             if queue_object.init_image is not None:
                 image = base64.b64encode(requests.get(queue_object.init_image.url, stream=True).content).decode('utf-8')
