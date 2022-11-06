@@ -51,12 +51,14 @@ class UpscaleCog(commands.Cog):
         str,
         description='The upscaler model to use.',
         required=True,
+        choices=['None', 'Lanczos', 'Nearest', 'LDSR', 'ESRGAN_4x', 'ScuNET GAN', 'ScuNET PSNR', 'SwinIR_4x'],
     )
     @option(
         'upscaler_2',
         str,
         description='The 2nd upscaler model to use.',
         required=False,
+        choices=['None', 'Lanczos', 'Nearest', 'LDSR', 'ESRGAN_4x', 'ScuNET GAN', 'ScuNET PSNR', 'SwinIR_4x'],
     )
     @option(
         'upscaler_2_strength',
