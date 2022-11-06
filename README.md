@@ -48,7 +48,7 @@ To generate an image from text, use the /draw command and include your prompt as
 TOKEN = put your bot token here
 ```
 
-- Run the bot by running launch.bat
+- Run the bot by running launch.bat (or launch.sh for Linux)
 
 ## Notes
 
