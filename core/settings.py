@@ -27,6 +27,7 @@ class GlobalVar:
     embed_color = discord.Colour.from_rgb(222, 89, 28)
     username: Optional[str] = None
     password: Optional[str] = None
+    sampler_names = []
     copy_command: bool = False
     model_fn_index = 0
 
@@ -97,6 +98,22 @@ def files_check():
     if dir_exists is False:
         print(f'The folder for DIR doesn\'t exist! Creating folder at {global_var.dir}.')
         os.mkdir(global_var.dir)
+
+    #pull list of samplers from api
+    with requests.Session() as s:
+        if global_var.username is not None:
+            login_payload = {
+                'username': global_var.username,
+                'password': global_var.password
+            }
+            s.post(global_var.url + '/login', data=login_payload)
+            r = s.get(global_var.url + "/sdapi/v1/samplers")
+        else:
+            s.post(global_var.url + '/login')
+            r = s.get(global_var.url + "/sdapi/v1/samplers")
+        for s in r.json():
+            sampler = s['name']
+            global_var.sampler_names.append(sampler)
 
 def guilds_check(self):
     #guild settings files. has to be done after on_ready

@@ -66,7 +66,7 @@ class SettingsCog(commands.Cog):
         str,
         description='Set default sampler for the server',
         required=False,
-        choices=['Euler a', 'Euler', 'LMS', 'Heun', 'DPM2', 'DPM2 a', 'DPM fast', 'DPM adaptive', 'LMS Karras', 'DPM2 Karras', 'DPM2 a Karras', 'DDIM', 'PLMS'],
+        choices=settings.global_var.sampler_names,
     )
     async def settings_handler(self, ctx,
                                current_settings: Optional[bool] = False,

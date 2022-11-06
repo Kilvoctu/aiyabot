@@ -80,7 +80,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         str,
         description='The sampler to use for generation. Default: Euler a',
         required=False,
-        choices=['Euler a', 'Euler', 'LMS', 'Heun', 'DPM2', 'DPM2 a', 'DPM fast', 'DPM adaptive', 'LMS Karras', 'DPM2 Karras', 'DPM2 a Karras', 'DDIM', 'PLMS'],
+        choices=settings.global_var.sampler_names,
     )
     @option(
         'seed',
