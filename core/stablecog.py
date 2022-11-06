@@ -322,7 +322,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 metadata = PngImagePlugin.PngInfo()
                 epoch_time = int(time.time())
                 metadata.add_text("parameters", meta)
-                file_path = f'{settings.global_var.dir}\{epoch_time}-{queue_object.seed}-{file_name[0:120]}-{i}.png'
+                file_path = f'{settings.global_var.dir}/{epoch_time}-{queue_object.seed}-{file_name[0:120]}-{i}.png'
                 image.save(file_path, pnginfo=metadata)
                 print(f'Saved image: {file_path}')
 
