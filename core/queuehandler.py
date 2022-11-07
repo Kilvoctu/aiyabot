@@ -5,7 +5,7 @@ from threading import Thread
 #the queue object for txt2image and img2img
 class DrawObject:
     def __init__(self, ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed,
-                 strength, init_image, copy_command, batch_count, facefix):
+                 strength, init_image, copy_command, batch_count, style, facefix):
         self.ctx = ctx
         self.prompt = prompt
         self.negative_prompt = negative_prompt
@@ -20,6 +20,7 @@ class DrawObject:
         self.init_image = init_image
         self.copy_command = copy_command
         self.batch_count = batch_count
+        self.style = style
         self.facefix = facefix
 
 #any command that needs to wait on processing should use the dream thread
