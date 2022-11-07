@@ -20,6 +20,7 @@ from core import settings
 
 
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
+    ctx_parse = discord.ApplicationContext
     def __init__(self, bot):
         self.wait_message = []
         self.bot = bot
@@ -27,6 +28,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
     with open('resources/models.csv', encoding='utf-8') as csv_file:
         model_data = list(csv.reader(csv_file, delimiter='|'))
+
+    #pulls from style_names list and makes some sort of dynamic list to bypass Discord 25 choices limit
+    def style_autocomplete(self: discord.AutocompleteContext):
+        return [
+            style for style in settings.global_var.style_names
+        ]
 
     @commands.slash_command(name = 'draw', description = 'Create an image')
     @option(
@@ -116,7 +123,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         str,
         description='Apply a predefined style to the generation.',
         required=False,
-        choices=settings.global_var.style_names,
+        autocomplete=discord.utils.basic_autocomplete(style_autocomplete),
     )
     @option(
         'facefix',
