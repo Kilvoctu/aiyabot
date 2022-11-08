@@ -328,9 +328,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             response_data = response.json()
             end_time = time.time()
 
-            #grab png info
-            load_r = json.loads(response_data['info'])
-            meta = load_r["infotexts"][0]
             #create safe/sanitized filename
             keep_chars = (' ', '.', '_')
             file_name = "".join(c for c in queue_object.prompt if c.isalnum() or c in keep_chars).rstrip()
@@ -341,9 +338,15 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 image = Image.open(io.BytesIO(base64.b64decode(image_base64.split(",",1)[0])))
                 pil_images.append(image)
 
+                #grab png info
+                png_payload = {
+                    "image": "data:image/png;base64," + image_base64
+                }
+                png_response = requests.post(url=f'{settings.global_var.url}/sdapi/v1/png-info', json=png_payload)
+
                 metadata = PngImagePlugin.PngInfo()
                 epoch_time = int(time.time())
-                metadata.add_text("parameters", meta)
+                metadata.add_text("parameters", png_response.json().get("info"))
                 file_path = f'{settings.global_var.dir}/{epoch_time}-{queue_object.seed}-{file_name[0:120]}-{i}.png'
                 image.save(file_path, pnginfo=metadata)
                 print(f'Saved image: {file_path}')
