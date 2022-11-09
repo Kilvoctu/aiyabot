@@ -65,16 +65,32 @@ def files_check():
         with open('resources/stats.txt', 'w') as f:
             f.write('0')
 
-    header = ['display_name', 'model_full_name']
-    unset_model = ['Default', '']
+    header = ['display_name', 'model_full_name', 'activator_token']
+    unset_model = ['Default', '', '']
     make_model_file = True
-    #if models.csv exists and has data, assume it's good to go
+    replace_model_file = False
+    #if models.csv exists and has data
     if os.path.isfile('resources/models.csv'):
         with open('resources/models.csv', encoding='utf-8') as f:
-            reader = csv.reader(f)
+            reader = csv.reader(f, delimiter="|")
             for i, row in enumerate(reader):
+                #if header is missing columns, reformat the file
+                if i == 0:
+                    if len(row)<3:
+                        with open('resources/models.csv', 'r') as fp:
+                            reader = csv.DictReader(fp, fieldnames=header, delimiter = "|")
+                            with open('resources/models2.csv', 'w', newline='') as fh:
+                                writer = csv.DictWriter(fh, fieldnames=reader.fieldnames, delimiter = "|")
+                                writer.writeheader()
+                                header = next(reader)
+                                writer.writerows(reader)
+                                replace_model_file = True
+                #if first row has data, do nothing
                 if i == 1:
                     make_model_file = False
+        if replace_model_file:
+            os.remove('resources/models.csv')
+            os.rename('resources/models2.csv', 'resources/models.csv')
     #otherwise create/reformat it
     if make_model_file:
         print(f'Uh oh, missing models.csv data. Creating a new one.')

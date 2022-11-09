@@ -64,14 +64,18 @@ DIR = set folder to save images, otherwise the default is \outputs
 
 USER = your username
 PASS = your password
-COPY = set to anything if you want the bot to output the command that was used to produce the image instead of the prompt
+COPY = set to anything to have the output show the command used to produce the image instead of the prompt
 ```
 - On first launch, AIYA will generate a models.csv with a default dummy value. If you'd like to add more models/checkpoints, replace the default value and add lines following the header format.
-  - Display name is anything you want. Full name is how it would appear in the Web UI. An example may look like:
+  - Display name is anything you want.
+  - Model full name is how it would appear in the Web UI.
+  - Activator token is any words a model may need to take effect. Can be blank (remember to add | separator at the end).
+  - An example may look like:
 ```
-display_name|model_full_name
-SD 1.5|v1-5-pruned-emaonly.ckpt [81761151]
-WD 1.3|wd-v1-3-float32.ckpt [4470c325]
+display_name|model_full_name|activator_token
+SD 1.5|v1-5-pruned-emaonly.ckpt [81761151]|
+WD 1.3|wd-v1-3-float32.ckpt [4470c325]|
+MoDi 1|moDi-v1-pruned.ckpt [ccf3615f]|Modern Disney style
 ```
 - In the Web UI, there is a setting named "Checkpoints to cache in RAM". If you have enough RAM, this value can be increased to speed up swapping.
 
