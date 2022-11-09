@@ -156,7 +156,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if sampler == 'unset':
             sampler = settings.read(guild)['sampler']
 
-        # if a model is not selected, do nothing
+        #if a model is not selected, do nothing
         model_name = 'Default'
         if data_model is None:
             data_model = settings.read(guild)['data_model']
@@ -165,12 +165,15 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         else:
             self.send_model = True
 
-        # get the selected model's display name
+        simple_prompt = prompt
+        #get the selected model's display name and prepend prompt with its token (even if blank)
         with open('resources/models.csv', 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter='|')
             for row in reader:
                 if row['model_full_name'] == data_model:
                     model_name = row['display_name']
+                    prompt = row['activator_token'] + " " + prompt
+                    prompt = prompt.lstrip(' ')
 
         if not self.send_model:
             print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
@@ -233,7 +236,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             append_options = append_options + '\nFace restoration: ``' + str(facefix) + '``'
 
         #log the command
-        copy_command = f'/draw prompt:{prompt} steps:{steps} height:{str(height)} width:{width} guidance_scale:{guidance_scale} sampler:{sampler} seed:{seed} count:{count}'
+        copy_command = f'/draw prompt:{simple_prompt} steps:{steps} height:{str(height)} width:{width} guidance_scale:{guidance_scale} sampler:{sampler} seed:{seed} count:{count}'
         if negative_prompt != '':
             copy_command = copy_command + f' negative_prompt:{negative_prompt}'
         if data_model:
@@ -256,11 +259,11 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             if user_already_in_queue:
                 await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
             else:
-                queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, style, facefix))
-                await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
+                queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, style, facefix, simple_prompt))
+                await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
         else:
-            await queuehandler.process_dream(self, queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, style, facefix))
-            await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
+            await queuehandler.process_dream(self, queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, style, facefix, simple_prompt))
+            await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
 
     #generate the image
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.DrawObject):
@@ -359,7 +362,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
                 image_count = len(pil_images)
                 noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
-                value = queue_object.copy_command if settings.global_var.copy_command else queue_object.prompt
+                value = queue_object.copy_command if settings.global_var.copy_command else queue_object.simple_prompt
                 embed.add_field(name=f'My {noun_descriptor} of', value=f'``{value}``', inline=False)
 
                 embed.add_field(name='took me', value='``{0:.3f}`` seconds'.format(end_time-start_time), inline=False)
