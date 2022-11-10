@@ -1,9 +1,10 @@
 import csv
+import discord
 import json
 import os
 import requests
+import time
 from typing import Optional
-import discord
 
 self = discord.Bot()
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -115,6 +116,15 @@ def files_check():
     if dir_exists is False:
         print(f'The folder for DIR doesn\'t exist! Creating folder at {global_var.dir}.')
         os.mkdir(global_var.dir)
+
+    #check if Web UI is running
+    connected = False
+    while not connected:
+        try:
+            return requests.head(global_var.url)
+        except Exception as e:
+            print(f'Waiting for Web UI at {global_var.url}...')
+            time.sleep(20)
 
     #pull list of samplers and styles from api
     with requests.Session() as s:
