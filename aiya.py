@@ -16,6 +16,7 @@ self.logger = get_logger(__name__)
 
 #load extensions
 # check files and global variables
+settings.startup_check()
 settings.files_check()
 settings.old_api_check()
 

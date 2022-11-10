@@ -126,9 +126,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     )
     @option(
         'facefix',
-        bool,
+        str,
         description='Tries to improve faces in pictures.',
         required=False,
+        choices=settings.global_var.facefix_models,
     )
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
                             prompt: str, negative_prompt: str = 'unset',
@@ -143,7 +144,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             init_url: Optional[str],
                             count: Optional[int] = None,
                             style: Optional[str] = 'None',
-                            facefix: Optional[bool] = False):
+                            facefix: Optional[str] = 'None'):
 
         #update defaults with any new defaults from settingscog
         guild = '% s' % ctx.guild_id
@@ -232,7 +233,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             append_options = append_options + '\nCount: ``' + str(count) + '``'
         if style != 'None':
             append_options = append_options + '\nStyle: ``' + str(style) + '``'
-        if facefix:
+        if facefix != 'None':
             append_options = append_options + '\nFace restoration: ``' + str(facefix) + '``'
 
         #log the command
@@ -245,7 +246,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             copy_command = copy_command + f' strength:{strength} init_url:{init_image.url}'
         if style != 'None':
             copy_command = copy_command + f' style:{style}'
-        if facefix:
+        if facefix != 'None':
             copy_command = copy_command + f' facefix:{facefix}'
         print(copy_command)
 
@@ -303,9 +304,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     "denoising_strength": queue_object.strength
                 }
                 payload.update(img_payload)
-            if queue_object.facefix:
+            if queue_object.facefix != 'None':
                 facefix_payload = {
-                    "restore_faces": True
+                    "restore_faces": True,
+                    "override_settings": {
+                        "face_restoration_model": queue_object.facefix
+                    }
                 }
                 payload.update(facefix_payload)
 
