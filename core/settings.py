@@ -122,7 +122,7 @@ def files_check():
     while not connected:
         try:
             return requests.head(global_var.url)
-        except Exception as e:
+        except(Exception,):
             print(f'Waiting for Web UI at {global_var.url}...')
             time.sleep(20)
 

@@ -2,8 +2,8 @@ import csv
 from discord import option
 from discord.ext import commands
 from discord.commands import OptionChoice
-from typing import Optional
 from core import settings
+from typing import Optional
 
 
 class SettingsCog(commands.Cog):

@@ -1,18 +1,18 @@
 import base64
 import contextlib
 import csv
+import discord
 import io
 import random
+import requests
 import time
 import traceback
 from asyncio import AbstractEventLoop
-from typing import Optional
-import discord
-import requests
-from PIL import Image, PngImagePlugin
 from discord import option
 from discord.commands import OptionChoice
 from discord.ext import commands
+from typing import Optional
+from PIL import Image, PngImagePlugin
 
 from core import queuehandler
 from core import settings
