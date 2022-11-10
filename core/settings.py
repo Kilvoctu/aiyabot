@@ -30,6 +30,7 @@ class GlobalVar:
     password: Optional[str] = None
     sampler_names = []
     style_names = {}
+    facefix_models = []
     copy_command: bool = False
     model_fn_index = 0
 
@@ -56,6 +57,27 @@ def update(guild_id:str, sett:str, value):
 def get_env_var_with_default(var: str, default: str) -> str:
     ret = os.getenv(var)
     return ret if ret is not None else default
+
+def startup_check():
+    #check .env for parameters. if they don't exist, ignore it and go with defaults.
+    global_var.url = get_env_var_with_default('URL', 'http://127.0.0.1:7860').rstrip("/")
+    print(f'Using URL: {global_var.url}')
+
+    global_var.dir = get_env_var_with_default('DIR', 'outputs')
+    print(f'Using outputs directory: {global_var.dir}')
+
+    global_var.username = os.getenv("USER")
+    global_var.password = os.getenv("PASS")
+    global_var.copy_command = os.getenv("COPY") is not None
+
+    #check if Web UI is running
+    connected = False
+    while not connected:
+        try:
+            return requests.head(global_var.url)
+        except(Exception,):
+            print(f'Waiting for Web UI at {global_var.url}...')
+            time.sleep(20)
 
 def files_check():
     #creating files if they don't exist
@@ -100,33 +122,13 @@ def files_check():
             writer.writerow(header)
             writer.writerow(unset_model)
 
-    #check .env for parameters. if they don't exist, ignore it and go with defaults.
-    global_var.url = get_env_var_with_default('URL', 'http://127.0.0.1:7860').rstrip("/")
-    print(f'Using URL: {global_var.url}')
-
-    global_var.dir = get_env_var_with_default('DIR', 'outputs')
-    print(f'Using outputs directory: {global_var.dir}')
-
-    global_var.username = os.getenv("USER")
-    global_var.password = os.getenv("PASS")
-    global_var.copy_command = os.getenv("COPY") is not None
-
     #if directory in DIR doesn't exist, create it
     dir_exists = os.path.exists(global_var.dir)
     if dir_exists is False:
         print(f'The folder for DIR doesn\'t exist! Creating folder at {global_var.dir}.')
         os.mkdir(global_var.dir)
 
-    #check if Web UI is running
-    connected = False
-    while not connected:
-        try:
-            return requests.head(global_var.url)
-        except(Exception,):
-            print(f'Waiting for Web UI at {global_var.url}...')
-            time.sleep(20)
-
-    #pull list of samplers and styles from api
+    #pull list of samplers, styles and face restorers from api
     with requests.Session() as s:
         if global_var.username is not None:
             login_payload = {
@@ -136,15 +138,18 @@ def files_check():
             s.post(global_var.url + '/login', data=login_payload)
             r = s.get(global_var.url + "/sdapi/v1/samplers")
             r2 = s.get(global_var.url + "/sdapi/v1/prompt-styles")
+            r3 = s.get(global_var.url + "/sdapi/v1/face-restorers")
         else:
             s.post(global_var.url + '/login')
             r = s.get(global_var.url + "/sdapi/v1/samplers")
             r2 = s.get(global_var.url + "/sdapi/v1/prompt-styles")
+            r3 = s.get(global_var.url + "/sdapi/v1/face-restorers")
         for s1 in r.json():
-            sampler = s1['name']
-            global_var.sampler_names.append(sampler)
+            global_var.sampler_names.append(s1['name'])
         for s2 in r2.json():
             global_var.style_names[s2['name']] = s2['prompt']
+        for s3 in r3.json():
+            global_var.facefix_models.append(s3['name'])
 
 def guilds_check(self):
     #guild settings files. has to be done after on_ready
