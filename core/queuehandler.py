@@ -54,7 +54,7 @@ def union(list_1, list_2, list_3):
     master_queue = list_1 + list_2 + list_3
     return master_queue
 
-async def process_dream(self, queue_object):
+async def process_dream(self, queue_object, my_view):
     GlobalQueue.dream_thread = Thread(target=self.dream,
-                               args=(GlobalQueue.event_loop, queue_object))
+                               args=(GlobalQueue.event_loop, queue_object, my_view))
     GlobalQueue.dream_thread.start()
