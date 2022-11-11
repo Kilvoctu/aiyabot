@@ -7,18 +7,28 @@ import time
 import traceback
 from asyncio import AbstractEventLoop
 from typing import Optional
-
 import discord
 import requests
 from PIL import Image, PngImagePlugin
 from discord import option
 from discord.ext import commands
+from discord.ui import View
 
 from core import queuehandler
 from core import settings
 from core import upscalecog
 from core import identifycog
 
+
+class MyView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+    @discord.ui.button(
+        custom_id="button_100",
+        emoji="🎲")
+    async def button_callback(self, button, interaction):
+        button.disabled = True
+        await interaction.response.send_message("You clicked the button!")
 
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
     ctx_parse = discord.ApplicationContext
@@ -278,6 +288,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         try:
             start_time = time.time()
 
+            view = View()
             #construct a payload for data model, then the normal payload
             model_payload = {
                 "fn_index": settings.global_var.model_fn_index,
@@ -388,7 +399,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     buffer.seek(0)
 
                 files = [discord.File(fp=buffer, filename=f'{queue_object.seed}-{i}.png') for (i, buffer) in enumerate(buffer_handles)]
-                event_loop.create_task(queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>', embed=embed, files=files))
+
+                event_loop.create_task(queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>', embed=embed, files=files, view=view))
 
         except Exception as e:
             embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}',
