@@ -19,16 +19,31 @@ from core import settings
 from core import upscalecog
 from core import identifycog
 
-
+async def test_button():
+    print("Buttons!")
 class MyView(discord.ui.View):
-    def __init__(self):
+    def __init__(self, user):
         super().__init__(timeout=None)
+        self.user = user
+
     @discord.ui.button(
-        custom_id="button_100",
+        custom_id="button_reroll",
         emoji="🎲")
     async def button_callback(self, button, interaction):
         button.disabled = True
-        await interaction.response.send_message("You clicked the button!")
+        await interaction.response.edit_message(view=self)
+        await test_button()
+
+    @discord.ui.button(
+        custom_id="button_x",
+        emoji="❌")
+    async def delete(self, button, interaction):
+        print(interaction.user.id)
+        print(self.user)
+        if interaction.user.id == self.user:
+            await interaction.message.delete()
+        else:
+            await interaction.response.send_message("You can't delete other people's images!", ephemeral=True)
 
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
     ctx_parse = discord.ApplicationContext
@@ -407,7 +422,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
         #check each queue for any remaining tasks
         if queuehandler.GlobalQueue.draw_q:
-            event_loop.create_task(queuehandler.process_dream(self, queuehandler.GlobalQueue.draw_q.pop(0)))
+            event_loop.create_task(queuehandler.process_dream(self, queuehandler.GlobalQueue.draw_q.pop(0), my_view))
         if queuehandler.GlobalQueue.upscale_q:
             upscale_dream = upscalecog.UpscaleCog(self)
             event_loop.create_task(queuehandler.process_dream(upscale_dream, queuehandler.GlobalQueue.upscale_q.pop(0)))
