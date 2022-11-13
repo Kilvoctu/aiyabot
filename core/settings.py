@@ -29,6 +29,7 @@ class GlobalVar:
     username: Optional[str] = None
     password: Optional[str] = None
     sampler_names = []
+    model_names = {}
     style_names = {}
     facefix_models = []
     copy_command: bool = False
@@ -114,13 +115,20 @@ def files_check():
         if replace_model_file:
             os.remove('resources/models.csv')
             os.rename('resources/models2.csv', 'resources/models.csv')
-    #otherwise create/reformat it
+    #create/reformat model.csv if something is wrong
     if make_model_file:
         print(f'Uh oh, missing models.csv data. Creating a new one.')
         with open('resources/models.csv', 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f, delimiter = "|")
             writer.writerow(header)
             writer.writerow(unset_model)
+
+    #get display_name:model_full_name pairs from models.csv into global variable
+    with open('resources/models.csv', encoding='utf-8') as csv_file:
+        model_data = list(csv.reader(csv_file, delimiter='|'))
+        for row in model_data[1:]:
+            global_var.model_names[row[0]] = row[1]
+    print(global_var.model_names)
 
     #if directory in DIR doesn't exist, create it
     dir_exists = os.path.exists(global_var.dir)
