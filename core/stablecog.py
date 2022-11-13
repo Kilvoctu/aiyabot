@@ -1,18 +1,17 @@
 import base64
 import contextlib
 import csv
-import discord
 import io
 import random
-import requests
 import time
 import traceback
 from asyncio import AbstractEventLoop
-from discord import option
-from discord.commands import OptionChoice
-from discord.ext import commands
 from typing import Optional
+import discord
+import requests
 from PIL import Image, PngImagePlugin
+from discord import option
+from discord.ext import commands
 
 from core import queuehandler
 from core import settings
@@ -25,10 +24,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         self.bot = bot
         self.send_model = False
 
-    with open('resources/models.csv', encoding='utf-8') as csv_file:
-        model_data = list(csv.reader(csv_file, delimiter='|'))
-
-    #pulls from style_names list and makes some sort of dynamic list to bypass Discord 25 choices limit
+    #pulls from model_names list and makes some sort of dynamic list to bypass Discord 25 choices limit
+    def model_autocomplete(self: discord.AutocompleteContext):
+        return [
+            model for model in settings.global_var.model_names
+        ]
+    #and for styles
     def style_autocomplete(self: discord.AutocompleteContext):
         return [
             style for style in settings.global_var.style_names
@@ -52,7 +53,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         str,
         description='Select the data model for image generation',
         required=False,
-        choices=[OptionChoice(name=row[0], value=row[1]) for row in model_data[1:]]
+        autocomplete=discord.utils.basic_autocomplete(model_autocomplete),
     )
     @option(
         'steps',
@@ -167,19 +168,22 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             self.send_model = True
 
         simple_prompt = prompt
-        #get the selected model's display name and prepend prompt with its token (even if blank)
+        #take selected data_model and get model_name, then update data_model with the full name
         with open('resources/models.csv', 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter='|')
             for row in reader:
-                if row['model_full_name'] == data_model:
+                if row['display_name'] == data_model:
                     model_name = row['display_name']
+                    data_model = row['model_full_name']
+                    #look at the model for activator token and prepend prompt with it
                     prompt = row['activator_token'] + " " + prompt
+                    #if there's no activator token, remove the extra blank space
                     prompt = prompt.lstrip(' ')
 
         if not self.send_model:
             print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
         else:
-            print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt} -- Using model: {data_model}.')
+            print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt} -- Using model: {data_model}')
 
         if seed == -1: seed = random.randint(0, 0xFFFFFFFF)
 
