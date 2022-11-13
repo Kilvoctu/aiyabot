@@ -128,7 +128,6 @@ def files_check():
         model_data = list(csv.reader(csv_file, delimiter='|'))
         for row in model_data[1:]:
             global_var.model_names[row[0]] = row[1]
-    print(global_var.model_names)
 
     #if directory in DIR doesn't exist, create it
     dir_exists = os.path.exists(global_var.dir)
