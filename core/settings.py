@@ -75,6 +75,10 @@ def startup_check():
     connected = False
     while not connected:
         try:
+            response = requests.get(global_var.url + '/sdapi/v1/cmd-flags')
+            if response.status_code == 404:
+                print('API is unreachable! Please check Web UI COMMANDLINE_ARGS for --api.')
+                os.system("pause")
             return requests.head(global_var.url)
         except(Exception,):
             print(f'Waiting for Web UI at {global_var.url}...')
