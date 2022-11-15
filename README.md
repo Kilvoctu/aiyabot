@@ -26,7 +26,7 @@ To generate an image from text, use the /draw command and include your prompt as
 ### Currently supported options
 
 - negative prompts
-- swap model/checkpoint (_see Notes_)
+- swap model/checkpoint (_see Notes or [wiki](https://github.com/Kilvoctu/aiyabot/wiki/Model-swapping)_)
 - sampling steps
 - height/width (up to 768)
 - CFG scale
