@@ -1,8 +1,8 @@
-import csv
+import discord
 from discord import option
 from discord.ext import commands
-from discord.commands import OptionChoice
 from typing import Optional
+
 from core import settings
 
 
@@ -10,8 +10,11 @@ class SettingsCog(commands.Cog):
     def __init__(self, bot:commands.Bot):
         self.bot = bot
 
-    with open('resources/models.csv', encoding='utf-8') as csv_file:
-        model_data = list(csv.reader(csv_file, delimiter='|'))
+    # pulls from model_names list and makes some sort of dynamic list to bypass Discord 25 choices limit
+    def model_autocomplete():
+        return [
+            models for model in settings.global_var.model_names
+        ]
 
     @commands.slash_command(name = 'settings', description = 'Review and change server defaults')
     @option(
@@ -31,7 +34,7 @@ class SettingsCog(commands.Cog):
         str,
         description='Set default data model for image generation',
         required=False,
-        choices=[OptionChoice(name=row[0], value=row[1]) for row in model_data[1:]]
+        autocomplete=discord.utils.basic_autocomplete(model_autocomplete),
     )
     @option(
         'set_steps',
@@ -66,7 +69,7 @@ class SettingsCog(commands.Cog):
         str,
         description='Set default sampler for the server',
         required=False,
-        choices=['Euler a', 'Euler', 'LMS', 'Heun', 'DPM2', 'DPM2 a', 'DPM fast', 'DPM adaptive', 'LMS Karras', 'DPM2 Karras', 'DPM2 a Karras', 'DDIM', 'PLMS'],
+        choices=settings.global_var.sampler_names,
     )
     async def settings_handler(self, ctx,
                                current_settings: Optional[bool] = False,

@@ -1,9 +1,10 @@
 import csv
+import discord
 import json
 import os
 import requests
+import time
 from typing import Optional
-import discord
 
 self = discord.Bot()
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -27,6 +28,10 @@ class GlobalVar:
     embed_color = discord.Colour.from_rgb(222, 89, 28)
     username: Optional[str] = None
     password: Optional[str] = None
+    sampler_names = []
+    model_names = {}
+    style_names = {}
+    facefix_models = []
     copy_command: bool = False
     model_fn_index = 0
 
@@ -54,33 +59,7 @@ def get_env_var_with_default(var: str, default: str) -> str:
     ret = os.getenv(var)
     return ret if ret is not None else default
 
-def files_check():
-    #creating files if they don't exist
-    if os.path.isfile('resources/stats.txt'):
-        pass
-    else:
-        print(f'Uh oh, stats.txt missing. Creating a new one.')
-        with open('resources/stats.txt', 'w') as f:
-            f.write('0')
-
-    header = ['display_name', 'model_full_name']
-    unset_model = ['Default', '']
-    make_model_file = True
-    #if models.csv exists and has data, assume it's good to go
-    if os.path.isfile('resources/models.csv'):
-        with open('resources/models.csv', encoding='utf-8') as f:
-            reader = csv.reader(f)
-            for i, row in enumerate(reader):
-                if i == 1:
-                    make_model_file = False
-    #otherwise create/reformat it
-    if make_model_file:
-        print(f'Uh oh, missing models.csv data. Creating a new one.')
-        with open('resources/models.csv', 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f, delimiter = "|")
-            writer.writerow(header)
-            writer.writerow(unset_model)
-
+def startup_check():
     #check .env for parameters. if they don't exist, ignore it and go with defaults.
     global_var.url = get_env_var_with_default('URL', 'http://127.0.0.1:7860').rstrip("/")
     print(f'Using URL: {global_var.url}')
@@ -92,11 +71,96 @@ def files_check():
     global_var.password = os.getenv("PASS")
     global_var.copy_command = os.getenv("COPY") is not None
 
+    #check if Web UI is running
+    connected = False
+    while not connected:
+        try:
+            response = requests.get(global_var.url + '/sdapi/v1/cmd-flags')
+            if response.status_code == 404:
+                print('API is unreachable! Please check Web UI COMMANDLINE_ARGS for --api.')
+                os.system("pause")
+            return requests.head(global_var.url)
+        except(Exception,):
+            print(f'Waiting for Web UI at {global_var.url}...')
+            time.sleep(20)
+
+def files_check():
+    #creating files if they don't exist
+    if os.path.isfile('resources/stats.txt'):
+        pass
+    else:
+        print(f'Uh oh, stats.txt missing. Creating a new one.')
+        with open('resources/stats.txt', 'w') as f:
+            f.write('0')
+
+    header = ['display_name', 'model_full_name', 'activator_token']
+    unset_model = ['Default', '', '']
+    make_model_file = True
+    replace_model_file = False
+    #if models.csv exists and has data
+    if os.path.isfile('resources/models.csv'):
+        with open('resources/models.csv', encoding='utf-8') as f:
+            reader = csv.reader(f, delimiter="|")
+            for i, row in enumerate(reader):
+                #if header is missing columns, reformat the file
+                if i == 0:
+                    if len(row)<3:
+                        with open('resources/models.csv', 'r') as fp:
+                            reader = csv.DictReader(fp, fieldnames=header, delimiter = "|")
+                            with open('resources/models2.csv', 'w', newline='') as fh:
+                                writer = csv.DictWriter(fh, fieldnames=reader.fieldnames, delimiter = "|")
+                                writer.writeheader()
+                                header = next(reader)
+                                writer.writerows(reader)
+                                replace_model_file = True
+                #if first row has data, do nothing
+                if i == 1:
+                    make_model_file = False
+        if replace_model_file:
+            os.remove('resources/models.csv')
+            os.rename('resources/models2.csv', 'resources/models.csv')
+    #create/reformat model.csv if something is wrong
+    if make_model_file:
+        print(f'Uh oh, missing models.csv data. Creating a new one.')
+        with open('resources/models.csv', 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f, delimiter = "|")
+            writer.writerow(header)
+            writer.writerow(unset_model)
+
+    #get display_name:model_full_name pairs from models.csv into global variable
+    with open('resources/models.csv', encoding='utf-8') as csv_file:
+        model_data = list(csv.reader(csv_file, delimiter='|'))
+        for row in model_data[1:]:
+            global_var.model_names[row[0]] = row[1]
+
     #if directory in DIR doesn't exist, create it
     dir_exists = os.path.exists(global_var.dir)
     if dir_exists is False:
         print(f'The folder for DIR doesn\'t exist! Creating folder at {global_var.dir}.')
         os.mkdir(global_var.dir)
+
+    #pull list of samplers, styles and face restorers from api
+    with requests.Session() as s:
+        if global_var.username is not None:
+            login_payload = {
+                'username': global_var.username,
+                'password': global_var.password
+            }
+            s.post(global_var.url + '/login', data=login_payload)
+            r = s.get(global_var.url + "/sdapi/v1/samplers")
+            r2 = s.get(global_var.url + "/sdapi/v1/prompt-styles")
+            r3 = s.get(global_var.url + "/sdapi/v1/face-restorers")
+        else:
+            s.post(global_var.url + '/login')
+            r = s.get(global_var.url + "/sdapi/v1/samplers")
+            r2 = s.get(global_var.url + "/sdapi/v1/prompt-styles")
+            r3 = s.get(global_var.url + "/sdapi/v1/face-restorers")
+        for s1 in r.json():
+            global_var.sampler_names.append(s1['name'])
+        for s2 in r2.json():
+            global_var.style_names[s2['name']] = s2['prompt']
+        for s3 in r3.json():
+            global_var.facefix_models.append(s3['name'])
 
 def guilds_check(self):
     #guild settings files. has to be done after on_ready

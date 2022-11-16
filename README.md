@@ -4,6 +4,19 @@ A Discord bot interface for Stable Diffusion
 
 <img src=https://raw.githubusercontent.com/Kilvoctu/kilvoctu.github.io/master/pics/preview.png  width=50% height=50%>
 
+## Setup requirements
+
+- Set up [AUTOMATIC1111's Stable Diffusion AI Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui).
+  - AIYA is currently tested on commit `bb2e2c82ce886843f11339571f9a70d4c5f2a09d` of the Web UI.
+- Run the Web UI as local host with api (`COMMANDLINE_ARGS= --listen --api`).
+- Clone this repo.
+- Create a text file in your cloned repo called ".env", formatted like so:
+```dotenv
+# .env
+TOKEN = put your bot token here
+```
+- Run the AIYA by running launch.bat (or launch.sh for Linux)
+
 ## Usage
 
 To generate an image from text, use the /draw command and include your prompt as the query.
@@ -13,7 +26,7 @@ To generate an image from text, use the /draw command and include your prompt as
 ### Currently supported options
 
 - negative prompts
-- swap model/checkpoint (_see Notes_)
+- swap model/checkpoint (_see Notes or [wiki](https://github.com/Kilvoctu/aiyabot/wiki/Model-swapping)_)
 - sampling steps
 - height/width (up to 768)
 - CFG scale
@@ -22,6 +35,7 @@ To generate an image from text, use the /draw command and include your prompt as
 - img2img
 - denoising strength
 - batch count
+- Web UI styles
 - face restoration
 
 #### Bonus features
@@ -34,21 +48,6 @@ To generate an image from text, use the /draw command and include your prompt as
   - batch count / max batch count
 - /stats command - shows how many /draw commands have been used.
 - /tips command - basic tips for writing prompts.
-
-## Setup requirements
-
-- Set up [AUTOMATIC1111's Stable Diffusion AI Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui).
-  - AIYA is currently tested on commit `321e13ca176b256177c4a752d1f2bbee79b5532e` of the Web UI.
-- Run the Web UI as local host with api (`COMMANDLINE_ARGS= --listen --api`).
-- Clone this repo.
-- Create a text file in your cloned repo called ".env", formatted like so:
-
-```dotenv
-# .env
-TOKEN = put your bot token here
-```
-
-- Run the bot by running launch.bat
 
 ## Notes
 
@@ -65,14 +64,18 @@ DIR = set folder to save images, otherwise the default is \outputs
 
 USER = your username
 PASS = your password
-COPY = set to anything if you want the bot to output the command that was used to produce the image instead of the prompt
+COPY = set to anything to have the output show the command used to produce the image instead of the prompt
 ```
 - On first launch, AIYA will generate a models.csv with a default dummy value. If you'd like to add more models/checkpoints, replace the default value and add lines following the header format.
-  - Display name is anything you want. Full name is how it would appear in the Web UI. An example may look like:
+  - Display name is anything you want.
+  - Model full name is how it would appear in the Web UI.
+  - Activator token is any words a model may need to take effect. Can be blank (remember to add | separator at the end).
+  - An example may look like:
 ```
-display_name|model_full_name
-SD 1.5|v1-5-pruned-emaonly.ckpt [81761151]
-WD 1.3|wd-v1-3-float32.ckpt [4470c325]
+display_name|model_full_name|activator_token
+SD 1.5|v1-5-pruned-emaonly.ckpt [81761151]|
+WD 1.3|wd-v1-3-float32.ckpt [4470c325]|
+MoDi 1|moDi-v1-pruned.ckpt [ccf3615f]|Modern Disney style
 ```
 - In the Web UI, there is a setting named "Checkpoints to cache in RAM". If you have enough RAM, this value can be increased to speed up swapping.
 

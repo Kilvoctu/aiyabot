@@ -1,10 +1,10 @@
 import asyncio
+import discord
 import os
 import sys
-import discord
-from dotenv import load_dotenv
-from core.logging import get_logger
 from core import settings
+from core.logging import get_logger
+from dotenv import load_dotenv
 
 
 #start up initialization stuff
@@ -16,6 +16,7 @@ self.logger = get_logger(__name__)
 
 #load extensions
 # check files and global variables
+settings.startup_check()
 settings.files_check()
 settings.old_api_check()
 

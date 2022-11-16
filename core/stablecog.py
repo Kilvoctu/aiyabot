@@ -2,7 +2,6 @@ import base64
 import contextlib
 import csv
 import io
-import json
 import random
 import time
 import traceback
@@ -13,7 +12,6 @@ import discord
 import requests
 from PIL import Image, PngImagePlugin
 from discord import option
-from discord.commands import OptionChoice
 from discord.ext import commands
 
 from core import queuehandler
@@ -22,13 +20,22 @@ from core import upscalecog
 
 
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
+    ctx_parse = discord.ApplicationContext
     def __init__(self, bot):
         self.wait_message = []
         self.bot = bot
         self.send_model = False
 
-    with open('resources/models.csv', encoding='utf-8') as csv_file:
-        model_data = list(csv.reader(csv_file, delimiter='|'))
+    #pulls from model_names list and makes some sort of dynamic list to bypass Discord 25 choices limit
+    def model_autocomplete(self: discord.AutocompleteContext):
+        return [
+            model for model in settings.global_var.model_names
+        ]
+    #and for styles
+    def style_autocomplete(self: discord.AutocompleteContext):
+        return [
+            style for style in settings.global_var.style_names
+        ]
 
     @commands.slash_command(name = 'draw', description = 'Create an image')
     @option(
@@ -48,7 +55,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         str,
         description='Select the data model for image generation',
         required=False,
-        choices=[OptionChoice(name=row[0], value=row[1]) for row in model_data[1:]]
+        autocomplete=discord.utils.basic_autocomplete(model_autocomplete),
     )
     @option(
         'steps',
@@ -82,7 +89,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         str,
         description='The sampler to use for generation. Default: Euler a',
         required=False,
-        choices=['Euler a', 'Euler', 'LMS', 'Heun', 'DPM2', 'DPM2 a', 'DPM fast', 'DPM adaptive', 'LMS Karras', 'DPM2 Karras', 'DPM2 a Karras', 'DDIM', 'PLMS'],
+        choices=settings.global_var.sampler_names,
     )
     @option(
         'seed',
@@ -114,10 +121,18 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         required=False,
     )
     @option(
+        'style',
+        str,
+        description='Apply a predefined style to the generation.',
+        required=False,
+        autocomplete=discord.utils.basic_autocomplete(style_autocomplete),
+    )
+    @option(
         'facefix',
-        bool,
+        str,
         description='Tries to improve faces in pictures.',
         required=False,
+        choices=settings.global_var.facefix_models,
     )
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
                             prompt: str, negative_prompt: str = 'unset',
@@ -131,7 +146,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             init_image: Optional[discord.Attachment] = None,
                             init_url: Optional[str],
                             count: Optional[int] = None,
-                            facefix: Optional[bool] = False):
+                            style: Optional[str] = 'None',
+                            facefix: Optional[str] = 'None'):
 
         #update defaults with any new defaults from settingscog
         guild = '% s' % ctx.guild_id
@@ -144,7 +160,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if sampler == 'unset':
             sampler = settings.read(guild)['sampler']
 
-        # if a model is not selected, do nothing
+        #if a model is not selected, do nothing
         model_name = 'Default'
         if data_model is None:
             data_model = settings.read(guild)['data_model']
@@ -153,17 +169,23 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         else:
             self.send_model = True
 
-        # get the selected model's display name
+        simple_prompt = prompt
+        #take selected data_model and get model_name, then update data_model with the full name
         with open('resources/models.csv', 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter='|')
             for row in reader:
-                if row['model_full_name'] == data_model:
+                if row['display_name'] == data_model:
                     model_name = row['display_name']
+                    data_model = row['model_full_name']
+                    #look at the model for activator token and prepend prompt with it
+                    prompt = row['activator_token'] + " " + prompt
+                    #if there's no activator token, remove the extra blank space
+                    prompt = prompt.lstrip(' ')
 
         if not self.send_model:
             print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
         else:
-            print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt} -- Using model: {data_model}.')
+            print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt} -- Using model: {data_model}')
 
         if seed == -1: seed = random.randint(0, 0xFFFFFFFF)
 
@@ -215,18 +237,22 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 count = max_count
                 append_options = append_options + '\nExceeded maximum of ``' + str(count) + '`` images! This is the best I can do...'
             append_options = append_options + '\nCount: ``' + str(count) + '``'
-        if facefix:
+        if style != 'None':
+            append_options = append_options + '\nStyle: ``' + str(style) + '``'
+        if facefix != 'None':
             append_options = append_options + '\nFace restoration: ``' + str(facefix) + '``'
 
         #log the command
-        copy_command = f'/draw prompt:{prompt} steps:{steps} height:{str(height)} width:{width} guidance_scale:{guidance_scale} sampler:{sampler} seed:{seed} count:{count}'
+        copy_command = f'/draw prompt:{simple_prompt} steps:{steps} height:{str(height)} width:{width} guidance_scale:{guidance_scale} sampler:{sampler} seed:{seed} count:{count}'
         if negative_prompt != '':
             copy_command = copy_command + f' negative_prompt:{negative_prompt}'
         if data_model:
             copy_command = copy_command + f' data_model:{model_name}'
         if init_image:
             copy_command = copy_command + f' strength:{strength} init_url:{init_image.url}'
-        if facefix:
+        if style != 'None':
+            copy_command = copy_command + f' style:{style}'
+        if facefix != 'None':
             copy_command = copy_command + f' facefix:{facefix}'
         print(copy_command)
 
@@ -240,11 +266,11 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             if user_already_in_queue:
                 await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
             else:
-                queuehandler.GlobalQueue.draw_queue.append(queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, facefix))
-                await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_queue, queuehandler.GlobalQueue.upscale_queue))}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
+                queuehandler.GlobalQueue.draw_queue.append(queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, style, facefix, simple_prompt))
+                await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_queue, queuehandler.GlobalQueue.upscale_queue))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
         else:
-            await queuehandler.process_dream(self, queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, facefix))
-            await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_queue, queuehandler.GlobalQueue.upscale_queue))}`` - ``{prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
+            await queuehandler.process_dream(self, queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, style, facefix, simple_prompt))
+            await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_queue, queuehandler.GlobalQueue.upscale_queue))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
 
     #generate the image
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.DrawObject):
@@ -270,7 +296,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 "seed_resize_from_h": 0,
                 "seed_resize_from_w": 0,
                 "denoising_strength": None,
-                "n_iter": queue_object.batch_count
+                "n_iter": queue_object.batch_count,
+                "styles": [
+                    queue_object.style
+                ]
             }
             if queue_object.init_image is not None:
                 image = base64.b64encode(requests.get(queue_object.init_image.url, stream=True).content).decode('utf-8')
@@ -281,9 +310,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     "denoising_strength": queue_object.strength
                 }
                 payload.update(img_payload)
-            if queue_object.facefix:
+            if queue_object.facefix != 'None':
                 facefix_payload = {
-                    "restore_faces": True
+                    "restore_faces": True,
+                    "override_settings": {
+                        "face_restoration_model": queue_object.facefix
+                    }
                 }
                 payload.update(facefix_payload)
 
@@ -308,9 +340,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             response_data = response.json()
             end_time = time.time()
 
-            #grab png info
-            load_r = json.loads(response_data['info'])
-            meta = load_r["infotexts"][0]
             #create safe/sanitized filename
             keep_chars = (' ', '.', '_')
             file_name = "".join(c for c in queue_object.prompt if c.isalnum() or c in keep_chars).rstrip()
@@ -321,9 +350,15 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 image = Image.open(io.BytesIO(base64.b64decode(image_base64.split(",",1)[0])))
                 pil_images.append(image)
 
+                #grab png info
+                png_payload = {
+                    "image": "data:image/png;base64," + image_base64
+                }
+                png_response = requests.post(url=f'{settings.global_var.url}/sdapi/v1/png-info', json=png_payload)
+
                 metadata = PngImagePlugin.PngInfo()
                 epoch_time = int(time.time())
-                metadata.add_text("parameters", meta)
+                metadata.add_text("parameters", png_response.json().get("info"))
                 file_path = f'{settings.global_var.dir}/{epoch_time}-{queue_object.seed}-{file_name[0:120]}-{i}.png'
                 image.save(file_path, pnginfo=metadata)
                 print(f'Saved image: {file_path}')
@@ -337,7 +372,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
                 image_count = len(pil_images)
                 noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
-                value = queue_object.copy_command if settings.global_var.copy_command else queue_object.prompt
+                value = queue_object.copy_command if settings.global_var.copy_command else queue_object.simple_prompt
                 embed.add_field(name=f'My {noun_descriptor} of', value=f'``{value}``', inline=False)
 
                 embed.add_field(name='took me', value='``{0:.3f}`` seconds'.format(end_time-start_time), inline=False)
