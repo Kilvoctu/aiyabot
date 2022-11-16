@@ -24,11 +24,27 @@ class DrawObject:
         self.facefix = facefix
         self.simple_prompt = simple_prompt
 
+#the queue object for extras - upscale
+class UpscaleObject:
+    def __init__(self, ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength):
+        self.ctx = ctx
+        self.resize = resize
+        self.init_image = init_image
+        self.upscaler_1 = upscaler_1
+        self.upscaler_2 = upscaler_2
+        self.upscaler_2_strength = upscaler_2_strength
+
 #any command that needs to wait on processing should use the dream thread
 class GlobalQueue:
     dream_thread = Thread()
     event_loop = asyncio.get_event_loop()
-    queue = []
+    master_queue = []
+    draw_queue = []
+    upscale_queue = []
+#this creates the master queue that oversees all queues
+def union(list_1, list_2):
+    master_queue = list_1 + list_2
+    return master_queue
 async def process_dream(self, queue_object):
     GlobalQueue.dream_thread = Thread(target=self.dream,
                                args=(GlobalQueue.event_loop, queue_object))
