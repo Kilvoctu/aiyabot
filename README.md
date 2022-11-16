@@ -37,7 +37,6 @@ To generate an image from text, use the /draw command and include your prompt as
 - batch count
 - Web UI styles
 - face restoration
-- upscaler
 
 #### Bonus features
 
@@ -47,8 +46,10 @@ To generate an image from text, use the /draw command and include your prompt as
   - sampling steps / max steps
   - sampling method
   - batch count / max batch count
+- /identify command - create a caption for your image.
 - /stats command - shows how many /draw commands have been used.
 - /tips command - basic tips for writing prompts.
+- /upscale command - resize your image.
 
 ## Notes
 

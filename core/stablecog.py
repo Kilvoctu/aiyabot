@@ -17,6 +17,7 @@ from discord.ext import commands
 from core import queuehandler
 from core import settings
 from core import upscalecog
+from core import identifycog
 
 
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
@@ -259,18 +260,18 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         #setup the queue
         if queuehandler.GlobalQueue.dream_thread.is_alive():
             user_already_in_queue = False
-            for queue_object in queuehandler.union(queuehandler.GlobalQueue.draw_queue, queuehandler.GlobalQueue.upscale_queue):
+            for queue_object in queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q):
                 if queue_object.ctx.author.id == ctx.author.id:
                     user_already_in_queue = True
                     break
             if user_already_in_queue:
                 await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
             else:
-                queuehandler.GlobalQueue.draw_queue.append(queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, style, facefix, simple_prompt))
-                await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_queue, queuehandler.GlobalQueue.upscale_queue))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
+                queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, style, facefix, simple_prompt))
+                await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
         else:
             await queuehandler.process_dream(self, queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, style, facefix, simple_prompt))
-            await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_queue, queuehandler.GlobalQueue.upscale_queue))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
+            await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
 
     #generate the image
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.DrawObject):
@@ -393,11 +394,15 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}',
                                   color=settings.global_var.embed_color)
             event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
-        if queuehandler.GlobalQueue.draw_queue:
-            event_loop.create_task(queuehandler.process_dream(self, queuehandler.GlobalQueue.draw_queue.pop(0)))
-        if queuehandler.GlobalQueue.upscale_queue:
+        #check each queue for any remaining tasks
+        if queuehandler.GlobalQueue.draw_q:
+            event_loop.create_task(queuehandler.process_dream(self, queuehandler.GlobalQueue.draw_q.pop(0)))
+        if queuehandler.GlobalQueue.upscale_q:
             upscale_dream = upscalecog.UpscaleCog(self)
-            event_loop.create_task(queuehandler.process_dream(upscale_dream, queuehandler.GlobalQueue.upscale_queue.pop(0)))
+            event_loop.create_task(queuehandler.process_dream(upscale_dream, queuehandler.GlobalQueue.upscale_q.pop(0)))
+        if queuehandler.GlobalQueue.identify_q:
+            identify_dream = identifycog.IdentifyCog(self)
+            event_loop.create_task(queuehandler.process_dream(identify_dream, queuehandler.GlobalQueue.identify_q.pop(0)))
 
 def setup(bot):
     bot.add_cog(StableCog(bot))
