@@ -34,7 +34,7 @@ class UpscaleObject:
         self.upscaler_2 = upscaler_2
         self.upscaler_2_strength = upscaler_2_strength
 
-#the queue object for extras - upscale
+#the queue object for identify (interrogate)
 class IdentifyObject:
     def __init__(self, ctx, init_image):
         self.ctx = ctx
