@@ -61,10 +61,10 @@ class IdentifyCog(commands.Cog):
                     await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
                 else:
                     queuehandler.GlobalQueue.identify_q.append(queuehandler.IdentifyObject(ctx, init_image))
-                    await ctx.send_response(f'<@{ctx.author.id}>, I\'m identifying the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``')
+                    await ctx.send_response(f'<@{ctx.author.id}>, I\'m identifying the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``', delete_after=45.0)
             else:
                 await queuehandler.process_dream(self, queuehandler.IdentifyObject(ctx, init_image))
-                await ctx.send_response(f'<@{ctx.author.id}>, I\'m identifying the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``')
+                await ctx.send_response(f'<@{ctx.author.id}>, I\'m identifying the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``', delete_after=45.0)
 
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.IdentifyObject):
         try:
@@ -93,6 +93,12 @@ class IdentifyCog(commands.Cog):
             embed.set_image(url=queue_object.init_image.url)
             embed.colour = settings.global_var.embed_color
             embed.add_field(name=f'I think this is', value=f'``{response_data.get("caption")}``', inline=False)
+
+            footer_args = dict(text=f'{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}')
+            if queue_object.ctx.author.avatar is not None:
+                footer_args['icon_url'] = queue_object.ctx.author.avatar.url
+            embed.set_footer(**footer_args)
+
             event_loop.create_task(
                 queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>', embed=embed))
 
