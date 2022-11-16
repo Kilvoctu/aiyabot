@@ -38,6 +38,7 @@ To generate an image from text, use the /draw command and include your prompt as
 - Web UI styles
 - face restoration
 - upscaler
+- identify (create a caption for your image)
 
 #### Bonus features
 

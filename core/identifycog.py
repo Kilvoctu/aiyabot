@@ -2,11 +2,15 @@ import base64
 import traceback
 import discord
 import requests
+from asyncio import AbstractEventLoop
 from discord import option
 from discord.ext import commands
 from typing import Optional
 
+from core import queuehandler
 from core import settings
+from core import stablecog
+from core import upscalecog
 
 
 class IdentifyCog(commands.Cog):
@@ -45,42 +49,66 @@ class IdentifyCog(commands.Cog):
                 await ctx.send_response('I need an image to identify!', ephemeral=True)
                 has_image = False
 
+        #set up the queue if an image was found
         if has_image:
-            try:
-                first_embed = discord.Embed(title='Identifying')
-                first_embed.colour = settings.global_var.embed_color
-                await ctx.send_response(embed=first_embed)
-                #construct a payload
-                image = base64.b64encode(requests.get(init_image.url, stream=True).content).decode('utf-8')
-                payload = {
-                    "image": 'data:image/png;base64,' + image
-                }
+            if queuehandler.GlobalQueue.dream_thread.is_alive():
+                user_already_in_queue = False
+                for queue_object in queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q):
+                    if queue_object.ctx.author.id == ctx.author.id:
+                        user_already_in_queue = True
+                        break
+                if user_already_in_queue:
+                    await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
+                else:
+                    queuehandler.GlobalQueue.identify_q.append(queuehandler.IdentifyObject(ctx, init_image))
+                    await ctx.send_response(f'<@{ctx.author.id}>, I\'m identifying the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``')
+            else:
+                await queuehandler.process_dream(self, queuehandler.IdentifyObject(ctx, init_image))
+                await ctx.send_response(f'<@{ctx.author.id}>, I\'m identifying the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``')
 
-                #send normal payload to webui
-                with requests.Session() as s:
-                    if settings.global_var.username is not None:
-                        login_payload = {
-                        'username': settings.global_var.username,
-                        'password': settings.global_var.password
-                        }
-                        s.post(settings.global_var.url + '/login', data=login_payload)
-                    else:
-                        s.post(settings.global_var.url + '/login')
+    def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.IdentifyObject):
+        try:
+            #construct a payload
+            image = base64.b64encode(requests.get(queue_object.init_image.url, stream=True).content).decode('utf-8')
+            payload = {
+                "image": 'data:image/png;base64,' + image
+            }
 
-                    response = s.post(url=f'{settings.global_var.url}/sdapi/v1/interrogate', json=payload)
-                response_data = response.json()
+            #send normal payload to webui
+            with requests.Session() as s:
+                if settings.global_var.username is not None:
+                    login_payload = {
+                    'username': settings.global_var.username,
+                    'password': settings.global_var.password
+                    }
+                    s.post(settings.global_var.url + '/login', data=login_payload)
+                else:
+                    s.post(settings.global_var.url + '/login')
 
-                # post to discord
-                new_embed = discord.Embed()
-                new_embed.set_image(url=init_image.url)
-                new_embed.colour = settings.global_var.embed_color
-                new_embed.add_field(name=f'I think this is', value=f'``{response_data.get("caption")}``', inline=False)
-                await ctx.edit(embed=new_embed)
+                response = s.post(url=f'{settings.global_var.url}/sdapi/v1/interrogate', json=payload)
+            response_data = response.json()
 
-            except Exception as e:
-                embed = discord.Embed(title='identify failed', description=f'{e}\n{traceback.print_exc()}',
-                                      color=settings.global_var.embed_color)
-                await ctx.channel.send(embed=embed)
+            # post to discord
+            embed = discord.Embed()
+            embed.set_image(url=queue_object.init_image.url)
+            embed.colour = settings.global_var.embed_color
+            embed.add_field(name=f'I think this is', value=f'``{response_data.get("caption")}``', inline=False)
+            event_loop.create_task(
+                queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>', embed=embed))
+
+        except Exception as e:
+            embed = discord.Embed(title='identify failed', description=f'{e}\n{traceback.print_exc()}',
+                                  color=settings.global_var.embed_color)
+            event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
+        #check each queue for any remaining tasks
+        if queuehandler.GlobalQueue.draw_q:
+            draw_dream = stablecog.StableCog(self)
+            event_loop.create_task(queuehandler.process_dream(draw_dream, queuehandler.GlobalQueue.draw_q.pop(0)))
+        if queuehandler.GlobalQueue.upscale_q:
+            upscale_dream = upscalecog.UpscaleCog(self)
+            event_loop.create_task(queuehandler.process_dream(upscale_dream, queuehandler.GlobalQueue.upscale_q.pop(0)))
+        if queuehandler.GlobalQueue.identify_q:
+            event_loop.create_task(queuehandler.process_dream(self, queuehandler.GlobalQueue.identify_q.pop(0)))
 
 def setup(bot):
     bot.add_cog(IdentifyCog(bot))
