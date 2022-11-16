@@ -36,7 +36,13 @@ class UpscaleObject:
 class GlobalQueue:
     dream_thread = Thread()
     event_loop = asyncio.get_event_loop()
-    queue = []
+    master_queue = []
+    draw_queue = []
+    upscale_queue = []
+#this creates the master queue that oversees all queues
+def union(list_1, list_2):
+    master_queue = list_1 + list_2
+    return master_queue
 async def process_dream(self, queue_object):
     GlobalQueue.dream_thread = Thread(target=self.dream,
                                args=(GlobalQueue.event_loop, queue_object))

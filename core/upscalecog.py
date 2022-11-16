@@ -14,9 +14,9 @@ from os.path import splitext, basename
 from PIL import Image
 from urllib.parse import urlparse
 
-
 from core import queuehandler
 from core import settings
+from core import stablecog
 
 
 class UpscaleCog(commands.Cog):
@@ -111,18 +111,18 @@ class UpscaleCog(commands.Cog):
         if has_image:
             if queuehandler.GlobalQueue.dream_thread.is_alive():
                 user_already_in_queue = False
-                for queue_object in queuehandler.GlobalQueue.queue:
+                for queue_object in queuehandler.union(queuehandler.GlobalQueue.draw_queue, queuehandler.GlobalQueue.upscale_queue):
                     if queue_object.ctx.author.id == ctx.author.id:
                         user_already_in_queue = True
                         break
                 if user_already_in_queue:
                     await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
                 else:
-                    queuehandler.GlobalQueue.queue.append(queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength))
-                    await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{append_options}')
+                    queuehandler.GlobalQueue.upscale_queue.append(queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength))
+                    await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_queue, queuehandler.GlobalQueue.upscale_queue))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{append_options}')
             else:
                 await queuehandler.process_dream(self, queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength))
-                await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{append_options}')
+                await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_queue, queuehandler.GlobalQueue.upscale_queue))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{append_options}')
 
     #generate the image
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.UpscaleObject):
@@ -191,8 +191,11 @@ class UpscaleCog(commands.Cog):
             embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}',
                                   color=settings.global_var.embed_color)
             event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
-        if queuehandler.GlobalQueue.queue:
-            event_loop.create_task(queuehandler.process_dream(self, queuehandler.GlobalQueue.queue.pop(0)))
+        if queuehandler.GlobalQueue.draw_queue:
+            draw_dream = stablecog.StableCog(self)
+            event_loop.create_task(queuehandler.process_dream(draw_dream, queuehandler.GlobalQueue.draw_queue.pop(0)))
+        if queuehandler.GlobalQueue.upscale_queue:
+            event_loop.create_task(queuehandler.process_dream(self, queuehandler.GlobalQueue.upscale_queue.pop(0)))
 
 def setup(bot):
     bot.add_cog(UpscaleCog(bot))
