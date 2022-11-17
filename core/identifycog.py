@@ -13,6 +13,7 @@ from core import stablecog
 from core import upscalecog
 
 
+#creating the view that holds the buttons for /identify output
 class MyView(discord.ui.View):
     def __init__(self, user):
         super().__init__(timeout=None)
