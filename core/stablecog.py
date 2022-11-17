@@ -13,71 +13,11 @@ from discord import option
 from discord.ext import commands
 from typing import Optional
 
-from core import identifycog
 from core import queuehandler
+from core import viewhandler
 from core import settings
 from core import upscalecog
-
-
-#creating the view that holds the buttons for /draw output
-class MyView(discord.ui.View):
-    def __init__(self, input_tuple):
-        super().__init__(timeout=None)
-        self.input_tuple = input_tuple
-
-    @discord.ui.button(
-        custom_id="button_reroll", emoji="🎲")
-    async def button_callback(self, button, interaction):
-        try:
-            #check if the /draw output is from the person who requested it
-            if self.message.embeds[0].footer.text == f'{interaction.user.name}#{interaction.user.discriminator}':
-                #update the tuple with a new seed
-                new_seed = list(self.input_tuple)
-                new_seed[9] = random.randint(0, 0xFFFFFFFF)
-                self.input_tuple = tuple(new_seed)
-
-                #set up the draw dream and do queue code again for lack of a more elegant solution
-                draw_dream = StableCog(self)
-                if queuehandler.GlobalQueue.dream_thread.is_alive():
-                    user_already_in_queue = False
-                    for queue_object in queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q):
-                        if queue_object.ctx.author.id == interaction.user.id:
-                            user_already_in_queue = True
-                            break
-                    if user_already_in_queue:
-                        await interaction.response.send_message(content=f"Please wait! You're queued up.", ephemeral=True)
-                    else:
-                        button.disabled = True
-                        await interaction.response.edit_message(view=self)
-                        queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(*self.input_tuple, MyView(self.input_tuple)))
-                        await interaction.followup.send(f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{new_seed[16]}``\nNew seed:``{new_seed[9]}``')
-                else:
-                    button.disabled = True
-                    await interaction.response.edit_message(view=self)
-                    await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(*self.input_tuple, MyView(self.input_tuple)))
-                    await interaction.followup.send(f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{new_seed[16]}``\nNew Seed:``{new_seed[9]}``')
-            else:
-                await interaction.response.send_message("You can't use other people's buttons!", ephemeral=True)
-        except:
-            #if interaction fails, assume it's because aiya restarted (breaks buttons)
-            button.disabled = True
-            await interaction.response.edit_message(view=self)
-            await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
-
-    #the button to delete generated images
-    @discord.ui.button(
-        custom_id="button_x",
-        emoji="❌")
-    async def delete(self, button, interaction):
-        try:
-            if self.message.embeds[0].footer.text == f'{interaction.user.name}#{interaction.user.discriminator}':
-                await interaction.message.delete()
-            else:
-                await interaction.response.send_message("You can't delete other people's images!", ephemeral=True)
-        except:
-                button.disabled = True
-                await interaction.response.edit_message(view=self)
-                await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
+from core import identifycog
 
 
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
@@ -89,7 +29,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
     @commands.Cog.listener()
     async def on_ready(self):
-        self.bot.add_view(MyView(self))
+        self.bot.add_view(viewhandler.DrawView(self))
 
     #pulls from model_names list and makes some sort of dynamic list to bypass Discord 25 choices limit
     def model_autocomplete(self: discord.AutocompleteContext):
@@ -323,7 +263,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
         #set up tuple of parameters to pass into the Discord view
         input_tuple = (ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, style, facefix, simple_prompt)
-        view = MyView(input_tuple)
+        view = viewhandler.DrawView(input_tuple)
         #setup the queue
         if queuehandler.GlobalQueue.dream_thread.is_alive():
             user_already_in_queue = False

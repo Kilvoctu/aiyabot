@@ -8,25 +8,11 @@ from discord.ext import commands
 from typing import Optional
 
 from core import queuehandler
+from core import viewhandler
 from core import settings
 from core import stablecog
 from core import upscalecog
 
-
-#creating the view that holds the buttons for /identify output
-class MyView(discord.ui.View):
-    def __init__(self, user):
-        super().__init__(timeout=None)
-        self.user = user
-
-    @discord.ui.button(
-        custom_id="button_x",
-        emoji="❌")
-    async def delete(self, button, interaction):
-        if interaction.user.id == self.user:
-            await interaction.message.delete()
-        else:
-            await interaction.response.send_message("You can't delete other people's images!", ephemeral=True)
 
 class IdentifyCog(commands.Cog):
     def __init__(self, bot):
@@ -64,7 +50,7 @@ class IdentifyCog(commands.Cog):
                 await ctx.send_response('I need an image to identify!', ephemeral=True)
                 has_image = False
 
-        view = MyView(ctx.author.id)
+        view = viewhandler.DeleteView(ctx.author.id)
         #set up the queue if an image was found
         if has_image:
             if queuehandler.GlobalQueue.dream_thread.is_alive():
