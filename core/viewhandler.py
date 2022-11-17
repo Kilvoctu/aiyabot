@@ -11,7 +11,8 @@ class DrawView(discord.ui.View):
         self.input_tuple = input_tuple
 
     @discord.ui.button(
-        custom_id="button_reroll", emoji="🎲")
+        custom_id="button_re-roll",
+        emoji="🎲")
     async def button_callback(self, button, interaction):
         try:
             #check if the /draw output is from the person who requested it
@@ -25,7 +26,9 @@ class DrawView(discord.ui.View):
                 draw_dream = stablecog.StableCog(self)
                 if queuehandler.GlobalQueue.dream_thread.is_alive():
                     user_already_in_queue = False
-                    for queue_object in queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q):
+                    for queue_object in queuehandler.union(queuehandler.GlobalQueue.draw_q,
+                                                           queuehandler.GlobalQueue.upscale_q,
+                                                           queuehandler.GlobalQueue.identify_q):
                         if queue_object.ctx.author.id == interaction.user.id:
                             user_already_in_queue = True
                             break
@@ -34,16 +37,20 @@ class DrawView(discord.ui.View):
                     else:
                         button.disabled = True
                         await interaction.response.edit_message(view=self)
-                        queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(*self.input_tuple, DrawView(self.input_tuple)))
-                        await interaction.followup.send(f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{new_seed[16]}``\nNew seed:``{new_seed[9]}``')
+                        queuehandler.GlobalQueue.draw_q.append(
+                            queuehandler.DrawObject(*self.input_tuple, DrawView(self.input_tuple)))
+                        await interaction.followup.send(
+                            f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{new_seed[16]}``\nNew seed:``{new_seed[9]}``')
                 else:
                     button.disabled = True
                     await interaction.response.edit_message(view=self)
-                    await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(*self.input_tuple, DrawView(self.input_tuple)))
-                    await interaction.followup.send(f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{new_seed[16]}``\nNew Seed:``{new_seed[9]}``')
+                    await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(*self.input_tuple,
+                                                                                         DrawView(self.input_tuple)))
+                    await interaction.followup.send(
+                        f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{new_seed[16]}``\nNew Seed:``{new_seed[9]}``')
             else:
                 await interaction.response.send_message("You can't use other people's buttons!", ephemeral=True)
-        except:
+        except(Exception,):
             #if interaction fails, assume it's because aiya restarted (breaks buttons)
             button.disabled = True
             await interaction.response.edit_message(view=self)
@@ -59,7 +66,7 @@ class DrawView(discord.ui.View):
                 await interaction.message.delete()
             else:
                 await interaction.response.send_message("You can't delete other people's images!", ephemeral=True)
-        except:
+        except(Exception,):
                 button.disabled = True
                 await interaction.response.edit_message(view=self)
                 await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
@@ -76,6 +83,7 @@ class DeleteView(discord.ui.View):
         emoji="❌")
     async def delete(self, button, interaction):
         if interaction.user.id == self.user:
+            button.disabled = True
             await interaction.message.delete()
         else:
             await interaction.response.send_message("You can't delete other people's images!", ephemeral=True)
