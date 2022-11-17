@@ -13,6 +13,20 @@ from core import stablecog
 from core import upscalecog
 
 
+class MyView(discord.ui.View):
+    def __init__(self, user):
+        super().__init__(timeout=None)
+        self.user = user
+
+    @discord.ui.button(
+        custom_id="button_x",
+        emoji="❌")
+    async def delete(self, button, interaction):
+        if interaction.user.id == self.user:
+            await interaction.message.delete()
+        else:
+            await interaction.response.send_message("You can't delete other people's images!", ephemeral=True)
+
 class IdentifyCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -49,6 +63,7 @@ class IdentifyCog(commands.Cog):
                 await ctx.send_response('I need an image to identify!', ephemeral=True)
                 has_image = False
 
+        view = MyView(ctx.author.id)
         #set up the queue if an image was found
         if has_image:
             if queuehandler.GlobalQueue.dream_thread.is_alive():
@@ -60,10 +75,10 @@ class IdentifyCog(commands.Cog):
                 if user_already_in_queue:
                     await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
                 else:
-                    queuehandler.GlobalQueue.identify_q.append(queuehandler.IdentifyObject(ctx, init_image))
+                    queuehandler.GlobalQueue.identify_q.append(queuehandler.IdentifyObject(ctx, init_image, view))
                     await ctx.send_response(f'<@{ctx.author.id}>, I\'m identifying the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``', delete_after=45.0)
             else:
-                await queuehandler.process_dream(self, queuehandler.IdentifyObject(ctx, init_image))
+                await queuehandler.process_dream(self, queuehandler.IdentifyObject(ctx, init_image, view))
                 await ctx.send_response(f'<@{ctx.author.id}>, I\'m identifying the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``', delete_after=45.0)
 
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.IdentifyObject):
@@ -100,7 +115,7 @@ class IdentifyCog(commands.Cog):
             embed.set_footer(**footer_args)
 
             event_loop.create_task(
-                queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>', embed=embed))
+                queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>', embed=embed, view=queue_object.view))
 
         except Exception as e:
             embed = discord.Embed(title='identify failed', description=f'{e}\n{traceback.print_exc()}',
