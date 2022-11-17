@@ -11,9 +11,9 @@ class SettingsCog(commands.Cog):
         self.bot = bot
 
     # pulls from model_names list and makes some sort of dynamic list to bypass Discord 25 choices limit
-    def model_autocomplete():
+    def model_autocomplete(self: discord.AutocompleteContext):
         return [
-            models for model in settings.global_var.model_names
+            model for model in settings.global_var.model_names
         ]
 
     @commands.slash_command(name = 'settings', description = 'Review and change server defaults')
