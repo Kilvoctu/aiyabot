@@ -79,6 +79,7 @@ class MyView(discord.ui.View):
                 await interaction.response.edit_message(view=self)
                 await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
 
+
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
     ctx_parse = discord.ApplicationContext
     def __init__(self, bot):
@@ -320,6 +321,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             copy_command = copy_command + f' facefix:{facefix}'
         print(copy_command)
 
+        #set up tuple of parameters to pass into the Discord view
         input_tuple = (ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, style, facefix, simple_prompt)
         view = MyView(input_tuple)
         #setup the queue
