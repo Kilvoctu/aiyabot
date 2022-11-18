@@ -85,7 +85,7 @@ class DrawView(discord.ui.View):
         #simpler variable name
         rev = self.input_tuple
         try:
-            #the tuple will show the model_full_name. Get the associated display_name and activator_token from it
+            #the tuple will show the model_full_name. Get the associated display_name and activator_token from it.
             with open('resources/models.csv', 'r', encoding='utf-8') as f:
                 reader = csv.DictReader(f, delimiter='|')
                 for row in reader:
@@ -110,14 +110,15 @@ class DrawView(discord.ui.View):
             embed.add_field(name=f'Classifier-free guidance scale', value=f'``{rev[7]}``', inline=False)
             embed.add_field(name=f'Sampling method', value=f'``{rev[8]}``', inline=False)
             embed.add_field(name=f'Seed', value=f'``{rev[9]}``', inline=False)
-            if rev[15]:
+            if rev[11]:
                 #not interested in adding embed fields for strength and init_image
                 copy_command = copy_command + f' strength:{rev[10]} init_url:{rev[11]}'
-            if rev[14] != 'None':
-                #will add embed field for below later on, maybe
+            if rev[13] != 'None':
                 copy_command = copy_command + f' style:{rev[13]}'
-            if rev[15] != 'None':
+                embed.add_field(name=f'Style preset', value=f'``{rev[13]}``', inline=False)
+            if rev[14] != 'None':
                 copy_command = copy_command + f' facefix:{rev[14]}'
+                embed.add_field(name=f'Face restoration model', value=f'``{rev[14]}``', inline=False)
             embed.add_field(name=f'Command for copying', value=f'``{copy_command}``', inline=False)
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
