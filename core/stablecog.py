@@ -70,16 +70,16 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         required=False,
     )
     @option(
-        'height',
+        'width',
         int,
-        description='Height of the generated image. Default: 512',
+        description='Width of the generated image. Default: 512',
         required=False,
         choices = [x for x in range(192, 832, 64)]
     )
     @option(
-        'width',
+        'height',
         int,
-        description='Width of the generated image. Default: 512',
+        description='Height of the generated image. Default: 512',
         required=False,
         choices = [x for x in range(192, 832, 64)]
     )
@@ -143,7 +143,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             prompt: str, negative_prompt: str = 'unset',
                             data_model: Optional[str] = None,
                             steps: Optional[int] = -1,
-                            height: Optional[int] = 512, width: Optional[int] = 512,
+                            width: Optional[int] = 512, height: Optional[int] = 512,
                             guidance_scale: Optional[float] = 7.0,
                             sampler: Optional[str] = 'unset',
                             seed: Optional[int] = -1,
@@ -225,10 +225,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             append_options = append_options + '\nModel: ``' + str(model_name) + '``'
         if negative_prompt != '':
             append_options = append_options + '\nNegative Prompt: ``' + str(negative_prompt) + '``'
-        if height != 512:
-            append_options = append_options + '\nHeight: ``' + str(height) + '``'
         if width != 512:
             append_options = append_options + '\nWidth: ``' + str(width) + '``'
+        if height != 512:
+            append_options = append_options + '\nHeight: ``' + str(height) + '``'
         if guidance_scale != 7.0:
             append_options = append_options + '\nGuidance Scale: ``' + str(guidance_scale) + '``'
         if sampler != 'Euler a':
@@ -247,22 +247,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if facefix != 'None':
             append_options = append_options + '\nFace restoration: ``' + str(facefix) + '``'
 
-        #log the command
-        copy_command = f'/draw prompt:{simple_prompt} steps:{steps} height:{str(height)} width:{width} guidance_scale:{guidance_scale} sampler:{sampler} seed:{seed} count:{count}'
-        if negative_prompt != '':
-            copy_command = copy_command + f' negative_prompt:{negative_prompt}'
-        if data_model:
-            copy_command = copy_command + f' data_model:{model_name}'
-        if init_image:
-            copy_command = copy_command + f' strength:{strength} init_url:{init_image.url}'
-        if style != 'None':
-            copy_command = copy_command + f' style:{style}'
-        if facefix != 'None':
-            copy_command = copy_command + f' facefix:{facefix}'
-        print(copy_command)
-
         #set up tuple of parameters to pass into the Discord view
-        input_tuple = (ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, style, facefix, simple_prompt)
+        input_tuple = (ctx, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength, init_image, count, style, facefix, simple_prompt)
         view = viewhandler.DrawView(input_tuple)
         #setup the queue
         if queuehandler.GlobalQueue.dream_thread.is_alive():
@@ -274,10 +260,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             if user_already_in_queue:
                 await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
             else:
-                queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, style, facefix, simple_prompt, view))
+                queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength, init_image, count, style, facefix, simple_prompt, view))
                 await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
         else:
-            await queuehandler.process_dream(self, queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, height, width, guidance_scale, sampler, seed, strength, init_image, copy_command, count, style, facefix, simple_prompt, view))
+            await queuehandler.process_dream(self, queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength, init_image, count, style, facefix, simple_prompt, view))
             await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
 
     #generate the image
@@ -296,8 +282,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 "prompt": queue_object.prompt,
                 "negative_prompt": queue_object.negative_prompt,
                 "steps": queue_object.steps,
-                "height": queue_object.height,
                 "width": queue_object.width,
+                "height": queue_object.height,
                 "cfg_scale": queue_object.guidance_scale,
                 "sampler_index": queue_object.sampler,
                 "seed": queue_object.seed,
@@ -380,8 +366,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
                 image_count = len(pil_images)
                 noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
-                value = queue_object.copy_command if settings.global_var.copy_command else queue_object.simple_prompt
-                embed.add_field(name=f'My {noun_descriptor} of', value=f'``{value}``', inline=False)
+                embed.add_field(name=f'My {noun_descriptor} of', value=f'``{queue_object.simple_prompt}``', inline=False)
 
                 embed.add_field(name='took me', value='``{0:.3f}`` seconds'.format(end_time-start_time), inline=False)
 
