@@ -1,6 +1,6 @@
 import base64
-import traceback
 import discord
+import traceback
 import requests
 from asyncio import AbstractEventLoop
 from discord import option

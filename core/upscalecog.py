@@ -1,17 +1,17 @@
 import base64
-import discord
 import csv
+import discord
 import io
 import random
 import requests
 import time
 import traceback
 from asyncio import AbstractEventLoop
-from typing import Optional
 from discord import option
 from discord.ext import commands
 from os.path import splitext, basename
 from PIL import Image
+from typing import Optional
 from urllib.parse import urlparse
 
 from core import queuehandler

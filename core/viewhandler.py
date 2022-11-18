@@ -141,7 +141,7 @@ class DrawView(discord.ui.View):
                 await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
 
 
-#creating the view that holds the buttons for /identify output
+#creating the view that holds a button to delete output
 class DeleteView(discord.ui.View):
     def __init__(self, user):
         super().__init__(timeout=None)
