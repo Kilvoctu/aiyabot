@@ -1,6 +1,7 @@
 import csv
 import discord
 import random
+from discord.ui import InputText, Modal, View
 
 from core import queuehandler
 from core import settings
@@ -26,11 +27,82 @@ input_tuple[0] = ctx
 [15] = simple_prompt
 '''
 
+#the modal that is used for the 🖋 button
+class DrawModal(Modal):
+    def __init__(self, input_tuple) -> None:
+        super().__init__(title="Change Prompt!")
+        self.input_tuple = input_tuple
+        self.add_item(
+            InputText(
+                label='Input your new prompt',
+                value=input_tuple[1],
+                style=discord.InputTextStyle.long
+            )
+        )
+        self.add_item(
+            InputText(
+                label='Input your new negative prompt (optional',
+                style=discord.InputTextStyle.long,
+                value=input_tuple[2],
+                required=False
+            )
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        new_prompt = list(self.input_tuple)
+        new_prompt[1] = self.children[0].value
+        new_prompt[15] = self.children[0].value
+        new_prompt[2] = self.children[1].value
+        prompt_tuple = tuple(new_prompt)
+
+        draw_dream = stablecog.StableCog(self)
+        prompt_output = f'\nNew prompt: ``{self.children[0].value}``'
+        if new_prompt[2] != '':
+            prompt_output = prompt_output + f'\nNew negative prompt: ``{self.children[1].value}``'
+        #check queue again, but now we know user is not in queue
+        if queuehandler.GlobalQueue.dream_thread.is_alive():
+            queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
+            await interaction.response.send_message(f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``{prompt_output}')
+        else:
+            await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
+            await interaction.response.send_message(f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``{prompt_output}')
+
 #creating the view that holds the buttons for /draw output
-class DrawView(discord.ui.View):
+class DrawView(View):
     def __init__(self, input_tuple):
         super().__init__(timeout=None)
         self.input_tuple = input_tuple
+
+    #the 🖋 button will allow a new prompt and keep same parameters for everything else
+    @discord.ui.button(
+        custom_id="button_re-prompt",
+        emoji="🖋")
+    async def button_draw(self, button, interaction):
+        try:
+            #check if the /draw output is from the person who requested it
+            if self.message.embeds[0].footer.text == f'{interaction.user.name}#{interaction.user.discriminator}':
+                #if there's room in the queue, open up the modal
+                if queuehandler.GlobalQueue.dream_thread.is_alive():
+                    user_already_in_queue = False
+                    for queue_object in queuehandler.union(queuehandler.GlobalQueue.draw_q,
+                                                           queuehandler.GlobalQueue.upscale_q,
+                                                           queuehandler.GlobalQueue.identify_q):
+                        if queue_object.ctx.author.id == interaction.user.id:
+                            user_already_in_queue = True
+                            break
+                    if user_already_in_queue:
+                        await interaction.response.send_message(content=f"Please wait! You're queued up.", ephemeral=True)
+                    else:
+                        await interaction.response.send_modal(DrawModal(self.input_tuple))
+                else:
+                    await interaction.response.send_modal(DrawModal(self.input_tuple))
+            else:
+                await interaction.response.send_message("You can't use other people's buttons!", ephemeral=True)
+        except(Exception,):
+            #if interaction fails, assume it's because aiya restarted (breaks buttons)
+            button.disabled = True
+            await interaction.response.edit_message(view=self)
+            await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
 
     #the 🎲 button will take the same parameters for the image, change the seed, and add a task to the queue
     @discord.ui.button(
@@ -142,7 +214,7 @@ class DrawView(discord.ui.View):
 
 
 #creating the view that holds the buttons for /identify output
-class DeleteView(discord.ui.View):
+class DeleteView(View):
     def __init__(self, user):
         super().__init__(timeout=None)
         self.user = user
