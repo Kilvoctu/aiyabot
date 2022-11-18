@@ -41,7 +41,7 @@ class DrawModal(Modal):
         )
         self.add_item(
             InputText(
-                label='Input your new negative prompt (optional',
+                label='Input your new negative prompt (optional)',
                 style=discord.InputTextStyle.long,
                 value=input_tuple[2],
                 required=False
