@@ -15,6 +15,7 @@ from PIL import Image
 from urllib.parse import urlparse
 
 from core import queuehandler
+from core import viewhandler
 from core import settings
 from core import stablecog
 from core import identifycog
@@ -108,6 +109,7 @@ class UpscaleCog(commands.Cog):
             append_options = append_options + '\nUpscaler 2: ``' + str(upscaler_2) + '``'
             append_options = append_options + ' - Strength: ``' + str(upscaler_2_strength) + '``'
 
+        view = viewhandler.DeleteView(ctx.author.id)
         #set up the queue if an image was found
         if has_image:
             if queuehandler.GlobalQueue.dream_thread.is_alive():
@@ -119,10 +121,10 @@ class UpscaleCog(commands.Cog):
                 if user_already_in_queue:
                     await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
                 else:
-                    queuehandler.GlobalQueue.upscale_q.append(queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength))
+                    queuehandler.GlobalQueue.upscale_q.append(queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength, view))
                     await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{append_options}')
             else:
-                await queuehandler.process_dream(self, queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength))
+                await queuehandler.process_dream(self, queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength, view))
                 await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{append_options}')
 
     #generate the image
@@ -186,7 +188,7 @@ class UpscaleCog(commands.Cog):
                 embed.set_footer(**footer_args)
 
                 event_loop.create_task(queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>', embed=embed,
-                                                  file=discord.File(fp=buffer, filename=file_path)))
+                                                  file=discord.File(fp=buffer, filename=file_path), view=queue_object.view))
 
         except Exception as e:
             embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}',

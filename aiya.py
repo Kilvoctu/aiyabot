@@ -41,16 +41,7 @@ async def on_ready():
     #because guilds are only known when on_ready, run files check for guilds
     settings.guilds_check(self)
 
-#feature to delete generations. give bot 'Add Reactions' permission (or not, to hide the ❌)
-@self.event
-async def on_message(message):
-    if message.author == self.user:
-        try:
-            if message.embeds[0].fields[1].name == 'took me':
-                await message.add_reaction('❌')
-        except(Exception,):
-            pass
-
+#fallback feature to delete generations if aiya has been restarted
 @self.event
 async def on_raw_reaction_add(ctx):
     if ctx.emoji.name == '❌':
