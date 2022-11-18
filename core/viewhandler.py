@@ -105,20 +105,17 @@ class DrawView(discord.ui.View):
                 embed.add_field(name=f'Data model', value=f'Display name - ``{model_name}``\nFull name - ``{rev[3]}``\nActivator token - ``{activator_token}``', inline=False)
             else:
                 embed.add_field(name=f'Data model', value=f'Display name - ``{model_name}``\nFull name - ``{rev[3]}``', inline=False)
-            embed.add_field(name=f'Sampling steps', value=f'``{rev[4]}``', inline=False)
-            embed.add_field(name=f'Size', value=f'``{rev[5]}x{rev[6]}``', inline=False)
-            embed.add_field(name=f'Classifier-free guidance scale', value=f'``{rev[7]}``', inline=False)
-            embed.add_field(name=f'Sampling method', value=f'``{rev[8]}``', inline=False)
-            embed.add_field(name=f'Seed', value=f'``{rev[9]}``', inline=False)
+            extra_params = f'Sampling steps: ``{rev[4]}``\nSize: ``{rev[5]}x{rev[6]}``\nClassifier-free guidance scale: ``{rev[7]}``\nSampling method: ``{rev[8]}``\nSeed: ``{rev[9]}``'
             if rev[11]:
                 #not interested in adding embed fields for strength and init_image
                 copy_command = copy_command + f' strength:{rev[10]} init_url:{rev[11]}'
             if rev[13] != 'None':
                 copy_command = copy_command + f' style:{rev[13]}'
-                embed.add_field(name=f'Style preset', value=f'``{rev[13]}``', inline=False)
+                extra_params = extra_params + f'\nStyle preset: ``{rev[13]}``'
             if rev[14] != 'None':
                 copy_command = copy_command + f' facefix:{rev[14]}'
-                embed.add_field(name=f'Face restoration model', value=f'``{rev[14]}``', inline=False)
+                extra_params = extra_params + f'\nFace restoration model: ``{rev[14]}``'
+            embed.add_field(name=f'Other parameters', value=extra_params, inline=False)
             embed.add_field(name=f'Command for copying', value=f'``{copy_command}``', inline=False)
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
