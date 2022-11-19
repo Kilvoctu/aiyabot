@@ -6,15 +6,14 @@ from core import settings
 from core.logging import get_logger
 from dotenv import load_dotenv
 
-
-#start up initialization stuff
+# start up initialization stuff
 self = discord.Bot()
 intents = discord.Intents.default()
 intents.members = True
 load_dotenv()
 self.logger = get_logger(__name__)
 
-#load extensions
+# load extensions
 # check files and global variables
 settings.startup_check()
 settings.files_check()
@@ -26,22 +25,26 @@ self.load_extension('core.upscalecog')
 self.load_extension('core.identifycog')
 self.load_extension('core.tipscog')
 
-#stats slash command
-@self.slash_command(name = 'stats', description = 'How many images has the bot generated?')
+
+# stats slash command
+@self.slash_command(name='stats', description='How many images has the bot generated?')
 async def stats(ctx):
     with open('resources/stats.txt', 'r') as f:
         data = list(map(int, f.readlines()))
-    embed = discord.Embed(title='Art generated', description=f'I have created {data[0]} pictures!', color=settings.global_var.embed_color)
+    embed = discord.Embed(title='Art generated', description=f'I have created {data[0]} pictures!',
+                          color=settings.global_var.embed_color)
     await ctx.respond(embed=embed)
+
 
 @self.event
 async def on_ready():
     self.logger.info(f'Logged in as {self.user.name} ({self.user.id})')
     await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='drawing tutorials.'))
-    #because guilds are only known when on_ready, run files check for guilds
+    # because guilds are only known when on_ready, run files check for guilds
     settings.guilds_check(self)
 
-#fallback feature to delete generations if aiya has been restarted
+
+# fallback feature to delete generations if aiya has been restarted
 @self.event
 async def on_raw_reaction_add(ctx):
     if ctx.emoji.name == '❌':
@@ -57,13 +60,16 @@ async def on_raw_reaction_add(ctx):
             if message.embeds:
                 await message.delete()
 
+
 @self.event
 async def on_guild_join(guild):
     print(f'Wow, I joined {guild.name}! Refreshing settings.')
     settings.guilds_check(self)
 
+
 async def shutdown(bot):
     await bot.close()
+
 
 try:
     self.run(os.getenv('TOKEN'))
