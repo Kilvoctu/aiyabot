@@ -36,7 +36,7 @@ class DrawModal(Modal):
         self.add_item(
             InputText(
                 label='Input your new prompt',
-                value=input_tuple[1],
+                value=input_tuple[15],
                 style=discord.InputTextStyle.long
             )
         )
@@ -51,7 +51,7 @@ class DrawModal(Modal):
 
     async def callback(self, interaction: discord.Interaction):
         new_prompt = list(self.input_tuple)
-        new_prompt[1] = self.children[0].value
+        new_prompt[1] = new_prompt[1].replace(new_prompt[15], self.children[0].value)
         new_prompt[15] = self.children[0].value
         new_prompt[2] = self.children[1].value
         prompt_tuple = tuple(new_prompt)
