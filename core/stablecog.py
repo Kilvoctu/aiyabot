@@ -26,7 +26,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     def __init__(self, bot):
         self.wait_message = []
         self.bot = bot
-        self.send_model = False
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -156,6 +155,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             style: Optional[str] = 'None',
                             facefix: Optional[str] = 'None'):
 
+        settings.global_var.send_model = False
         # update defaults with any new defaults from settingscog
         guild = '% s' % ctx.guild_id
         if negative_prompt == 'unset':
@@ -172,9 +172,9 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if data_model is None:
             data_model = settings.read(guild)['data_model']
             if data_model != '':
-                self.send_model = True
+                settings.global_var.send_model = True
         else:
-            self.send_model = True
+            settings.global_var.send_model = True
 
         simple_prompt = prompt
         # take selected data_model and get model_name, then update data_model with the full name
@@ -189,7 +189,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     # if there's no activator token, remove the extra blank space
                     prompt = prompt.lstrip(' ')
 
-        if not self.send_model:
+        if not settings.global_var.send_model:
             print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
         else:
             print(
@@ -341,7 +341,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     s.post(settings.global_var.url + '/login')
 
                 # only send model payload if one is defined
-                if self.send_model:
+                if settings.global_var.send_model:
                     s.post(url=f'{settings.global_var.url}/api/predict', json=model_payload)
                 if queue_object.init_image is not None:
                     response = s.post(url=f'{settings.global_var.url}/sdapi/v1/img2img', json=payload)

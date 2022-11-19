@@ -35,6 +35,7 @@ class GlobalVar:
     facefix_models = []
     copy_command: bool = False
     model_fn_index = 0
+    send_model = False
 
 
 global_var = GlobalVar()

@@ -62,10 +62,12 @@ class DrawModal(Modal):
             prompt_output = prompt_output + f'\nNew negative prompt: ``{self.children[1].value}``'
         # check queue again, but now we know user is not in queue
         if queuehandler.GlobalQueue.dream_thread.is_alive():
+            settings.global_var.send_model = True
             queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
             await interaction.response.send_message(
                 f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``{prompt_output}')
         else:
+            settings.global_var.send_model = True
             await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
             await interaction.response.send_message(
                 f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``{prompt_output}')
@@ -138,6 +140,7 @@ class DrawView(View):
                     else:
                         button.disabled = True
                         await interaction.response.edit_message(view=self)
+                        settings.global_var.send_model = True
                         queuehandler.GlobalQueue.draw_q.append(
                             queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
                         await interaction.followup.send(
@@ -145,6 +148,7 @@ class DrawView(View):
                 else:
                     button.disabled = True
                     await interaction.response.edit_message(view=self)
+                    settings.global_var.send_model = True
                     await queuehandler.process_dream(draw_dream,
                                                      queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
                     await interaction.followup.send(
