@@ -18,7 +18,7 @@ class IdentifyCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.slash_command(name = 'identify', description = 'Describe an image')
+    @commands.slash_command(name='identify', description='Describe an image')
     @option(
         'init_image',
         discord.Attachment,
@@ -36,7 +36,7 @@ class IdentifyCog(commands.Cog):
                             init_url: Optional[str]):
 
         has_image = True
-        #url *will* override init image for compatibility, can be changed here
+        # url *will* override init image for compatibility, can be changed here
         if init_url:
             try:
                 init_image = requests.get(init_url)
@@ -44,18 +44,20 @@ class IdentifyCog(commands.Cog):
                 await ctx.send_response('URL image not found!\nI have nothing to work with...', ephemeral=True)
                 has_image = False
 
-        #fail if no image is provided
+        # fail if no image is provided
         if init_url is None:
             if init_image is None:
                 await ctx.send_response('I need an image to identify!', ephemeral=True)
                 has_image = False
 
         view = viewhandler.DeleteView(ctx.author.id)
-        #set up the queue if an image was found
+        # set up the queue if an image was found
         if has_image:
             if queuehandler.GlobalQueue.dream_thread.is_alive():
                 user_already_in_queue = False
-                for queue_object in queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q):
+                for queue_object in queuehandler.union(queuehandler.GlobalQueue.draw_q,
+                                                       queuehandler.GlobalQueue.upscale_q,
+                                                       queuehandler.GlobalQueue.identify_q):
                     if queue_object.ctx.author.id == ctx.author.id:
                         user_already_in_queue = True
                         break
@@ -63,25 +65,29 @@ class IdentifyCog(commands.Cog):
                     await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
                 else:
                     queuehandler.GlobalQueue.identify_q.append(queuehandler.IdentifyObject(ctx, init_image, view))
-                    await ctx.send_response(f'<@{ctx.author.id}>, I\'m identifying the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``', delete_after=45.0)
+                    await ctx.send_response(
+                        f'<@{ctx.author.id}>, I\'m identifying the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``',
+                        delete_after=45.0)
             else:
                 await queuehandler.process_dream(self, queuehandler.IdentifyObject(ctx, init_image, view))
-                await ctx.send_response(f'<@{ctx.author.id}>, I\'m identifying the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``', delete_after=45.0)
+                await ctx.send_response(
+                    f'<@{ctx.author.id}>, I\'m identifying the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``',
+                    delete_after=45.0)
 
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.IdentifyObject):
         try:
-            #construct a payload
+            # construct a payload
             image = base64.b64encode(requests.get(queue_object.init_image.url, stream=True).content).decode('utf-8')
             payload = {
                 "image": 'data:image/png;base64,' + image
             }
 
-            #send normal payload to webui
+            # send normal payload to webui
             with requests.Session() as s:
                 if settings.global_var.username is not None:
                     login_payload = {
-                    'username': settings.global_var.username,
-                    'password': settings.global_var.password
+                        'username': settings.global_var.username,
+                        'password': settings.global_var.password
                     }
                     s.post(settings.global_var.url + '/login', data=login_payload)
                 else:
@@ -102,13 +108,14 @@ class IdentifyCog(commands.Cog):
             embed.set_footer(**footer_args)
 
             event_loop.create_task(
-                queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>', embed=embed, view=queue_object.view))
+                queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>', embed=embed,
+                                              view=queue_object.view))
 
         except Exception as e:
             embed = discord.Embed(title='identify failed', description=f'{e}\n{traceback.print_exc()}',
                                   color=settings.global_var.embed_color)
             event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
-        #check each queue for any remaining tasks
+        # check each queue for any remaining tasks
         if queuehandler.GlobalQueue.draw_q:
             draw_dream = stablecog.StableCog(self)
             event_loop.create_task(queuehandler.process_dream(draw_dream, queuehandler.GlobalQueue.draw_q.pop(0)))
@@ -117,6 +124,7 @@ class IdentifyCog(commands.Cog):
             event_loop.create_task(queuehandler.process_dream(upscale_dream, queuehandler.GlobalQueue.upscale_q.pop(0)))
         if queuehandler.GlobalQueue.identify_q:
             event_loop.create_task(queuehandler.process_dream(self, queuehandler.GlobalQueue.identify_q.pop(0)))
+
 
 def setup(bot):
     bot.add_cog(IdentifyCog(bot))

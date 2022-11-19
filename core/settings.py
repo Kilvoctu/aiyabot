@@ -12,16 +12,17 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 path = 'resources/'.format(dir_path)
 
 template = {
-            "default_steps": 30,
-            "sampler": "Euler a",
-            "negative_prompt": "",
-            "max_steps": 50,
-            "default_count": 1,
-            "max_count": 1,
-            "data_model": ""
-        }
+    "default_steps": 30,
+    "sampler": "Euler a",
+    "negative_prompt": "",
+    "max_steps": 50,
+    "default_count": 1,
+    "max_count": 1,
+    "data_model": ""
+}
 
-#initialize global variables here
+
+# initialize global variables here
 class GlobalVar:
     url = ""
     dir = ""
@@ -35,12 +36,15 @@ class GlobalVar:
     copy_command: bool = False
     model_fn_index = 0
 
+
 global_var = GlobalVar()
+
 
 def build(guild_id):
     settings = json.dumps(template)
     with open(path + guild_id + '.json', 'w') as configfile:
         configfile.write(settings)
+
 
 def read(guild_id):
     with open(path + guild_id + '.json', 'r') as configfile:
@@ -48,19 +52,22 @@ def read(guild_id):
         settings.update(json.load(configfile))
     return settings
 
-def update(guild_id:str, sett:str, value):
+
+def update(guild_id: str, sett: str, value):
     with open(path + guild_id + '.json', 'r') as configfile:
         settings = json.load(configfile)
     settings[sett] = value
     with open(path + guild_id + '.json', 'w') as configfile:
         json.dump(settings, configfile)
 
+
 def get_env_var_with_default(var: str, default: str) -> str:
     ret = os.getenv(var)
     return ret if ret is not None else default
 
+
 def startup_check():
-    #check .env for parameters. if they don't exist, ignore it and go with defaults.
+    # check .env for parameters. if they don't exist, ignore it and go with defaults.
     global_var.url = get_env_var_with_default('URL', 'http://127.0.0.1:7860').rstrip("/")
     print(f'Using URL: {global_var.url}')
 
@@ -71,7 +78,7 @@ def startup_check():
     global_var.password = os.getenv("PASS")
     global_var.copy_command = os.getenv("COPY") is not None
 
-    #check if Web UI is running
+    # check if Web UI is running
     connected = False
     while not connected:
         try:
@@ -84,8 +91,9 @@ def startup_check():
             print(f'Waiting for Web UI at {global_var.url}...')
             time.sleep(20)
 
+
 def files_check():
-    #creating files if they don't exist
+    # creating files if they don't exist
     if os.path.isfile('resources/stats.txt'):
         pass
     else:
@@ -97,49 +105,49 @@ def files_check():
     unset_model = ['Default', '', '']
     make_model_file = True
     replace_model_file = False
-    #if models.csv exists and has data
+    # if models.csv exists and has data
     if os.path.isfile('resources/models.csv'):
         with open('resources/models.csv', encoding='utf-8') as f:
             reader = csv.reader(f, delimiter="|")
             for i, row in enumerate(reader):
-                #if header is missing columns, reformat the file
+                # if header is missing columns, reformat the file
                 if i == 0:
-                    if len(row)<3:
+                    if len(row) < 3:
                         with open('resources/models.csv', 'r') as fp:
-                            reader = csv.DictReader(fp, fieldnames=header, delimiter = "|")
+                            reader = csv.DictReader(fp, fieldnames=header, delimiter="|")
                             with open('resources/models2.csv', 'w', newline='') as fh:
-                                writer = csv.DictWriter(fh, fieldnames=reader.fieldnames, delimiter = "|")
+                                writer = csv.DictWriter(fh, fieldnames=reader.fieldnames, delimiter="|")
                                 writer.writeheader()
                                 header = next(reader)
                                 writer.writerows(reader)
                                 replace_model_file = True
-                #if first row has data, do nothing
+                # if first row has data, do nothing
                 if i == 1:
                     make_model_file = False
         if replace_model_file:
             os.remove('resources/models.csv')
             os.rename('resources/models2.csv', 'resources/models.csv')
-    #create/reformat model.csv if something is wrong
+    # create/reformat model.csv if something is wrong
     if make_model_file:
         print(f'Uh oh, missing models.csv data. Creating a new one.')
         with open('resources/models.csv', 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f, delimiter = "|")
+            writer = csv.writer(f, delimiter="|")
             writer.writerow(header)
             writer.writerow(unset_model)
 
-    #get display_name:model_full_name pairs from models.csv into global variable
+    # get display_name:model_full_name pairs from models.csv into global variable
     with open('resources/models.csv', encoding='utf-8') as csv_file:
         model_data = list(csv.reader(csv_file, delimiter='|'))
         for row in model_data[1:]:
             global_var.model_names[row[0]] = row[1]
 
-    #if directory in DIR doesn't exist, create it
+    # if directory in DIR doesn't exist, create it
     dir_exists = os.path.exists(global_var.dir)
     if dir_exists is False:
         print(f'The folder for DIR doesn\'t exist! Creating folder at {global_var.dir}.')
         os.mkdir(global_var.dir)
 
-    #pull list of samplers, styles and face restorers from api
+    # pull list of samplers, styles and face restorers from api
     with requests.Session() as s:
         if global_var.username is not None:
             login_payload = {
@@ -162,13 +170,14 @@ def files_check():
         for s3 in r3.json():
             global_var.facefix_models.append(s3['name'])
 
+
 def guilds_check(self):
-    #guild settings files. has to be done after on_ready
+    # guild settings files. has to be done after on_ready
     for guild in self.guilds:
         try:
             read(str(guild.id))
             print(f'I\'m using local settings for {guild.id} a.k.a {guild}.')
-            #if models.csv has the blank "Default" data, update guild settings
+            # if models.csv has the blank "Default" data, update guild settings
             with open('resources/models.csv', 'r', encoding='utf-8') as f:
                 reader = csv.DictReader(f, delimiter='|')
                 for row in reader:
@@ -185,7 +194,8 @@ def guilds_check(self):
         print(f'Setting up settings for DMs, called None.json')
         build("None")
 
-#iterate through the old api at /config to get things we need that don't exist in new api
+
+# iterate through the old api at /config to get things we need that don't exist in new api
 def old_api_check():
     with requests.Session() as s:
         if global_var.username is not None:
@@ -199,9 +209,9 @@ def old_api_check():
             s.post(global_var.url + '/login')
             config_url = s.get(global_var.url + "/config")
         old_config = config_url.json()
-        #check all dependencies in config to see if there's a target value
-        #and if there is, match the target value to the id value of component we want
-        #this provides the fn_index needed for the payload to old api
+        # check all dependencies in config to see if there's a target value
+        # and if there is, match the target value to the id value of component we want
+        # this provides the fn_index needed for the payload to old api
         for d in range(len(old_config["dependencies"])):
             try:
                 for c in old_config["components"]:

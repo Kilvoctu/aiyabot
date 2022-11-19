@@ -22,6 +22,7 @@ from core import identifycog
 
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
     ctx_parse = discord.ApplicationContext
+
     def __init__(self, bot):
         self.wait_message = []
         self.bot = bot
@@ -31,18 +32,19 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     async def on_ready(self):
         self.bot.add_view(viewhandler.DrawView(self))
 
-    #pulls from model_names list and makes some sort of dynamic list to bypass Discord 25 choices limit
+    # pulls from model_names list and makes some sort of dynamic list to bypass Discord 25 choices limit
     def model_autocomplete(self: discord.AutocompleteContext):
         return [
             model for model in settings.global_var.model_names
         ]
-    #and for styles
+
+    # and for styles
     def style_autocomplete(self: discord.AutocompleteContext):
         return [
             style for style in settings.global_var.style_names
         ]
 
-    @commands.slash_command(name = 'draw', description = 'Create an image')
+    @commands.slash_command(name='draw', description='Create an image')
     @option(
         'prompt',
         str,
@@ -74,14 +76,14 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         int,
         description='Width of the generated image. Default: 512',
         required=False,
-        choices = [x for x in range(192, 832, 64)]
+        choices=[x for x in range(192, 832, 64)]
     )
     @option(
         'height',
         int,
         description='Height of the generated image. Default: 512',
         required=False,
-        choices = [x for x in range(192, 832, 64)]
+        choices=[x for x in range(192, 832, 64)]
     )
     @option(
         'guidance_scale',
@@ -154,7 +156,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             style: Optional[str] = 'None',
                             facefix: Optional[str] = 'None'):
 
-        #update defaults with any new defaults from settingscog
+        # update defaults with any new defaults from settingscog
         guild = '% s' % ctx.guild_id
         if negative_prompt == 'unset':
             negative_prompt = settings.read(guild)['negative_prompt']
@@ -165,7 +167,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if sampler == 'unset':
             sampler = settings.read(guild)['sampler']
 
-        #if a model is not selected, do nothing
+        # if a model is not selected, do nothing
         model_name = 'Default'
         if data_model is None:
             data_model = settings.read(guild)['data_model']
@@ -175,49 +177,51 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             self.send_model = True
 
         simple_prompt = prompt
-        #take selected data_model and get model_name, then update data_model with the full name
+        # take selected data_model and get model_name, then update data_model with the full name
         with open('resources/models.csv', 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter='|')
             for row in reader:
                 if row['display_name'] == data_model:
                     model_name = row['display_name']
                     data_model = row['model_full_name']
-                    #look at the model for activator token and prepend prompt with it
+                    # look at the model for activator token and prepend prompt with it
                     prompt = row['activator_token'] + " " + prompt
-                    #if there's no activator token, remove the extra blank space
+                    # if there's no activator token, remove the extra blank space
                     prompt = prompt.lstrip(' ')
 
         if not self.send_model:
             print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
         else:
-            print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt} -- Using model: {data_model}')
+            print(
+                f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt} -- Using model: {data_model}')
 
-        if seed == -1: seed = random.randint(0, 0xFFFFFFFF)
+        if seed == -1:
+            seed = random.randint(0, 0xFFFFFFFF)
 
-        #url *will* override init image for compatibility, can be changed here
+        # url *will* override init image for compatibility, can be changed here
         if init_url:
             try:
                 init_image = requests.get(init_url)
             except(Exception,):
                 await ctx.send_response('URL image not found!\nI will do my best without it!')
 
-        #increment number of times command is used
+        # increment number of times command is used
         with open('resources/stats.txt', 'r') as f:
             data = list(map(int, f.readlines()))
         data[0] = data[0] + 1
         with open('resources/stats.txt', 'w') as f:
             f.write('\n'.join(str(x) for x in data))
 
-        #random messages for bot to say
+        # random messages for bot to say
         with open('resources/messages.csv') as csv_file:
             message_data = list(csv.reader(csv_file, delimiter='|'))
             message_row_count = len(message_data) - 1
             for row in message_data:
-                self.wait_message.append( row[0] )
+                self.wait_message.append(row[0])
 
-        #formatting bot initial reply
+        # formatting bot initial reply
         append_options = ''
-        #lower step value to the highest setting if user goes over max steps
+        # lower step value to the highest setting if user goes over max steps
         if steps > settings.read(guild)['max_steps']:
             steps = settings.read(guild)['max_steps']
             append_options = append_options + f'\nExceeded maximum of ``{steps}`` steps! This is the best I can do...'
@@ -247,31 +251,43 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if facefix != 'None':
             append_options = append_options + f'\nFace restoration: ``{facefix}``'
 
-        #set up tuple of parameters to pass into the Discord view
-        input_tuple = (ctx, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength, init_image, count, style, facefix, simple_prompt)
+        # set up tuple of parameters to pass into the Discord view
+        input_tuple = (
+            ctx, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength,
+            init_image, count, style, facefix, simple_prompt)
         view = viewhandler.DrawView(input_tuple)
-        #setup the queue
+        # setup the queue
         if queuehandler.GlobalQueue.dream_thread.is_alive():
             user_already_in_queue = False
-            for queue_object in queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q):
+            for queue_object in queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q,
+                                                   queuehandler.GlobalQueue.identify_q):
                 if queue_object.ctx.author.id == ctx.author.id:
                     user_already_in_queue = True
                     break
             if user_already_in_queue:
                 await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
             else:
-                queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength, init_image, count, style, facefix, simple_prompt, view))
-                await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
+                queuehandler.GlobalQueue.draw_q.append(
+                    queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, width, height,
+                                            guidance_scale, sampler, seed, strength, init_image, count, style, facefix,
+                                            simple_prompt, view))
+                await ctx.send_response(
+                    f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
         else:
-            await queuehandler.process_dream(self, queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength, init_image, count, style, facefix, simple_prompt, view))
-            await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
+            await queuehandler.process_dream(self,
+                                             queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps,
+                                                                     width, height, guidance_scale, sampler, seed,
+                                                                     strength, init_image, count, style, facefix,
+                                                                     simple_prompt, view))
+            await ctx.send_response(
+                f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
 
-    #generate the image
+    # generate the image
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.DrawObject):
         try:
             start_time = time.time()
 
-            #construct a payload for data model, then the normal payload
+            # construct a payload for data model, then the normal payload
             model_payload = {
                 "fn_index": settings.global_var.model_fn_index,
                 "data": [
@@ -313,18 +329,18 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 }
                 payload.update(facefix_payload)
 
-            #send normal payload to webui
+            # send normal payload to webui
             with requests.Session() as s:
                 if settings.global_var.username is not None:
                     login_payload = {
-                    'username': settings.global_var.username,
-                    'password': settings.global_var.password
+                        'username': settings.global_var.username,
+                        'password': settings.global_var.password
                     }
                     s.post(settings.global_var.url + '/login', data=login_payload)
                 else:
                     s.post(settings.global_var.url + '/login')
 
-                #only send model payload if one is defined
+                # only send model payload if one is defined
                 if self.send_model:
                     s.post(url=f'{settings.global_var.url}/api/predict', json=model_payload)
                 if queue_object.init_image is not None:
@@ -334,17 +350,17 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             response_data = response.json()
             end_time = time.time()
 
-            #create safe/sanitized filename
+            # create safe/sanitized filename
             keep_chars = (' ', '.', '_')
             file_name = "".join(c for c in queue_object.prompt if c.isalnum() or c in keep_chars).rstrip()
 
             # save local copy of image and prepare PIL images
             pil_images = []
             for i, image_base64 in enumerate(response_data['images']):
-                image = Image.open(io.BytesIO(base64.b64decode(image_base64.split(",",1)[0])))
+                image = Image.open(io.BytesIO(base64.b64decode(image_base64.split(",", 1)[0])))
                 pil_images.append(image)
 
-                #grab png info
+                # grab png info
                 png_payload = {
                     "image": "data:image/png;base64," + image_base64
                 }
@@ -366,9 +382,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
                 image_count = len(pil_images)
                 noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
-                embed.add_field(name=f'My {noun_descriptor} of', value=f'``{queue_object.simple_prompt}``', inline=False)
+                embed.add_field(name=f'My {noun_descriptor} of', value=f'``{queue_object.simple_prompt}``',
+                                inline=False)
 
-                embed.add_field(name='took me', value='``{0:.3f}`` seconds'.format(end_time-start_time), inline=False)
+                embed.add_field(name='took me', value='``{0:.3f}`` seconds'.format(end_time - start_time), inline=False)
 
                 footer_args = dict(text=f'{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}')
                 if queue_object.ctx.author.avatar is not None:
@@ -379,14 +396,17 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     pil_image.save(buffer, 'PNG')
                     buffer.seek(0)
 
-                files = [discord.File(fp=buffer, filename=f'{queue_object.seed}-{i}.png') for (i, buffer) in enumerate(buffer_handles)]
-                event_loop.create_task(queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>', embed=embed, files=files, view=queue_object.view))
+                files = [discord.File(fp=buffer, filename=f'{queue_object.seed}-{i}.png') for (i, buffer) in
+                         enumerate(buffer_handles)]
+                event_loop.create_task(
+                    queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>', embed=embed, files=files,
+                                                  view=queue_object.view))
 
         except Exception as e:
             embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}',
                                   color=settings.global_var.embed_color)
             event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
-        #check each queue for any remaining tasks
+        # check each queue for any remaining tasks
         if queuehandler.GlobalQueue.draw_q:
             event_loop.create_task(queuehandler.process_dream(self, queuehandler.GlobalQueue.draw_q.pop(0)))
         if queuehandler.GlobalQueue.upscale_q:
@@ -394,7 +414,9 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             event_loop.create_task(queuehandler.process_dream(upscale_dream, queuehandler.GlobalQueue.upscale_q.pop(0)))
         if queuehandler.GlobalQueue.identify_q:
             identify_dream = identifycog.IdentifyCog(self)
-            event_loop.create_task(queuehandler.process_dream(identify_dream, queuehandler.GlobalQueue.identify_q.pop(0)))
+            event_loop.create_task(
+                queuehandler.process_dream(identify_dream, queuehandler.GlobalQueue.identify_q.pop(0)))
+
 
 def setup(bot):
     bot.add_cog(StableCog(bot))

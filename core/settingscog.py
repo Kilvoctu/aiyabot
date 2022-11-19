@@ -7,7 +7,7 @@ from core import settings
 
 
 class SettingsCog(commands.Cog):
-    def __init__(self, bot:commands.Bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     # pulls from model_names list and makes some sort of dynamic list to bypass Discord 25 choices limit
@@ -16,7 +16,7 @@ class SettingsCog(commands.Cog):
             model for model in settings.global_var.model_names
         ]
 
-    @commands.slash_command(name = 'settings', description = 'Review and change server defaults')
+    @commands.slash_command(name='settings', description='Review and change server defaults')
     @option(
         'current_settings',
         bool,
@@ -88,7 +88,7 @@ class SettingsCog(commands.Cog):
             for key, value in cur_set.items():
                 reply = reply + str(key) + ": " + str(value) + ", "
 
-        #run through each command and update the defaults user selects
+        # run through each command and update the defaults user selects
         if set_nprompt != 'unset':
             settings.update(guild, 'negative_prompt', set_nprompt)
             reply = reply + f'\nNew default negative prompts is "{set_nprompt}.'
@@ -104,7 +104,7 @@ class SettingsCog(commands.Cog):
         if set_maxsteps != 1:
             settings.update(guild, 'max_steps', set_maxsteps)
             reply = reply + f'\nNew max steps value is {set_maxsteps}.'
-            #automatically lower default steps if max steps goes below it
+            # automatically lower default steps if max steps goes below it
             if set_maxsteps < reviewer['default_steps']:
                 settings.update(guild, 'default_steps', set_maxsteps)
                 reply = reply + f'\nDefault steps value is too high! Lowering to {set_maxsteps}.'
@@ -112,12 +112,12 @@ class SettingsCog(commands.Cog):
         if set_maxcount is not None:
             settings.update(guild, 'max_count', set_maxcount)
             reply = reply + f'\nNew max count value is {set_maxcount}.'
-            #automatically lower default count if max count goes below it
+            # automatically lower default count if max count goes below it
             if set_maxcount < reviewer['default_count']:
                 settings.update(guild, 'default_count', set_maxcount)
                 reply = reply + f'\nDefault count value is too high! Lowering to {set_maxcount}.'
 
-        #review settings again in case user is trying to set steps/counts and max steps/counts simultaneously
+        # review settings again in case user is trying to set steps/counts and max steps/counts simultaneously
         reviewer = settings.read(guild)
         if set_steps > reviewer['max_steps']:
             reply = reply + f'\nMax steps is {reviewer["max_steps"]}! You can\'t go beyond it!'
@@ -133,6 +133,7 @@ class SettingsCog(commands.Cog):
                 reply = reply + f'\nNew default count is {set_count}.'
 
         await ctx.send_response(reply)
+
 
 def setup(bot):
     bot.add_cog(SettingsCog(bot))

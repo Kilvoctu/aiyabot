@@ -27,7 +27,8 @@ input_tuple[0] = ctx
 [15] = simple_prompt
 '''
 
-#the modal that is used for the 🖋 button
+
+# the modal that is used for the 🖋 button
 class DrawModal(Modal):
     def __init__(self, input_tuple) -> None:
         super().__init__(title="Change Prompt!")
@@ -59,29 +60,32 @@ class DrawModal(Modal):
         prompt_output = f'\nNew prompt: ``{self.children[0].value}``'
         if new_prompt[2] != '':
             prompt_output = prompt_output + f'\nNew negative prompt: ``{self.children[1].value}``'
-        #check queue again, but now we know user is not in queue
+        # check queue again, but now we know user is not in queue
         if queuehandler.GlobalQueue.dream_thread.is_alive():
             queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
-            await interaction.response.send_message(f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``{prompt_output}')
+            await interaction.response.send_message(
+                f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``{prompt_output}')
         else:
             await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
-            await interaction.response.send_message(f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``{prompt_output}')
+            await interaction.response.send_message(
+                f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``{prompt_output}')
 
-#creating the view that holds the buttons for /draw output
+
+# creating the view that holds the buttons for /draw output
 class DrawView(View):
     def __init__(self, input_tuple):
         super().__init__(timeout=None)
         self.input_tuple = input_tuple
 
-    #the 🖋 button will allow a new prompt and keep same parameters for everything else
+    # the 🖋 button will allow a new prompt and keep same parameters for everything else
     @discord.ui.button(
         custom_id="button_re-prompt",
         emoji="🖋")
     async def button_draw(self, button, interaction):
         try:
-            #check if the /draw output is from the person who requested it
+            # check if the /draw output is from the person who requested it
             if self.message.embeds[0].footer.text == f'{interaction.user.name}#{interaction.user.discriminator}':
-                #if there's room in the queue, open up the modal
+                # if there's room in the queue, open up the modal
                 if queuehandler.GlobalQueue.dream_thread.is_alive():
                     user_already_in_queue = False
                     for queue_object in queuehandler.union(queuehandler.GlobalQueue.draw_q,
@@ -91,7 +95,8 @@ class DrawView(View):
                             user_already_in_queue = True
                             break
                     if user_already_in_queue:
-                        await interaction.response.send_message(content=f"Please wait! You're queued up.", ephemeral=True)
+                        await interaction.response.send_message(content=f"Please wait! You're queued up.",
+                                                                ephemeral=True)
                     else:
                         await interaction.response.send_modal(DrawModal(self.input_tuple))
                 else:
@@ -99,25 +104,25 @@ class DrawView(View):
             else:
                 await interaction.response.send_message("You can't use other people's 🖋!", ephemeral=True)
         except(Exception,):
-            #if interaction fails, assume it's because aiya restarted (breaks buttons)
+            # if interaction fails, assume it's because aiya restarted (breaks buttons)
             button.disabled = True
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
 
-    #the 🎲 button will take the same parameters for the image, change the seed, and add a task to the queue
+    # the 🎲 button will take the same parameters for the image, change the seed, and add a task to the queue
     @discord.ui.button(
         custom_id="button_re-roll",
         emoji="🎲")
     async def button_roll(self, button, interaction):
         try:
-            #check if the /draw output is from the person who requested it
+            # check if the /draw output is from the person who requested it
             if self.message.embeds[0].footer.text == f'{interaction.user.name}#{interaction.user.discriminator}':
-                #update the tuple with a new seed
+                # update the tuple with a new seed
                 new_seed = list(self.input_tuple)
                 new_seed[9] = random.randint(0, 0xFFFFFFFF)
                 seed_tuple = tuple(new_seed)
 
-                #set up the draw dream and do queue code again for lack of a more elegant solution
+                # set up the draw dream and do queue code again for lack of a more elegant solution
                 draw_dream = stablecog.StableCog(self)
                 if queuehandler.GlobalQueue.dream_thread.is_alive():
                     user_already_in_queue = False
@@ -128,23 +133,26 @@ class DrawView(View):
                             user_already_in_queue = True
                             break
                     if user_already_in_queue:
-                        await interaction.response.send_message(content=f"Please wait! You're queued up.", ephemeral=True)
+                        await interaction.response.send_message(content=f"Please wait! You're queued up.",
+                                                                ephemeral=True)
                     else:
                         button.disabled = True
                         await interaction.response.edit_message(view=self)
-                        queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
+                        queuehandler.GlobalQueue.draw_q.append(
+                            queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
                         await interaction.followup.send(
                             f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{seed_tuple[15]}``\nNew seed:``{seed_tuple[9]}``')
                 else:
                     button.disabled = True
                     await interaction.response.edit_message(view=self)
-                    await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
+                    await queuehandler.process_dream(draw_dream,
+                                                     queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
                     await interaction.followup.send(
                         f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{seed_tuple[15]}``\nNew Seed:``{seed_tuple[9]}``')
             else:
                 await interaction.response.send_message("You can't use other people's 🎲!", ephemeral=True)
         except(Exception,):
-            #if interaction fails, assume it's because aiya restarted (breaks buttons)
+            # if interaction fails, assume it's because aiya restarted (breaks buttons)
             button.disabled = True
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
@@ -154,10 +162,10 @@ class DrawView(View):
         custom_id="button_review",
         emoji="📋")
     async def button_review(self, button, interaction):
-        #simpler variable name
+        # simpler variable name
         rev = self.input_tuple
         try:
-            #the tuple will show the model_full_name. Get the associated display_name and activator_token from it.
+            # the tuple will show the model_full_name. Get the associated display_name and activator_token from it.
             with open('resources/models.csv', 'r', encoding='utf-8') as f:
                 reader = csv.DictReader(f, delimiter='|')
                 for row in reader:
@@ -165,21 +173,24 @@ class DrawView(View):
                         model_name = row['display_name']
                         activator_token = row['activator_token']
 
-            #generate the command for copy-pasting, and also add embed fields
+            # generate the command for copy-pasting, and also add embed fields
             embed = discord.Embed(title="About the image!", description="")
             embed.colour = settings.global_var.embed_color
             embed.add_field(name=f'Prompt', value=f'``{rev[15]}``', inline=False)
-            copy_command = f'/draw prompt:{rev[15]} data_model:{model_name} steps:{rev[4]} height:{str(rev[5])} width:{rev[6]} guidance_scale:{rev[7]} sampler:{rev[8]} seed:{rev[9]} count:{rev[12]}'
+            copy_command = f'/draw prompt:{rev[15]} data_model:{model_name} steps:{rev[4]} height:{str(rev[5])} width:{rev[6]} guidance_scale:{rev[7]} sampler:{rev[8]} seed:{rev[9]} count:{rev[12]} '
             if rev[2] != '':
                 copy_command = copy_command + f' negative_prompt:{rev[2]}'
                 embed.add_field(name=f'Negative prompt', value=f'``{rev[2]}``', inline=False)
             if activator_token:
-                embed.add_field(name=f'Data model', value=f'Display name - ``{model_name}``\nFull name - ``{rev[3]}``\nActivator token - ``{activator_token}``', inline=False)
+                embed.add_field(name=f'Data model',
+                                value=f'Display name - ``{model_name}``\nFull name - ``{rev[3]}``\nActivator token - ``{activator_token}``',
+                                inline=False)
             else:
-                embed.add_field(name=f'Data model', value=f'Display name - ``{model_name}``\nFull name - ``{rev[3]}``', inline=False)
+                embed.add_field(name=f'Data model', value=f'Display name - ``{model_name}``\nFull name - ``{rev[3]}``',
+                                inline=False)
             extra_params = f'Sampling steps: ``{rev[4]}``\nSize: ``{rev[5]}x{rev[6]}``\nClassifier-free guidance scale: ``{rev[7]}``\nSampling method: ``{rev[8]}``\nSeed: ``{rev[9]}``'
             if rev[11]:
-                #not interested in adding embed fields for strength and init_image
+                # not interested in adding embed fields for strength and init_image
                 copy_command = copy_command + f' strength:{rev[10]} init_url:{rev[11]}'
             if rev[13] != 'None':
                 copy_command = copy_command + f' style:{rev[13]}'
@@ -197,7 +208,7 @@ class DrawView(View):
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
 
-    #the button to delete generated images
+    # the button to delete generated images
     @discord.ui.button(
         custom_id="button_x",
         emoji="❌")
@@ -208,11 +219,12 @@ class DrawView(View):
             else:
                 await interaction.response.send_message("You can't delete other people's images!", ephemeral=True)
         except(Exception,):
-                button.disabled = True
-                await interaction.response.edit_message(view=self)
-                await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
+            button.disabled = True
+            await interaction.response.edit_message(view=self)
+            await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
 
-#creating the view that holds a button to delete output
+
+# creating the view that holds a button to delete output
 class DeleteView(View):
     def __init__(self, user):
         super().__init__(timeout=None)

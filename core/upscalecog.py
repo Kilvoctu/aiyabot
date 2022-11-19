@@ -27,7 +27,7 @@ class UpscaleCog(commands.Cog):
         self.bot = bot
         self.file_name = ''
 
-    @commands.slash_command(name = 'upscale', description = 'Upscale an image')
+    @commands.slash_command(name='upscale', description='Upscale an image')
     @option(
         'init_image',
         discord.Attachment,
@@ -77,7 +77,7 @@ class UpscaleCog(commands.Cog):
                             upscaler_2_strength: Optional[float] = 0.5):
 
         has_image = True
-        #url *will* override init image for compatibility, can be changed here
+        # url *will* override init image for compatibility, can be changed here
         if init_url:
             try:
                 init_image = requests.get(init_url)
@@ -85,54 +85,62 @@ class UpscaleCog(commands.Cog):
                 await ctx.send_response('URL image not found!\nI have nothing to work with...', ephemeral=True)
                 has_image = False
 
-        #fail if no image is provided
+        # fail if no image is provided
         if init_url is None:
             if init_image is None:
                 await ctx.send_response('I need an image to upscale!', ephemeral=True)
                 has_image = False
 
-        #pull the name from the image
+        # pull the name from the image
         disassembled = urlparse(init_image.url)
         filename, file_ext = splitext(basename(disassembled.path))
         self.file_name = filename
 
-        #random messages for bot to say
+        # random messages for bot to say
         with open('resources/messages.csv') as csv_file:
             message_data = list(csv.reader(csv_file, delimiter='|'))
             message_row_count = len(message_data) - 1
             for row in message_data:
-                self.wait_message.append( row[0] )
+                self.wait_message.append(row[0])
 
-        #formatting bot initial reply
+        # formatting bot initial reply
         append_options = ''
         if upscaler_2:
             append_options = append_options + f'\nUpscaler 2: ``{upscaler_2}``'
             append_options = append_options + f' - Strength: ``{upscaler_2_strength}``'
 
         view = viewhandler.DeleteView(ctx.author.id)
-        #set up the queue if an image was found
+        # set up the queue if an image was found
         if has_image:
             if queuehandler.GlobalQueue.dream_thread.is_alive():
                 user_already_in_queue = False
-                for queue_object in queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q):
+                for queue_object in queuehandler.union(queuehandler.GlobalQueue.draw_q,
+                                                       queuehandler.GlobalQueue.upscale_q,
+                                                       queuehandler.GlobalQueue.identify_q):
                     if queue_object.ctx.author.id == ctx.author.id:
                         user_already_in_queue = True
                         break
                 if user_already_in_queue:
                     await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
                 else:
-                    queuehandler.GlobalQueue.upscale_q.append(queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength, view))
-                    await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{append_options}')
+                    queuehandler.GlobalQueue.upscale_q.append(
+                        queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength,
+                                                   view))
+                    await ctx.send_response(
+                        f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{append_options}')
             else:
-                await queuehandler.process_dream(self, queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength, view))
-                await ctx.send_response(f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{append_options}')
+                await queuehandler.process_dream(self, queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1,
+                                                                                  upscaler_2, upscaler_2_strength,
+                                                                                  view))
+                await ctx.send_response(
+                    f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{append_options}')
 
-    #generate the image
+    # generate the image
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.UpscaleObject):
         try:
             start_time = time.time()
 
-            #construct a payload
+            # construct a payload
             image = base64.b64encode(requests.get(queue_object.init_image.url, stream=True).content).decode('utf-8')
             payload = {
                 "upscaling_resize": queue_object.resize,
@@ -146,12 +154,12 @@ class UpscaleCog(commands.Cog):
                 }
                 payload.update(up2_payload)
 
-            #send normal payload to webui
+            # send normal payload to webui
             with requests.Session() as s:
                 if settings.global_var.username is not None:
                     login_payload = {
-                    'username': settings.global_var.username,
-                    'password': settings.global_var.password
+                        'username': settings.global_var.username,
+                        'password': settings.global_var.password
                     }
                     s.post(settings.global_var.url + '/login', data=login_payload)
                 else:
@@ -161,7 +169,7 @@ class UpscaleCog(commands.Cog):
             response_data = response.json()
             end_time = time.time()
 
-            #create safe/sanitized filename
+            # create safe/sanitized filename
             epoch_time = int(time.time())
             file_path = f'{settings.global_var.dir}/{epoch_time}-x{queue_object.resize}-{self.file_name[0:120]}.png'
 
@@ -180,21 +188,23 @@ class UpscaleCog(commands.Cog):
 
                 embed.colour = settings.global_var.embed_color
                 embed.add_field(name=f'My upscale of', value=f'``{queue_object.resize}``x', inline=False)
-                embed.add_field(name='took me', value='``{0:.3f}`` seconds'.format(end_time-start_time), inline=False)
+                embed.add_field(name='took me', value='``{0:.3f}`` seconds'.format(end_time - start_time), inline=False)
 
                 footer_args = dict(text=f'{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}')
                 if queue_object.ctx.author.avatar is not None:
                     footer_args['icon_url'] = queue_object.ctx.author.avatar.url
                 embed.set_footer(**footer_args)
 
-                event_loop.create_task(queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>', embed=embed,
-                                                  file=discord.File(fp=buffer, filename=file_path), view=queue_object.view))
+                event_loop.create_task(
+                    queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>', embed=embed,
+                                                  file=discord.File(fp=buffer, filename=file_path),
+                                                  view=queue_object.view))
 
         except Exception as e:
             embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}',
                                   color=settings.global_var.embed_color)
             event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
-        #check each queue for any remaining tasks
+        # check each queue for any remaining tasks
         if queuehandler.GlobalQueue.draw_q:
             draw_dream = stablecog.StableCog(self)
             event_loop.create_task(queuehandler.process_dream(draw_dream, queuehandler.GlobalQueue.draw_q.pop(0)))
@@ -202,7 +212,9 @@ class UpscaleCog(commands.Cog):
             event_loop.create_task(queuehandler.process_dream(self, queuehandler.GlobalQueue.upscale_q.pop(0)))
         if queuehandler.GlobalQueue.identify_q:
             identify_dream = identifycog.IdentifyCog(self)
-            event_loop.create_task(queuehandler.process_dream(identify_dream, queuehandler.GlobalQueue.identify_q.pop(0)))
+            event_loop.create_task(
+                queuehandler.process_dream(identify_dream, queuehandler.GlobalQueue.identify_q.pop(0)))
+
 
 def setup(bot):
     bot.add_cog(UpscaleCog(bot))
