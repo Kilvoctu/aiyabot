@@ -97,7 +97,7 @@ class DrawView(View):
                 else:
                     await interaction.response.send_modal(DrawModal(self.input_tuple))
             else:
-                await interaction.response.send_message("You can't use other people's buttons!", ephemeral=True)
+                await interaction.response.send_message("You can't use other people's 🖋!", ephemeral=True)
         except(Exception,):
             #if interaction fails, assume it's because aiya restarted (breaks buttons)
             button.disabled = True
@@ -142,7 +142,7 @@ class DrawView(View):
                     await interaction.followup.send(
                         f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{seed_tuple[15]}``\nNew Seed:``{seed_tuple[9]}``')
             else:
-                await interaction.response.send_message("You can't use other people's buttons!", ephemeral=True)
+                await interaction.response.send_message("You can't use other people's 🎲!", ephemeral=True)
         except(Exception,):
             #if interaction fails, assume it's because aiya restarted (breaks buttons)
             button.disabled = True
