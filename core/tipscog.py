@@ -5,13 +5,13 @@ from discord.ui import View
 from core import settings
 
 
-class view(View):
+class StyleView(View):
     @discord.ui.button(label="View the styles list", style=discord.ButtonStyle.primary)
     async def button_callback(self, button, interaction):
         button.disabled = True
         style_list = ''
         for i, j in settings.global_var.style_names.items():
-            style_list = style_list + str(i) + ' - ``' + str(j) + ' ``\n'
+            style_list = style_list + f'{str(i)} - ``{str(j)}``\n'
         embed2 = discord.Embed(title="Style list", description=style_list)
         await interaction.response.edit_message(view=self)
         await interaction.followup.send("Here you go!", embed=embed2, ephemeral=True)
@@ -33,7 +33,7 @@ class TipsCog(commands.Cog):
         embed.add_field(name="Alternating", value="`[word1|word2]`\nWhen generating an image, the AI will alternate between the words for each step. Word order still applies.", inline=True)
         embed.set_footer(text='Also, you can react with ❌ to delete your generated images.')
 
-        await ctx.respond(embed=embed, view=view(), ephemeral=True)
+        await ctx.respond(embed=embed, view=StyleView(), ephemeral=True)
 
 def setup(bot):
     bot.add_cog(TipsCog(bot))

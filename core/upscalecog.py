@@ -106,8 +106,8 @@ class UpscaleCog(commands.Cog):
         #formatting bot initial reply
         append_options = ''
         if upscaler_2:
-            append_options = append_options + '\nUpscaler 2: ``' + str(upscaler_2) + '``'
-            append_options = append_options + ' - Strength: ``' + str(upscaler_2_strength) + '``'
+            append_options = append_options + f'\nUpscaler 2: ``{upscaler_2}``'
+            append_options = append_options + f' - Strength: ``{upscaler_2_strength}``'
 
         view = viewhandler.DeleteView(ctx.author.id)
         #set up the queue if an image was found

@@ -91,46 +91,46 @@ class SettingsCog(commands.Cog):
         #run through each command and update the defaults user selects
         if set_nprompt != 'unset':
             settings.update(guild, 'negative_prompt', set_nprompt)
-            reply = reply + '\nNew default negative prompts is "' + str(set_nprompt) + '".'
+            reply = reply + f'\nNew default negative prompts is "{set_nprompt}.'
 
         if set_model is not None:
             settings.update(guild, 'data_model', set_model)
-            reply = reply + '\nNew default data model is "' + str(set_model) + '".'
+            reply = reply + f'\nNew default data model is "{set_model}.'
 
         if set_sampler != 'unset':
             settings.update(guild, 'sampler', set_sampler)
-            reply = reply + '\nNew default sampler is "' + str(set_sampler) + '".'
+            reply = reply + f'\nNew default sampler is "{set_sampler}.'
 
         if set_maxsteps != 1:
             settings.update(guild, 'max_steps', set_maxsteps)
-            reply = reply + '\nNew max steps value is ' + str(set_maxsteps) + '.'
+            reply = reply + f'\nNew max steps value is {set_maxsteps}.'
             #automatically lower default steps if max steps goes below it
             if set_maxsteps < reviewer['default_steps']:
                 settings.update(guild, 'default_steps', set_maxsteps)
-                reply = reply + '\nDefault steps value is too high! Lowering to ' + str(set_maxsteps) + '.'
+                reply = reply + f'\nDefault steps value is too high! Lowering to {set_maxsteps}.'
 
         if set_maxcount is not None:
             settings.update(guild, 'max_count', set_maxcount)
-            reply = reply + '\nNew max count value is ' + str(set_maxcount) + '.'
+            reply = reply + f'\nNew max count value is {set_maxcount}.'
             #automatically lower default count if max count goes below it
             if set_maxcount < reviewer['default_count']:
                 settings.update(guild, 'default_count', set_maxcount)
-                reply = reply + '\nDefault count value is too high! Lowering to ' + str(set_maxcount) + '.'
+                reply = reply + f'\nDefault count value is too high! Lowering to {set_maxcount}.'
 
         #review settings again in case user is trying to set steps/counts and max steps/counts simultaneously
         reviewer = settings.read(guild)
         if set_steps > reviewer['max_steps']:
-            reply = reply + '\nMax steps is ' + str(reviewer["max_steps"]) + '! You can\'t go beyond it!'
+            reply = reply + f'\nMax steps is {reviewer["max_steps"]}! You can\'t go beyond it!'
         elif set_steps != 1:
             settings.update(guild, 'default_steps', set_steps)
-            reply = reply + '\nNew default steps value is ' + str(set_steps) + '.'
+            reply = reply + f'\nNew default steps value is {set_steps}.'
 
         if set_count is not None:
             if set_count > reviewer['max_count']:
-                reply = reply + '\nMax count is ' + str(reviewer["max_count"]) + '! You can\'t go beyond it!'
+                reply = reply + f'\nMax count is {reviewer["max_count"]}! You can\'t go beyond it!'
             else:
                 settings.update(guild, 'default_count', set_count)
-                reply = reply + '\nNew default count is ' + str(set_count) + '.'
+                reply = reply + f'\nNew default count is {set_count}.'
 
         await ctx.send_response(reply)
 

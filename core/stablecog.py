@@ -220,32 +220,32 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         #lower step value to the highest setting if user goes over max steps
         if steps > settings.read(guild)['max_steps']:
             steps = settings.read(guild)['max_steps']
-            append_options = append_options + '\nExceeded maximum of ``' + str(steps) + '`` steps! This is the best I can do...'
+            append_options = append_options + f'\nExceeded maximum of ``{steps}`` steps! This is the best I can do...'
         if model_name != 'Default':
-            append_options = append_options + '\nModel: ``' + str(model_name) + '``'
+            append_options = append_options + f'\nModel: ``{model_name}``'
         if negative_prompt != '':
-            append_options = append_options + '\nNegative Prompt: ``' + str(negative_prompt) + '``'
+            append_options = append_options + f'\nNegative Prompt: ``{negative_prompt}``'
         if width != 512:
-            append_options = append_options + '\nWidth: ``' + str(width) + '``'
+            append_options = append_options + f'\nWidth: ``{width}``'
         if height != 512:
-            append_options = append_options + '\nHeight: ``' + str(height) + '``'
+            append_options = append_options + f'\nHeight: ``{height}``'
         if guidance_scale != 7.0:
-            append_options = append_options + '\nGuidance Scale: ``' + str(guidance_scale) + '``'
+            append_options = append_options + f'\nGuidance Scale: ``{guidance_scale}``'
         if sampler != 'Euler a':
-            append_options = append_options + '\nSampler: ``' + str(sampler) + '``'
+            append_options = append_options + f'\nSampler: ``{sampler}``'
         if init_image:
-            append_options = append_options + '\nStrength: ``' + str(strength) + '``'
-            append_options = append_options + '\nURL Init Image: ``' + str(init_image.url) + '``'
+            append_options = append_options + f'\nStrength: ``{strength}``'
+            append_options = append_options + f'\nURL Init Image: ``{init_image.url}``'
         if count != 1:
             max_count = settings.read(guild)['max_count']
             if count > max_count:
                 count = max_count
-                append_options = append_options + '\nExceeded maximum of ``' + str(count) + '`` images! This is the best I can do...'
-            append_options = append_options + '\nCount: ``' + str(count) + '``'
+                append_options = append_options + f'\nExceeded maximum of ``{count}`` images! This is the best I can do...'
+            append_options = append_options + f'\nCount: ``{count}``'
         if style != 'None':
-            append_options = append_options + '\nStyle: ``' + str(style) + '``'
+            append_options = append_options + f'\nStyle: ``{style}``'
         if facefix != 'None':
-            append_options = append_options + '\nFace restoration: ``' + str(facefix) + '``'
+            append_options = append_options + f'\nFace restoration: ``{facefix}``'
 
         #set up tuple of parameters to pass into the Discord view
         input_tuple = (ctx, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength, init_image, count, style, facefix, simple_prompt)
