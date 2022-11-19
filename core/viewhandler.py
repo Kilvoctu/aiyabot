@@ -177,7 +177,7 @@ class DrawView(View):
             embed = discord.Embed(title="About the image!", description="")
             embed.colour = settings.global_var.embed_color
             embed.add_field(name=f'Prompt', value=f'``{rev[15]}``', inline=False)
-            copy_command = f'/draw prompt:{rev[15]} data_model:{model_name} steps:{rev[4]} height:{str(rev[5])} width:{rev[6]} guidance_scale:{rev[7]} sampler:{rev[8]} seed:{rev[9]} count:{rev[12]} '
+            copy_command = f'/draw prompt:{rev[15]} data_model:{model_name} steps:{rev[4]} width:{rev[5]} height:{rev[6]} guidance_scale:{rev[7]} sampler:{rev[8]} seed:{rev[9]} count:{rev[12]} '
             if rev[2] != '':
                 copy_command = copy_command + f' negative_prompt:{rev[2]}'
                 embed.add_field(name=f'Negative prompt', value=f'``{rev[2]}``', inline=False)
