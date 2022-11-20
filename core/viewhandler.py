@@ -230,7 +230,8 @@ class DrawView(View):
         except(Exception,):
             button.disabled = True
             await interaction.response.edit_message(view=self)
-            await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
+            await interaction.followup.send("I may have been restarted. This button no longer works.\n"
+                                            "You can react with ❌ to delete the image.", ephemeral=True)
 
 
 # creating the view that holds a button to delete output
