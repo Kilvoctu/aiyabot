@@ -28,6 +28,9 @@ input_tuple[0] = ctx
 [16] = simple_prompt
 '''
 
+# set up tuple of queues to pass into union()
+queues = (queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q)
+
 
 # the modal that is used for the 🖋 button
 class DrawModal(Modal):
@@ -66,12 +69,12 @@ class DrawModal(Modal):
             settings.global_var.send_model = True
             queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
             await interaction.response.send_message(
-                f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``{prompt_output}')
+                f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(*queues))}``{prompt_output}')
         else:
             settings.global_var.send_model = True
             await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
             await interaction.response.send_message(
-                f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``{prompt_output}')
+                f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(*queues))}``{prompt_output}')
 
 
 # creating the view that holds the buttons for /draw output
@@ -91,9 +94,7 @@ class DrawView(View):
                 # if there's room in the queue, open up the modal
                 if queuehandler.GlobalQueue.dream_thread.is_alive():
                     user_already_in_queue = False
-                    for queue_object in queuehandler.union(queuehandler.GlobalQueue.draw_q,
-                                                           queuehandler.GlobalQueue.upscale_q,
-                                                           queuehandler.GlobalQueue.identify_q):
+                    for queue_object in queuehandler.union(*queues):
                         if queue_object.ctx.author.id == interaction.user.id:
                             user_already_in_queue = True
                             break
@@ -129,9 +130,7 @@ class DrawView(View):
                 draw_dream = stablecog.StableCog(self)
                 if queuehandler.GlobalQueue.dream_thread.is_alive():
                     user_already_in_queue = False
-                    for queue_object in queuehandler.union(queuehandler.GlobalQueue.draw_q,
-                                                           queuehandler.GlobalQueue.upscale_q,
-                                                           queuehandler.GlobalQueue.identify_q):
+                    for queue_object in queuehandler.union(*queues):
                         if queue_object.ctx.author.id == interaction.user.id:
                             user_already_in_queue = True
                             break
@@ -145,7 +144,7 @@ class DrawView(View):
                         queuehandler.GlobalQueue.draw_q.append(
                             queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
                         await interaction.followup.send(
-                            f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{seed_tuple[16]}``\nNew seed:``{seed_tuple[9]}``')
+                            f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[16]}``\nNew seed:``{seed_tuple[9]}``')
                 else:
                     button.disabled = True
                     await interaction.response.edit_message(view=self)
@@ -153,7 +152,7 @@ class DrawView(View):
                     await queuehandler.process_dream(draw_dream,
                                                      queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
                     await interaction.followup.send(
-                        f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{seed_tuple[16]}``\nNew Seed:``{seed_tuple[9]}``')
+                        f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[16]}``\nNew Seed:``{seed_tuple[9]}``')
             else:
                 await interaction.response.send_message("You can't use other people's 🎲!", ephemeral=True)
         except(Exception,):

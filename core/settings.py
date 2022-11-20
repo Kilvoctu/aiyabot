@@ -146,7 +146,7 @@ def files_check():
     # if directory in DIR doesn't exist, create it
     dir_exists = os.path.exists(global_var.dir)
     if dir_exists is False:
-        print(f'The folder for DIR doesn\'t exist! Creating folder at {global_var.dir}.')
+        print(f"The folder for DIR doesn't exist! Creating folder at {global_var.dir}.")
         os.mkdir(global_var.dir)
 
     # pull list of samplers, styles and face restorers from api

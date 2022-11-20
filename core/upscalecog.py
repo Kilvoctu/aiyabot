@@ -104,19 +104,19 @@ class UpscaleCog(commands.Cog):
                 self.wait_message.append(row[0])
 
         # formatting aiya initial reply
-        append_options = ''
+        reply_adds = ''
         if upscaler_2:
-            append_options = append_options + f'\nUpscaler 2: ``{upscaler_2}``'
-            append_options = append_options + f' - Strength: ``{upscaler_2_strength}``'
+            reply_adds = reply_adds + f'\nUpscaler 2: ``{upscaler_2}``'
+            reply_adds = reply_adds + f' - Strength: ``{upscaler_2_strength}``'
 
         view = viewhandler.DeleteView(ctx.author.id)
+        # set up tuple of queues to pass into union()
+        queues = (queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q)
         # set up the queue if an image was found
         if has_image:
             if queuehandler.GlobalQueue.dream_thread.is_alive():
                 user_already_in_queue = False
-                for queue_object in queuehandler.union(queuehandler.GlobalQueue.draw_q,
-                                                       queuehandler.GlobalQueue.upscale_q,
-                                                       queuehandler.GlobalQueue.identify_q):
+                for queue_object in queuehandler.union(*queues):
                     if queue_object.ctx.author.id == ctx.author.id:
                         user_already_in_queue = True
                         break
@@ -127,13 +127,13 @@ class UpscaleCog(commands.Cog):
                         queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength,
                                                    view))
                     await ctx.send_response(
-                        f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{append_options}')
+                        f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(*queues))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
             else:
                 await queuehandler.process_dream(self, queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1,
                                                                                   upscaler_2, upscaler_2_strength,
                                                                                   view))
                 await ctx.send_response(
-                    f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{append_options}')
+                    f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(*queues))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
 
     # generate the image
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.UpscaleObject):

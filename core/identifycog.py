@@ -51,13 +51,13 @@ class IdentifyCog(commands.Cog):
                 has_image = False
 
         view = viewhandler.DeleteView(ctx.author.id)
+        # set up tuple of queues to pass into union()
+        queues = (queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q)
         # set up the queue if an image was found
         if has_image:
             if queuehandler.GlobalQueue.dream_thread.is_alive():
                 user_already_in_queue = False
-                for queue_object in queuehandler.union(queuehandler.GlobalQueue.draw_q,
-                                                       queuehandler.GlobalQueue.upscale_q,
-                                                       queuehandler.GlobalQueue.identify_q):
+                for queue_object in queuehandler.union(*queues):
                     if queue_object.ctx.author.id == ctx.author.id:
                         user_already_in_queue = True
                         break
@@ -66,12 +66,12 @@ class IdentifyCog(commands.Cog):
                 else:
                     queuehandler.GlobalQueue.identify_q.append(queuehandler.IdentifyObject(ctx, init_image, view))
                     await ctx.send_response(
-                        f'<@{ctx.author.id}>, I\'m identifying the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``',
+                        f"<@{ctx.author.id}>, I'm identifying the image!\nQueue: ``{len(queuehandler.union(*queues))}``",
                         delete_after=45.0)
             else:
                 await queuehandler.process_dream(self, queuehandler.IdentifyObject(ctx, init_image, view))
                 await ctx.send_response(
-                    f'<@{ctx.author.id}>, I\'m identifying the image!\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}``',
+                    f"<@{ctx.author.id}>, I'm identifying the image!\nQueue: ``{len(queuehandler.union(*queues))}``",
                     delete_after=45.0)
 
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.IdentifyObject):
