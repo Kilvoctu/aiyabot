@@ -12,14 +12,14 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 path = 'resources/'.format(dir_path)
 
 template = {
-    "default_steps": 30,
-    "sampler": "Euler a",
     "negative_prompt": "",
+    "data_model": "",
+    "default_steps": 30,
     "max_steps": 50,
+    "sampler": "Euler a",
     "default_count": 1,
     "max_count": 1,
-    "clip_skip": 1,
-    "data_model": ""
+    "clip_skip": 1
 }
 
 
