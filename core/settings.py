@@ -34,7 +34,6 @@ class GlobalVar:
     model_names = {}
     style_names = {}
     facefix_models = []
-    model_fn_index = 0
     send_model = False
 
 
@@ -193,31 +192,3 @@ def guilds_check(self):
     else:
         print(f'Setting up settings for DMs, called None.json')
         build("None")
-
-
-# iterate through the old api at /config to get things we need that don't exist in new api
-def old_api_check():
-    with requests.Session() as s:
-        if global_var.username is not None:
-            login_payload = {
-                'username': global_var.username,
-                'password': global_var.password
-            }
-            s.post(global_var.url + '/login', data=login_payload)
-            config_url = s.get(global_var.url + "/config")
-        else:
-            s.post(global_var.url + '/login')
-            config_url = s.get(global_var.url + "/config")
-        old_config = config_url.json()
-        # check all dependencies in config to see if there's a target value
-        # and if there is, match the target value to the id value of component we want
-        # this provides the fn_index needed for the payload to old api
-        for d in range(len(old_config["dependencies"])):
-            try:
-                for c in old_config["components"]:
-                    if old_config["dependencies"][d]["targets"][0] == c["id"] and c["props"].get(
-                            "label") == "Stable Diffusion checkpoint":
-                        global_var.model_fn_index = d
-            except(Exception,):
-                pass
-        print("The fn_index for the model is " + str(global_var.model_fn_index) + "!")
