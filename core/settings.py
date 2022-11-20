@@ -18,6 +18,7 @@ template = {
     "max_steps": 50,
     "default_count": 1,
     "max_count": 1,
+    "clip_skip": 1,
     "data_model": ""
 }
 
