@@ -34,7 +34,6 @@ class GlobalVar:
     model_names = {}
     style_names = {}
     facefix_models = []
-    copy_command: bool = False
     model_fn_index = 0
     send_model = False
 
@@ -78,7 +77,6 @@ def startup_check():
 
     global_var.username = os.getenv("USER")
     global_var.password = os.getenv("PASS")
-    global_var.copy_command = os.getenv("COPY") is not None
 
     # check if Web UI is running
     connected = False
