@@ -140,6 +140,13 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         required=False,
         choices=settings.global_var.facefix_models,
     )
+    @option(
+        'clip_skip',
+        int,
+        description='Number of last layers of CLIP model to skip',
+        required=False,
+        choices=[x for x in range(1, 13, 1)]
+    )
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
                             prompt: str, negative_prompt: str = 'unset',
                             data_model: Optional[str] = None,
@@ -153,7 +160,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             init_url: Optional[str],
                             count: Optional[int] = None,
                             style: Optional[str] = 'None',
-                            facefix: Optional[str] = 'None'):
+                            facefix: Optional[str] = 'None',
+                            clip_skip: Optional[int] = 0):
 
         settings.global_var.send_model = False
         # update defaults with any new defaults from settingscog
@@ -166,6 +174,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             count = settings.read(guild)['default_count']
         if sampler == 'unset':
             sampler = settings.read(guild)['sampler']
+        if clip_skip == 0:
+            clip_skip = settings.read(guild)['clip_skip']
 
         # if a model is not selected, do nothing
         model_name = 'Default'
@@ -212,14 +222,14 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         with open('resources/stats.txt', 'w') as f:
             f.write('\n'.join(str(x) for x in data))
 
-        # random messages for bot to say
+        # random messages for aiya to say
         with open('resources/messages.csv') as csv_file:
             message_data = list(csv.reader(csv_file, delimiter='|'))
             message_row_count = len(message_data) - 1
             for row in message_data:
                 self.wait_message.append(row[0])
 
-        # formatting bot initial reply
+        # formatting aiya initial reply
         append_options = ''
         # lower step value to the highest setting if user goes over max steps
         if steps > settings.read(guild)['max_steps']:
@@ -250,11 +260,13 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             append_options = append_options + f'\nStyle: ``{style}``'
         if facefix != 'None':
             append_options = append_options + f'\nFace restoration: ``{facefix}``'
+        if clip_skip != 1:
+            append_options = append_options + f'\nCLIP skip: ``{clip_skip}``'
 
         # set up tuple of parameters to pass into the Discord view
         input_tuple = (
             ctx, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength,
-            init_image, count, style, facefix, simple_prompt)
+            init_image, count, style, facefix, clip_skip, simple_prompt)
         view = viewhandler.DrawView(input_tuple)
         # setup the queue
         if queuehandler.GlobalQueue.dream_thread.is_alive():
@@ -270,7 +282,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 queuehandler.GlobalQueue.draw_q.append(
                     queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, width, height,
                                             guidance_scale, sampler, seed, strength, init_image, count, style, facefix,
-                                            simple_prompt, view))
+                                            clip_skip, simple_prompt, view))
                 await ctx.send_response(
                     f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
         else:
@@ -278,7 +290,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                                              queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps,
                                                                      width, height, guidance_scale, sampler, seed,
                                                                      strength, init_image, count, style, facefix,
-                                                                     simple_prompt, view))
+                                                                     clip_skip, simple_prompt, view))
             await ctx.send_response(
                 f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{append_options}')
 
@@ -320,14 +332,21 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     "denoising_strength": queue_object.strength
                 }
                 payload.update(img_payload)
+            # add any options that would go into the override_settings
+            override_settings = {"CLIP_stop_at_last_layers": queue_object.clip_skip}
             if queue_object.facefix != 'None':
+                override_settings["face_restoration_model"] = queue_object.facefix
+                # face restoration needs this extra parameter
                 facefix_payload = {
                     "restore_faces": True,
-                    "override_settings": {
-                        "face_restoration_model": queue_object.facefix
-                    }
                 }
                 payload.update(facefix_payload)
+
+            # update payload with override_settings
+            override_payload = {
+                "override_settings": override_settings
+            }
+            payload.update(override_payload)
 
             # send normal payload to webui
             with requests.Session() as s:

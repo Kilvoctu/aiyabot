@@ -24,7 +24,7 @@ class SettingsCog(commands.Cog):
         required=False,
     )
     @option(
-        'set_nprompt',
+        'set_n_prompt',
         str,
         description='Set default negative prompt for the server',
         required=False,
@@ -44,7 +44,7 @@ class SettingsCog(commands.Cog):
         required=False,
     )
     @option(
-        'set_maxsteps',
+        'set_max_steps',
         int,
         description='Set default maximum steps for the server',
         min_value=1,
@@ -58,7 +58,7 @@ class SettingsCog(commands.Cog):
         required=False,
     )
     @option(
-        'set_maxcount',
+        'set_max_count',
         int,
         description='Set default maximum count for the server',
         min_value=1,
@@ -71,15 +71,23 @@ class SettingsCog(commands.Cog):
         required=False,
         choices=settings.global_var.sampler_names,
     )
+    @option(
+        'set_clip_skip',
+        int,
+        description='Set default CLIP skip for the server',
+        required=False,
+        choices=[x for x in range(1, 13, 1)]
+    )
     async def settings_handler(self, ctx,
                                current_settings: Optional[bool] = False,
-                               set_nprompt: Optional[str] = 'unset',
+                               set_n_prompt: Optional[str] = 'unset',
                                set_model: Optional[str] = None,
                                set_steps: Optional[int] = 1,
-                               set_maxsteps: Optional[int] = 1,
+                               set_max_steps: Optional[int] = 1,
                                set_count: Optional[int] = None,
-                               set_maxcount: Optional[int] = None,
-                               set_sampler: Optional[str] = 'unset'):
+                               set_max_count: Optional[int] = None,
+                               set_sampler: Optional[str] = 'unset',
+                               set_clip_skip: Optional[int] = 0):
         guild = '% s' % ctx.guild_id
         reviewer = settings.read(guild)
         reply = 'Summary:\n'
@@ -89,33 +97,37 @@ class SettingsCog(commands.Cog):
                 reply = reply + str(key) + ": " + str(value) + ", "
 
         # run through each command and update the defaults user selects
-        if set_nprompt != 'unset':
-            settings.update(guild, 'negative_prompt', set_nprompt)
-            reply = reply + f'\nNew default negative prompts is "{set_nprompt}.'
+        if set_n_prompt != 'unset':
+            settings.update(guild, 'negative_prompt', set_n_prompt)
+            reply = reply + f'\nNew default negative prompts is "{set_n_prompt}".'
 
         if set_model is not None:
             settings.update(guild, 'data_model', set_model)
-            reply = reply + f'\nNew default data model is "{set_model}.'
+            reply = reply + f'\nNew default data model is "{set_model}".'
 
         if set_sampler != 'unset':
             settings.update(guild, 'sampler', set_sampler)
-            reply = reply + f'\nNew default sampler is "{set_sampler}.'
+            reply = reply + f'\nNew default sampler is "{set_sampler}".'
 
-        if set_maxsteps != 1:
-            settings.update(guild, 'max_steps', set_maxsteps)
-            reply = reply + f'\nNew max steps value is {set_maxsteps}.'
+        if set_max_steps != 1:
+            settings.update(guild, 'max_steps', set_max_steps)
+            reply = reply + f'\nNew max steps value is {set_max_steps}.'
             # automatically lower default steps if max steps goes below it
-            if set_maxsteps < reviewer['default_steps']:
-                settings.update(guild, 'default_steps', set_maxsteps)
-                reply = reply + f'\nDefault steps value is too high! Lowering to {set_maxsteps}.'
+            if set_max_steps < reviewer['default_steps']:
+                settings.update(guild, 'default_steps', set_max_steps)
+                reply = reply + f'\nDefault steps value is too high! Lowering to {set_max_steps}.'
 
-        if set_maxcount is not None:
-            settings.update(guild, 'max_count', set_maxcount)
-            reply = reply + f'\nNew max count value is {set_maxcount}.'
+        if set_max_count is not None:
+            settings.update(guild, 'max_count', set_max_count)
+            reply = reply + f'\nNew max count value is {set_max_count}.'
             # automatically lower default count if max count goes below it
-            if set_maxcount < reviewer['default_count']:
-                settings.update(guild, 'default_count', set_maxcount)
-                reply = reply + f'\nDefault count value is too high! Lowering to {set_maxcount}.'
+            if set_max_count < reviewer['default_count']:
+                settings.update(guild, 'default_count', set_max_count)
+                reply = reply + f'\nDefault count value is too high! Lowering to {set_max_count}.'
+
+        if set_clip_skip != 0:
+            settings.update(guild, 'clip_skip', set_clip_skip)
+            reply = reply + f'\nNew CLIP skip is {set_clip_skip}.'
 
         # review settings again in case user is trying to set steps/counts and max steps/counts simultaneously
         reviewer = settings.read(guild)
