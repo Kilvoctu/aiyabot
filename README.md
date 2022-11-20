@@ -62,7 +62,7 @@ To generate an image from text, use the /draw command and include your prompt as
 
 - Ensure AIYA has `bot` and `application.commands` scopes when inviting to your Discord server, and intents are enabled.
 - As /settings can be abused, consider reviewing who can access the command. This can be done through Apps -> Integrations in your Server Settings.
-- React to generated images with ❌ to delete them.
+- If the ❌ button fails, you can react to generated images with ❌ to delete them.
 - Optional .env variables you can set:
 
 ```dotenv
