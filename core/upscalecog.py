@@ -96,14 +96,14 @@ class UpscaleCog(commands.Cog):
         filename, file_ext = splitext(basename(disassembled.path))
         self.file_name = filename
 
-        # random messages for bot to say
+        # random messages for aiya to say
         with open('resources/messages.csv') as csv_file:
             message_data = list(csv.reader(csv_file, delimiter='|'))
             message_row_count = len(message_data) - 1
             for row in message_data:
                 self.wait_message.append(row[0])
 
-        # formatting bot initial reply
+        # formatting aiya initial reply
         append_options = ''
         if upscaler_2:
             append_options = append_options + f'\nUpscaler 2: ``{upscaler_2}``'

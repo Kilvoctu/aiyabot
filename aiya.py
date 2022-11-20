@@ -27,7 +27,7 @@ self.load_extension('core.tipscog')
 
 
 # stats slash command
-@self.slash_command(name='stats', description='How many images has the bot generated?')
+@self.slash_command(name='stats', description='How many images have I generated?')
 async def stats(ctx):
     with open('resources/stats.txt', 'r') as f:
         data = list(map(int, f.readlines()))

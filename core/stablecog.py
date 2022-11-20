@@ -222,14 +222,14 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         with open('resources/stats.txt', 'w') as f:
             f.write('\n'.join(str(x) for x in data))
 
-        # random messages for bot to say
+        # random messages for aiya to say
         with open('resources/messages.csv') as csv_file:
             message_data = list(csv.reader(csv_file, delimiter='|'))
             message_row_count = len(message_data) - 1
             for row in message_data:
                 self.wait_message.append(row[0])
 
-        # formatting bot initial reply
+        # formatting aiya initial reply
         append_options = ''
         # lower step value to the highest setting if user goes over max steps
         if steps > settings.read(guild)['max_steps']:
@@ -260,6 +260,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             append_options = append_options + f'\nStyle: ``{style}``'
         if facefix != 'None':
             append_options = append_options + f'\nFace restoration: ``{facefix}``'
+        if clip_skip != 1:
+            append_options = append_options + f'\nCLIP skip: ``{clip_skip}``'
 
         # set up tuple of parameters to pass into the Discord view
         input_tuple = (
