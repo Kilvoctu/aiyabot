@@ -52,18 +52,36 @@ class DrawModal(Modal):
                 required=False
             )
         )
+        self.add_item(
+            InputText(
+                label='Keep seed? Set to -1 to randomize',
+                style=discord.InputTextStyle.short,
+                value=input_tuple[9],
+                required=False
+            )
+        )
 
     async def callback(self, interaction: discord.Interaction):
+        # update the tuple with new prompts
         new_prompt = list(self.input_tuple)
         new_prompt[1] = new_prompt[1].replace(new_prompt[16], self.children[0].value)
         new_prompt[16] = self.children[0].value
         new_prompt[2] = self.children[1].value
+
+        # update the tuple new seed (random if set to -1)
+        new_prompt[9] = self.children[2].value
+        if self.children[2].value == "-1":
+            new_prompt[9] = random.randint(0, 0xFFFFFFFF)
+
         prompt_tuple = tuple(new_prompt)
 
         draw_dream = stablecog.StableCog(self)
-        prompt_output = f'\nNew prompt: ``{self.children[0].value}``'
+        prompt_output = f'\nNew prompt: ``{new_prompt[16]}``'
         if new_prompt[2] != '':
-            prompt_output = prompt_output + f'\nNew negative prompt: ``{self.children[1].value}``'
+            prompt_output = prompt_output + f'\nNew negative prompt: ``{new_prompt[2]}``'
+        if self.children[2].value != self.input_tuple[9]:
+            prompt_output = prompt_output + f'\nNew seed: ``{new_prompt[9]}``'
+
         # check queue again, but now we know user is not in queue
         if queuehandler.GlobalQueue.dream_thread.is_alive():
             settings.global_var.send_model = True
