@@ -186,7 +186,13 @@ def files_check():
     r2 = s.get(global_var.url + "/sdapi/v1/prompt-styles")
     r3 = s.get(global_var.url + "/sdapi/v1/face-restorers")
     for s1 in r.json():
-        global_var.sampler_names.append(s1['name'])
+        try:
+            global_var.sampler_names.append(s1['name'])
+        except(Exception,):
+            # throw in last exception error for anything that wasn't caught earlier
+            print("Can't connect to API for some reason!"
+                  "Please check your .env URL or credentials.")
+            os.system("pause")
     for s2 in r2.json():
         global_var.style_names[s2['name']] = s2['prompt']
     for s3 in r3.json():
