@@ -352,7 +352,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             payload.update(override_payload)
 
             # send normal payload to webui
-            if settings.global_var.username is not None:
+            if settings.global_var.gradio_auth:
                 login_payload = {
                     'username': settings.global_var.username,
                     'password': settings.global_var.password

@@ -87,7 +87,7 @@ class IdentifyCog(commands.Cog):
                 if settings.global_var.api_auth:
                     s.auth = (settings.global_var.api_user, settings.global_var.api_pass)
 
-                if settings.global_var.username is not None:
+                if settings.global_var.gradio_auth:
                     login_payload = {
                         'username': settings.global_var.username,
                         'password': settings.global_var.password
