@@ -7,7 +7,7 @@ A Discord bot interface for Stable Diffusion
 ## Setup requirements
 
 - Set up [AUTOMATIC1111's Stable Diffusion AI Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui).
-  - AIYA is currently tested on commit `47a44c7e421b98ca07e92dbf88769b04c9e28f86` of the Web UI.
+  - AIYA is currently tested on commit `828438b4a190759807f9054932cae3a8b880ddf1` of the Web UI.
 - Run the Web UI as local host with api (`COMMANDLINE_ARGS= --listen --api`).
 - Clone this repo.
 - Create a text file in your cloned repo called ".env", formatted like so:
@@ -26,7 +26,7 @@ To generate an image from text, use the /draw command and include your prompt as
 ### Currently supported options
 
 - negative prompts
-- swap model/checkpoint (_see Notes or [wiki](https://github.com/Kilvoctu/aiyabot/wiki/Model-swapping)_)
+- swap model/checkpoint (_[see wiki](https://github.com/Kilvoctu/aiyabot/wiki/Model-swapping)_)
 - sampling steps
 - width/height (up to 768)
 - CFG scale
@@ -41,7 +41,7 @@ To generate an image from text, use the /draw command and include your prompt as
 
 #### Bonus features
 
-- /settings command - set per-server defaults for the following (_also see Notes!_):
+- /settings command - set per-server defaults for the following (_see Notes!_):
   - negative prompts
   - model/checkpoint
   - sampling steps / max steps
@@ -62,31 +62,9 @@ To generate an image from text, use the /draw command and include your prompt as
 
 - Ensure AIYA has `bot` and `application.commands` scopes when inviting to your Discord server, and intents are enabled.
 - As /settings can be abused, consider reviewing who can access the command. This can be done through Apps -> Integrations in your Server Settings.
-- If the ❌ button fails, you can react to generated images with ❌ to delete them.
-- Optional .env variables you can set:
+- [See wiki for optional .env variables you can set.](https://github.com/Kilvoctu/aiyabot/wiki/.env-Settings)
+- [See wiki for notes on swapping models.](https://github.com/Kilvoctu/aiyabot/wiki/Model-swapping)
 
-```dotenv
-URL = set URL if yours is not default (http://127.0.0.1:7860)
-DIR = set folder to save images, otherwise the default is \outputs
-
-# only set USER and PASS if you use --share and --gradio-auth
-
-USER = your username
-PASS = your password
-COPY = set to anything to have the output show the command used to produce the image instead of the prompt
-```
-- On first launch, AIYA will generate a models.csv with a default dummy value. If you'd like to add more models/checkpoints, replace the default value and add lines following the header format.
-  - Display name is anything you want.
-  - Model full name is how it would appear in the Web UI.
-  - Activator token is any words a model may need to take effect. Can be blank (remember to add | separator at the end).
-  - An example may look like:
-```
-display_name|model_full_name|activator_token
-SD 1.5|v1-5-pruned-emaonly.ckpt [81761151]|
-WD 1.3|wd-v1-3-float32.ckpt [4470c325]|
-MoDi 1|moDi-v1-pruned.ckpt [ccf3615f]|Modern Disney style
-```
-- In the Web UI, there is a setting named "Checkpoints to cache in RAM". If you have enough RAM, this value can be increased to speed up swapping.
 
 ## Credits
 
