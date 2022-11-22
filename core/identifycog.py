@@ -84,6 +84,9 @@ class IdentifyCog(commands.Cog):
 
             # send normal payload to webui
             with requests.Session() as s:
+                if settings.global_var.api_auth:
+                    s.auth = (settings.global_var.api_user, settings.global_var.api_pass)
+
                 if settings.global_var.username is not None:
                     login_payload = {
                         'username': settings.global_var.username,

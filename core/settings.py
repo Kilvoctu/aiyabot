@@ -30,6 +30,9 @@ class GlobalVar:
     embed_color = discord.Colour.from_rgb(222, 89, 28)
     username: Optional[str] = None
     password: Optional[str] = None
+    api_auth = False
+    api_user: Optional[str] = None
+    api_pass: Optional[str] = None
     sampler_names = []
     model_names = {}
     style_names = {}
@@ -76,12 +79,18 @@ def startup_check():
 
     global_var.username = os.getenv("USER")
     global_var.password = os.getenv("PASS")
+    global_var.api_user = os.getenv("APIUSER")
+    global_var.api_pass = os.getenv("APIPASS")
 
     # check if Web UI is running
     connected = False
     while not connected:
         try:
             response = requests.get(global_var.url + '/sdapi/v1/cmd-flags')
+            # lazy method to see if --api-auth commandline argument is set
+            if response.status_code == 401:
+                global_var.api_auth = True
+            # lazy method to see if --api commandline argument is not set
             if response.status_code == 404:
                 print('API is unreachable! Please check Web UI COMMANDLINE_ARGS for --api.')
                 os.system("pause")
@@ -148,6 +157,9 @@ def files_check():
 
     # pull list of samplers, styles and face restorers from api
     with requests.Session() as s:
+        if global_var.api_auth:
+            s.auth = (global_var.api_user, global_var.api_pass)
+
         if global_var.username is not None:
             login_payload = {
                 'username': global_var.username,
