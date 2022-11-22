@@ -30,6 +30,10 @@ class GlobalVar:
     embed_color = discord.Colour.from_rgb(222, 89, 28)
     username: Optional[str] = None
     password: Optional[str] = None
+    api_auth = False
+    gradio_auth = False
+    api_user: Optional[str] = None
+    api_pass: Optional[str] = None
     sampler_names = []
     model_names = {}
     style_names = {}
@@ -76,12 +80,23 @@ def startup_check():
 
     global_var.username = os.getenv("USER")
     global_var.password = os.getenv("PASS")
+    global_var.api_user = os.getenv("APIUSER")
+    global_var.api_pass = os.getenv("APIPASS")
 
     # check if Web UI is running
     connected = False
     while not connected:
         try:
             response = requests.get(global_var.url + '/sdapi/v1/cmd-flags')
+            # lazy method to see if --api-auth commandline argument is set
+            if response.status_code == 401:
+                global_var.api_auth = True
+                # lazy method to see if --api-auth credentials are set
+                if (not global_var.api_pass) or (not global_var.api_user):
+                    print('API rejected me! If using --api-auth, '
+                          'please check your .env file for APIUSER and APIPASS values.')
+                    os.system("pause")
+            # lazy method to see if --api commandline argument is not set
             if response.status_code == 404:
                 print('API is unreachable! Please check Web UI COMMANDLINE_ARGS for --api.')
                 os.system("pause")
@@ -147,27 +162,41 @@ def files_check():
         os.mkdir(global_var.dir)
 
     # pull list of samplers, styles and face restorers from api
-    with requests.Session() as s:
-        if global_var.username is not None:
-            login_payload = {
-                'username': global_var.username,
-                'password': global_var.password
-            }
-            s.post(global_var.url + '/login', data=login_payload)
-            r = s.get(global_var.url + "/sdapi/v1/samplers")
-            r2 = s.get(global_var.url + "/sdapi/v1/prompt-styles")
-            r3 = s.get(global_var.url + "/sdapi/v1/face-restorers")
-        else:
-            s.post(global_var.url + '/login')
-            r = s.get(global_var.url + "/sdapi/v1/samplers")
-            r2 = s.get(global_var.url + "/sdapi/v1/prompt-styles")
-            r3 = s.get(global_var.url + "/sdapi/v1/face-restorers")
-        for s1 in r.json():
+    # create persistent session since we'll need to do a few API calls
+    s = requests.Session()
+    if global_var.api_auth:
+        s.auth = (global_var.api_user, global_var.api_pass)
+
+    # do a check to see if --gradio-auth is set
+    r0 = s.get(global_var.url + '/sdapi/v1/cmd-flags')
+    response_data = r0.json()
+    if response_data['gradio_auth']:
+        global_var.gradio_auth = True
+
+    if global_var.gradio_auth:
+        login_payload = {
+            'username': global_var.username,
+            'password': global_var.password
+        }
+        s.post(global_var.url + '/login', data=login_payload)
+    else:
+        s.post(global_var.url + '/login')
+
+    r = s.get(global_var.url + "/sdapi/v1/samplers")
+    r2 = s.get(global_var.url + "/sdapi/v1/prompt-styles")
+    r3 = s.get(global_var.url + "/sdapi/v1/face-restorers")
+    for s1 in r.json():
+        try:
             global_var.sampler_names.append(s1['name'])
-        for s2 in r2.json():
-            global_var.style_names[s2['name']] = s2['prompt']
-        for s3 in r3.json():
-            global_var.facefix_models.append(s3['name'])
+        except(Exception,):
+            # throw in last exception error for anything that wasn't caught earlier
+            print("Can't connect to API for some reason!"
+                  "Please check your .env URL or credentials.")
+            os.system("pause")
+    for s2 in r2.json():
+        global_var.style_names[s2['name']] = s2['prompt']
+    for s3 in r3.json():
+        global_var.facefix_models.append(s3['name'])
 
 
 def guilds_check(self):
