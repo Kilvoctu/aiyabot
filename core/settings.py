@@ -90,6 +90,11 @@ def startup_check():
             # lazy method to see if --api-auth commandline argument is set
             if response.status_code == 401:
                 global_var.api_auth = True
+                # lazy method to see if --api-auth credentials are set
+                if not global_var.api_pass:
+                    print('API rejected me! If using --api-auth, '
+                          'please check your .env file for APIUSER and APIPASS values.')
+                    os.system("pause")
             # lazy method to see if --api commandline argument is not set
             if response.status_code == 404:
                 print('API is unreachable! Please check Web UI COMMANDLINE_ARGS for --api.')
