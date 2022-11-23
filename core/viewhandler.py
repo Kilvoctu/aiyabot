@@ -54,7 +54,7 @@ class DrawModal(Modal):
         )
         self.add_item(
             InputText(
-                label='Keep seed? Set to -1 to randomize',
+                label='Keep seed? Delete or set to -1 to randomize',
                 style=discord.InputTextStyle.short,
                 value=input_tuple[9],
                 required=False
@@ -70,7 +70,7 @@ class DrawModal(Modal):
 
         # update the tuple new seed (random if set to -1)
         new_prompt[9] = self.children[2].value
-        if self.children[2].value == "-1":
+        if (self.children[2].value == "-1") or (self.children[2].value == ""):
             new_prompt[9] = random.randint(0, 0xFFFFFFFF)
 
         prompt_tuple = tuple(new_prompt)
@@ -79,7 +79,7 @@ class DrawModal(Modal):
         prompt_output = f'\nNew prompt: ``{new_prompt[16]}``'
         if new_prompt[2] != '':
             prompt_output = prompt_output + f'\nNew negative prompt: ``{new_prompt[2]}``'
-        if self.children[2].value != self.input_tuple[9]:
+        if str(new_prompt[9]) != str(self.input_tuple[9]):
             prompt_output = prompt_output + f'\nNew seed: ``{new_prompt[9]}``'
 
         # check queue again, but now we know user is not in queue
