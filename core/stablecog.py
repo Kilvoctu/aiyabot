@@ -75,14 +75,14 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         int,
         description='Width of the generated image. Default: 512',
         required=False,
-        choices=[x for x in range(192, 832, 64)]
+        choices=[x for x in range(192, 1088, 64)]
     )
     @option(
         'height',
         int,
         description='Height of the generated image. Default: 512',
         required=False,
-        choices=[x for x in range(192, 832, 64)]
+        choices=[x for x in range(192, 1088, 64)]
     )
     @option(
         'guidance_scale',
@@ -136,9 +136,15 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     @option(
         'facefix',
         str,
-        description='Tries to improve faces in pictures.',
+        description='Tries to improve faces in images.',
         required=False,
         choices=settings.global_var.facefix_models,
+    )
+    @option(
+        'highres_fix',
+        bool,
+        description='Tries to fix issues from generating high-res images. Takes longer!',
+        required=False,
     )
     @option(
         'clip_skip',
@@ -161,6 +167,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             count: Optional[int] = None,
                             style: Optional[str] = 'None',
                             facefix: Optional[str] = 'None',
+                            highres_fix: Optional[bool] = False,
                             clip_skip: Optional[int] = 0):
 
         settings.global_var.send_model = False
@@ -266,7 +273,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         # set up tuple of parameters to pass into the Discord view
         input_tuple = (
             ctx, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength,
-            init_image, count, style, facefix, clip_skip, simple_prompt)
+            init_image, count, style, facefix, highres_fix, clip_skip, simple_prompt)
         view = viewhandler.DrawView(input_tuple)
         # set up tuple of queues to pass into union()
         queues = (queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q)
@@ -283,7 +290,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 queuehandler.GlobalQueue.draw_q.append(
                     queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, width, height,
                                             guidance_scale, sampler, seed, strength, init_image, count, style, facefix,
-                                            clip_skip, simple_prompt, view))
+                                            highres_fix, clip_skip, simple_prompt, view))
                 await ctx.send_response(
                     f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{reply_adds}')
         else:
@@ -291,7 +298,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                                              queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps,
                                                                      width, height, guidance_scale, sampler, seed,
                                                                      strength, init_image, count, style, facefix,
-                                                                     clip_skip, simple_prompt, view))
+                                                                     highres_fix, clip_skip, simple_prompt, view))
             await ctx.send_response(
                 f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{reply_adds}')
 
@@ -326,6 +333,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     queue_object.style
                 ]
             }
+
+            # update payload is init_img or init_url is used
             if queue_object.init_image is not None:
                 image = base64.b64encode(requests.get(queue_object.init_image.url, stream=True).content).decode('utf-8')
                 img_payload = {
@@ -335,6 +344,15 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     "denoising_strength": queue_object.strength
                 }
                 payload.update(img_payload)
+
+            # update payload if high-res fix is used
+            if queue_object.highres_fix:
+                highres_payload = {
+                    "enable_hr": queue_object.highres_fix,
+                    "denoising_strength": queue_object.strength
+                }
+                payload.update(highres_payload)
+
             # add any options that would go into the override_settings
             override_settings = {"CLIP_stop_at_last_layers": queue_object.clip_skip}
             if queue_object.facefix != 'None':

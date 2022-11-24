@@ -28,17 +28,17 @@ class GlobalVar:
     url = ""
     dir = ""
     embed_color = discord.Colour.from_rgb(222, 89, 28)
+    gradio_auth = False
     username: Optional[str] = None
     password: Optional[str] = None
     api_auth = False
-    gradio_auth = False
     api_user: Optional[str] = None
     api_pass: Optional[str] = None
-    sampler_names = []
+    send_model = False
     model_names = {}
+    sampler_names = []
     style_names = {}
     facefix_models = []
-    send_model = False
 
 
 global_var = GlobalVar()
