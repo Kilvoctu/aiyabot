@@ -15,7 +15,7 @@ A Discord bot interface for Stable Diffusion
 # .env
 TOKEN = put your bot token here
 ```
-- Run the AIYA by running launch.bat (or launch.sh for Linux)
+- Run AIYA by running launch.bat (or launch.sh for Linux)
 
 ## Usage
 
@@ -28,7 +28,7 @@ To generate an image from text, use the /draw command and include your prompt as
 - negative prompts
 - swap model/checkpoint (_[see wiki](https://github.com/Kilvoctu/aiyabot/wiki/Model-swapping)_)
 - sampling steps
-- width/height (up to 768)
+- width/height (up to 1024)
 - CFG scale
 - sampling method
 - seed
@@ -37,6 +37,7 @@ To generate an image from text, use the /draw command and include your prompt as
 - batch count
 - Web UI styles
 - face restoration
+- high-res fix
 - CLIP skip
 
 #### Bonus features

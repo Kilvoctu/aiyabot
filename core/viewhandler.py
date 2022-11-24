@@ -24,8 +24,9 @@ input_tuple[0] = ctx
 [12] = count
 [13] = style
 [14] = facefix
-[15] = clip_skip
-[16] = simple_prompt
+[15] = highres_fix
+[16] = clip_skip
+[17] = simple_prompt
 '''
 
 # set up tuple of queues to pass into union()
@@ -40,7 +41,7 @@ class DrawModal(Modal):
         self.add_item(
             InputText(
                 label='Input your new prompt',
-                value=input_tuple[16],
+                value=input_tuple[17],
                 style=discord.InputTextStyle.long
             )
         )
@@ -64,8 +65,8 @@ class DrawModal(Modal):
     async def callback(self, interaction: discord.Interaction):
         # update the tuple with new prompts
         new_prompt = list(self.input_tuple)
-        new_prompt[1] = new_prompt[1].replace(new_prompt[16], self.children[0].value)
-        new_prompt[16] = self.children[0].value
+        new_prompt[1] = new_prompt[1].replace(new_prompt[17], self.children[0].value)
+        new_prompt[17] = self.children[0].value
         new_prompt[2] = self.children[1].value
 
         # update the tuple new seed (random if set to -1)
@@ -76,7 +77,7 @@ class DrawModal(Modal):
         prompt_tuple = tuple(new_prompt)
 
         draw_dream = stablecog.StableCog(self)
-        prompt_output = f'\nNew prompt: ``{new_prompt[16]}``'
+        prompt_output = f'\nNew prompt: ``{new_prompt[17]}``'
         if new_prompt[2] != '':
             prompt_output = prompt_output + f'\nNew negative prompt: ``{new_prompt[2]}``'
         if str(new_prompt[9]) != str(self.input_tuple[9]):
@@ -162,7 +163,7 @@ class DrawView(View):
                         queuehandler.GlobalQueue.draw_q.append(
                             queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
                         await interaction.followup.send(
-                            f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[16]}``\nNew seed:``{seed_tuple[9]}``')
+                            f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[17]}``\nNew seed:``{seed_tuple[9]}``')
                 else:
                     button.disabled = True
                     await interaction.response.edit_message(view=self)
@@ -170,7 +171,7 @@ class DrawView(View):
                     await queuehandler.process_dream(draw_dream,
                                                      queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
                     await interaction.followup.send(
-                        f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[16]}``\nNew Seed:``{seed_tuple[9]}``')
+                        f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[17]}``\nNew Seed:``{seed_tuple[9]}``')
             else:
                 await interaction.response.send_message("You can't use other people's 🎲!", ephemeral=True)
         except(Exception,):
@@ -198,8 +199,8 @@ class DrawView(View):
             # generate the command for copy-pasting, and also add embed fields
             embed = discord.Embed(title="About the image!", description="")
             embed.colour = settings.global_var.embed_color
-            embed.add_field(name=f'Prompt', value=f'``{rev[16]}``', inline=False)
-            copy_command = f'/draw prompt:{rev[16]} data_model:{model_name} steps:{rev[4]} width:{rev[5]} height:{rev[6]} guidance_scale:{rev[7]} sampler:{rev[8]} seed:{rev[9]}'
+            embed.add_field(name=f'Prompt', value=f'``{rev[17]}``', inline=False)
+            copy_command = f'/draw prompt:{rev[17]} data_model:{model_name} steps:{rev[4]} width:{rev[5]} height:{rev[6]} guidance_scale:{rev[7]} sampler:{rev[8]} seed:{rev[9]}'
             if rev[2] != '':
                 copy_command = copy_command + f' negative_prompt:{rev[2]}'
                 embed.add_field(name=f'Negative prompt', value=f'``{rev[2]}``', inline=False)
@@ -222,9 +223,12 @@ class DrawView(View):
             if rev[14] != 'None':
                 copy_command = copy_command + f' facefix:{rev[14]}'
                 extra_params = extra_params + f'\nFace restoration model: ``{rev[14]}``'
-            if rev[15] != 1:
-                copy_command = copy_command + f' clip_skip:{rev[15]}'
-                extra_params = extra_params + f'\nCLIP skip: ``{rev[15]}``'
+            if rev[15]:
+                copy_command = copy_command + f' enable_hr:{rev[15]}'
+                extra_params = extra_params + f'\nHigh-res fix: ``{rev[15]}``'
+            if rev[16] != 1:
+                copy_command = copy_command + f' clip_skip:{rev[16]}'
+                extra_params = extra_params + f'\nCLIP skip: ``{rev[16]}``'
             embed.add_field(name=f'Other parameters', value=extra_params, inline=False)
             embed.add_field(name=f'Command for copying', value=f'``{copy_command}``', inline=False)
 
