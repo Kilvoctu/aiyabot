@@ -85,12 +85,14 @@ class DrawModal(Modal):
 
         # check queue again, but now we know user is not in queue
         if queuehandler.GlobalQueue.dream_thread.is_alive():
-            settings.global_var.send_model = True
+            if self.input_tuple[3] != '':
+                settings.global_var.send_model = True
             queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
             await interaction.response.send_message(
                 f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(*queues))}``{prompt_output}')
         else:
-            settings.global_var.send_model = True
+            if self.input_tuple[3] != '':
+                settings.global_var.send_model = True
             await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
             await interaction.response.send_message(
                 f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(*queues))}``{prompt_output}')
@@ -159,7 +161,10 @@ class DrawView(View):
                     else:
                         button.disabled = True
                         await interaction.response.edit_message(view=self)
-                        settings.global_var.send_model = True
+
+                        if self.input_tuple[3] != '':
+                            settings.global_var.send_model = True
+
                         queuehandler.GlobalQueue.draw_q.append(
                             queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
                         await interaction.followup.send(
@@ -167,7 +172,10 @@ class DrawView(View):
                 else:
                     button.disabled = True
                     await interaction.response.edit_message(view=self)
-                    settings.global_var.send_model = True
+
+                    if self.input_tuple[3] != '':
+                        settings.global_var.send_model = True
+
                     await queuehandler.process_dream(draw_dream,
                                                      queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
                     await interaction.followup.send(
