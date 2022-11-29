@@ -27,6 +27,7 @@ input_tuple[0] = ctx
 [15] = highres_fix
 [16] = clip_skip
 [17] = simple_prompt
+[18] = model_index
 '''
 
 # set up tuple of queues to pass into union()
@@ -128,7 +129,8 @@ class DrawView(View):
                     await interaction.response.send_modal(DrawModal(self.input_tuple))
             else:
                 await interaction.response.send_message("You can't use other people's 🖋!", ephemeral=True)
-        except(Exception,):
+        except Exception as e:
+            print('The pen button broke: ' + str(e))
             # if interaction fails, assume it's because aiya restarted (breaks buttons)
             button.disabled = True
             await interaction.response.edit_message(view=self)
@@ -182,7 +184,8 @@ class DrawView(View):
                         f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[17]}``\nNew Seed:``{seed_tuple[9]}``')
             else:
                 await interaction.response.send_message("You can't use other people's 🎲!", ephemeral=True)
-        except(Exception,):
+        except Exception as e:
+            print('The dice roll button broke: ' + str(e))
             # if interaction fails, assume it's because aiya restarted (breaks buttons)
             button.disabled = True
             await interaction.response.edit_message(view=self)
@@ -195,14 +198,22 @@ class DrawView(View):
     async def button_review(self, button, interaction):
         # simpler variable name
         rev = self.input_tuple
+        # initial dummy data for a default models.csv
+        model_name = 'Default'
+        full_name = 'Unknown'
+        activator_token = False
         try:
             # the tuple will show the model_full_name. Get the associated display_name and activator_token from it.
             with open('resources/models.csv', 'r', encoding='utf-8') as f:
                 reader = csv.DictReader(f, delimiter='|')
                 for row in reader:
-                    if row['model_full_name'] == rev[3]:
+                    if reader.line_num == rev[18]:
                         model_name = row['display_name']
+                        full_name = rev[3]
                         activator_token = row['activator_token']
+
+            # strip any folders from model full name
+            full_name = full_name.split('/', 1)[-1].split('\\', 1)[-1]
 
             # generate the command for copy-pasting, and also add embed fields
             embed = discord.Embed(title="About the image!", description="")
@@ -214,10 +225,10 @@ class DrawView(View):
                 embed.add_field(name=f'Negative prompt', value=f'``{rev[2]}``', inline=False)
             if activator_token:
                 embed.add_field(name=f'Data model',
-                                value=f'Display name - ``{model_name}``\nFull name - ``{rev[3]}``\nActivator token - ``{activator_token}``',
+                                value=f'Display name - ``{model_name}``\nFull name - ``{full_name}``\nActivator token - ``{activator_token}``',
                                 inline=False)
             else:
-                embed.add_field(name=f'Data model', value=f'Display name - ``{model_name}``\nFull name - ``{rev[3]}``',
+                embed.add_field(name=f'Data model', value=f'Display name - ``{model_name}``\nFull name - ``{full_name}``',
                                 inline=False)
             extra_params = f'Sampling steps: ``{rev[4]}``\nSize: ``{rev[5]}x{rev[6]}``\nClassifier-free guidance scale: ``{rev[7]}``\nSampling method: ``{rev[8]}``\nSeed: ``{rev[9]}``'
             if rev[11]:
@@ -241,7 +252,8 @@ class DrawView(View):
             embed.add_field(name=f'Command for copying', value=f'``{copy_command}``', inline=False)
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
-        except(Exception,):
+        except Exception as e:
+            print('The clipboard button broke: ' + str(e))
             # if interaction fails, assume it's because aiya restarted (breaks buttons)
             button.disabled = True
             await interaction.response.edit_message(view=self)
