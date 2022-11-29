@@ -130,7 +130,7 @@ class DrawView(View):
             else:
                 await interaction.response.send_message("You can't use other people's 🖋!", ephemeral=True)
         except Exception as e:
-            print('The pen button broke:' + str(e))
+            print('The pen button broke: ' + str(e))
             # if interaction fails, assume it's because aiya restarted (breaks buttons)
             button.disabled = True
             await interaction.response.edit_message(view=self)
@@ -185,7 +185,7 @@ class DrawView(View):
             else:
                 await interaction.response.send_message("You can't use other people's 🎲!", ephemeral=True)
         except Exception as e:
-            print('The dice roll button broke:' + str(e))
+            print('The dice roll button broke: ' + str(e))
             # if interaction fails, assume it's because aiya restarted (breaks buttons)
             button.disabled = True
             await interaction.response.edit_message(view=self)
@@ -206,6 +206,11 @@ class DrawView(View):
                     if reader.line_num == rev[18]:
                         model_name = row['display_name']
                         activator_token = row['activator_token']
+                    else:
+                        # fill in dummy data for default models.csv
+                        model_name = 'Default'
+                        rev[3] = 'Unknown'
+                        activator_token = False
 
             # generate the command for copy-pasting, and also add embed fields
             embed = discord.Embed(title="About the image!", description="")
@@ -245,7 +250,7 @@ class DrawView(View):
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
         except Exception as e:
-            print('The clipboard button broke:' + str(e))
+            print('The clipboard button broke: ' + str(e))
             # if interaction fails, assume it's because aiya restarted (breaks buttons)
             button.disabled = True
             await interaction.response.edit_message(view=self)

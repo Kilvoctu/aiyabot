@@ -186,6 +186,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
         # if a model is not selected, do nothing
         model_name = 'Default'
+        model_index = 0
         if data_model is None:
             data_model = settings.read(guild)['data_model']
             if data_model != '':
