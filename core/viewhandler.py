@@ -198,6 +198,10 @@ class DrawView(View):
     async def button_review(self, button, interaction):
         # simpler variable name
         rev = self.input_tuple
+        # initial dummy data for a default models.csv
+        model_name = 'Default'
+        full_name = 'Unknown'
+        activator_token = False
         try:
             # the tuple will show the model_full_name. Get the associated display_name and activator_token from it.
             with open('resources/models.csv', 'r', encoding='utf-8') as f:
@@ -205,12 +209,11 @@ class DrawView(View):
                 for row in reader:
                     if reader.line_num == rev[18]:
                         model_name = row['display_name']
+                        full_name = rev[3]
                         activator_token = row['activator_token']
-                    else:
-                        # fill in dummy data for default models.csv
-                        model_name = 'Default'
-                        rev[3] = 'Unknown'
-                        activator_token = False
+
+            # strip any folders from model full name
+            full_name = full_name.split('/', 1)[-1].split('\\', 1)[-1]
 
             # generate the command for copy-pasting, and also add embed fields
             embed = discord.Embed(title="About the image!", description="")
@@ -222,10 +225,10 @@ class DrawView(View):
                 embed.add_field(name=f'Negative prompt', value=f'``{rev[2]}``', inline=False)
             if activator_token:
                 embed.add_field(name=f'Data model',
-                                value=f'Display name - ``{model_name}``\nFull name - ``{rev[3]}``\nActivator token - ``{activator_token}``',
+                                value=f'Display name - ``{model_name}``\nFull name - ``{full_name}``\nActivator token - ``{activator_token}``',
                                 inline=False)
             else:
-                embed.add_field(name=f'Data model', value=f'Display name - ``{model_name}``\nFull name - ``{rev[3]}``',
+                embed.add_field(name=f'Data model', value=f'Display name - ``{model_name}``\nFull name - ``{full_name}``',
                                 inline=False)
             extra_params = f'Sampling steps: ``{rev[4]}``\nSize: ``{rev[5]}x{rev[6]}``\nClassifier-free guidance scale: ``{rev[7]}``\nSampling method: ``{rev[8]}``\nSeed: ``{rev[9]}``'
             if rev[11]:
