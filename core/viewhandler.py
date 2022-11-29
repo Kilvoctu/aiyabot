@@ -27,7 +27,7 @@ input_tuple[0] = ctx
 [15] = highres_fix
 [16] = clip_skip
 [17] = simple_prompt
-[18] = simple_model
+[18] = model_index
 '''
 
 # set up tuple of queues to pass into union()
@@ -196,14 +196,12 @@ class DrawView(View):
     async def button_review(self, button, interaction):
         # simpler variable name
         rev = self.input_tuple
-        print(rev[3])
-        print(rev[18])
         try:
             # the tuple will show the model_full_name. Get the associated display_name and activator_token from it.
             with open('resources/models.csv', 'r', encoding='utf-8') as f:
                 reader = csv.DictReader(f, delimiter='|')
                 for row in reader:
-                    if (row['model_full_name'] == rev[3]) or (row['model_full_name'] == rev[18]):
+                    if reader.line_num == rev[18]:
                         model_name = row['display_name']
                         activator_token = row['activator_token']
 
