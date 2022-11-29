@@ -294,18 +294,11 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             if user_already_in_queue:
                 await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
             else:
-                queuehandler.GlobalQueue.draw_q.append(
-                    queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps, width, height,
-                                            guidance_scale, sampler, seed, strength, init_image, count, style, facefix,
-                                            highres_fix, clip_skip, simple_prompt, view))
+                queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(*input_tuple, view))
                 await ctx.send_response(
                     f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{reply_adds}')
         else:
-            await queuehandler.process_dream(self,
-                                             queuehandler.DrawObject(ctx, prompt, negative_prompt, data_model, steps,
-                                                                     width, height, guidance_scale, sampler, seed,
-                                                                     strength, init_image, count, style, facefix,
-                                                                     highres_fix, clip_skip, simple_prompt, view))
+            await queuehandler.process_dream(self, queuehandler.DrawObject(*input_tuple, view))
             await ctx.send_response(
                 f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{reply_adds}')
 
