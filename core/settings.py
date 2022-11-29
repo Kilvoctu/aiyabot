@@ -36,6 +36,7 @@ class GlobalVar:
     api_pass: Optional[str] = None
     send_model = False
     model_names = {}
+    model_pairs = {}
     sampler_names = []
     style_names = {}
     facefix_models = []
@@ -185,6 +186,7 @@ def files_check():
     r = s.get(global_var.url + "/sdapi/v1/samplers")
     r2 = s.get(global_var.url + "/sdapi/v1/prompt-styles")
     r3 = s.get(global_var.url + "/sdapi/v1/face-restorers")
+    r4 = s.get(global_var.url + "/sdapi/v1/sd-models")
     for s1 in r.json():
         try:
             global_var.sampler_names.append(s1['name'])
@@ -197,6 +199,8 @@ def files_check():
         global_var.style_names[s2['name']] = s2['prompt']
     for s3 in r3.json():
         global_var.facefix_models.append(s3['name'])
+    for s4 in r4.json():
+        global_var.model_pairs[s4['title']] = s4['model_name']
 
 
 def guilds_check(self):

@@ -206,6 +206,15 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     # if there's no activator token, remove the extra blank space
                     prompt = prompt.lstrip(' ')
 
+        # if using model short name in csv, find its respective title for payload
+        data_model = data_model.replace('\\', '_').replace('/', '_')
+        simple_model = data_model
+        print(data_model, simple_model)
+        for title, name in settings.global_var.model_pairs.items():
+            if name == data_model:
+                data_model = title
+        print(data_model)
+
         if not settings.global_var.send_model:
             print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
         else:
@@ -273,7 +282,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         # set up tuple of parameters to pass into the Discord view
         input_tuple = (
             ctx, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength,
-            init_image, count, style, facefix, highres_fix, clip_skip, simple_prompt)
+            init_image, count, style, facefix, highres_fix, clip_skip, simple_prompt, simple_model)
         view = viewhandler.DrawView(input_tuple)
         # set up tuple of queues to pass into union()
         queues = (queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q)
