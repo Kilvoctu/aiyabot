@@ -206,7 +206,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     prompt = row['activator_token'] + " " + prompt
                     # if there's no activator token, remove the extra blank space
                     prompt = prompt.lstrip(' ')
-                    # get the index of the selected model for later use, subtract one for header
+                    # get the index of the selected model for later use
                     model_index = reader.line_num
 
         # if using model "short name" in csv, find its respective title for payload
