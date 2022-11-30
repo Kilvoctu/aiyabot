@@ -417,29 +417,18 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             with contextlib.ExitStack() as stack:
                 buffer_handles = [stack.enter_context(io.BytesIO()) for _ in pil_images]
 
-                embed = discord.Embed()
-                embed.colour = settings.global_var.embed_color
-
                 image_count = len(pil_images)
                 noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
-                embed.add_field(name=f'My {noun_descriptor} of', value=f'``{queue_object.simple_prompt}``',
-                                inline=False)
-
-                embed.add_field(name='took me', value='``{0:.3f}`` seconds'.format(end_time - start_time), inline=False)
-
-                footer_args = dict(text=f'{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}')
-                if queue_object.ctx.author.avatar is not None:
-                    footer_args['icon_url'] = queue_object.ctx.author.avatar.url
-                embed.set_footer(**footer_args)
 
                 for (pil_image, buffer) in zip(pil_images, buffer_handles):
                     pil_image.save(buffer, 'PNG')
                     buffer.seek(0)
-
+                draw_time = '{0:.3f}'.format(end_time - start_time)
+                message = f'my {noun_descriptor} of ``{queue_object.simple_prompt}`` took me ``{draw_time}`` seconds!'
                 files = [discord.File(fp=buffer, filename=f'{queue_object.seed}-{i}.png') for (i, buffer) in
                          enumerate(buffer_handles)]
                 event_loop.create_task(
-                    queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>', embed=embed, files=files,
+                    queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>, {message}', files=files,
                                                   view=queue_object.view))
 
         except Exception as e:
