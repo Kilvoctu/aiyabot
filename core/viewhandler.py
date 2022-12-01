@@ -112,7 +112,8 @@ class DrawView(View):
     async def button_draw(self, button, interaction):
         try:
             # check if the /draw output is from the person who requested it
-            if self.message.embeds[0].footer.text == f'{interaction.user.name}#{interaction.user.discriminator}':
+            end_user = f'{interaction.user.name}#{interaction.user.discriminator}'
+            if end_user in self.message.content:
                 # if there's room in the queue, open up the modal
                 if queuehandler.GlobalQueue.dream_thread.is_alive():
                     user_already_in_queue = False
@@ -143,7 +144,8 @@ class DrawView(View):
     async def button_roll(self, button, interaction):
         try:
             # check if the /draw output is from the person who requested it
-            if self.message.embeds[0].footer.text == f'{interaction.user.name}#{interaction.user.discriminator}':
+            end_user = f'{interaction.user.name}#{interaction.user.discriminator}'
+            if end_user in self.message.content:
                 # update the tuple with a new seed
                 new_seed = list(self.input_tuple)
                 new_seed[9] = random.randint(0, 0xFFFFFFFF)
@@ -265,7 +267,8 @@ class DrawView(View):
         emoji="❌")
     async def delete(self, button, interaction):
         try:
-            if self.message.embeds[0].footer.text == f'{interaction.user.name}#{interaction.user.discriminator}':
+            end_user = f'{interaction.user.name}#{interaction.user.discriminator}'
+            if end_user in self.message.content:
                 await interaction.message.delete()
             else:
                 await interaction.response.send_message("You can't delete other people's images!", ephemeral=True)
