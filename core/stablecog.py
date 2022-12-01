@@ -229,10 +229,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             except(Exception,):
                 await ctx.send_response('URL image not found!\nI will do my best without it!')
 
-        # increment number of times command is used
+        # increment number of images generated
         with open('resources/stats.txt', 'r') as f:
             data = list(map(int, f.readlines()))
-        data[0] = data[0] + 1
+        data[0] = data[0] + count
         with open('resources/stats.txt', 'w') as f:
             f.write('\n'.join(str(x) for x in data))
 
