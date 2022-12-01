@@ -24,7 +24,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     ctx_parse = discord.ApplicationContext
 
     def __init__(self, bot):
-        self.wait_message = []
         self.bot = bot
 
     @commands.Cog.listener()
@@ -237,13 +236,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         with open('resources/stats.txt', 'w') as f:
             f.write('\n'.join(str(x) for x in data))
 
-        # random messages for aiya to say
-        with open('resources/messages.csv') as csv_file:
-            message_data = list(csv.reader(csv_file, delimiter='|'))
-            message_row_count = len(message_data) - 1
-            for row in message_data:
-                self.wait_message.append(row[0])
-
         # formatting aiya initial reply
         reply_adds = ''
         # lower step value to the highest setting if user goes over max steps
@@ -297,11 +289,11 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             else:
                 queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(*input_tuple, view))
                 await ctx.send_response(
-                    f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{reply_adds}')
+                    f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{reply_adds}')
         else:
             await queuehandler.process_dream(self, queuehandler.DrawObject(*input_tuple, view))
             await ctx.send_response(
-                f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{reply_adds}')
+                f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{reply_adds}')
 
     # generate the image
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.DrawObject):

@@ -148,14 +148,14 @@ class UpscaleCog(commands.Cog):
                         queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength,
                                                    gfpgan, codeformer, upscale_first, view))
                     await ctx.send_response(
-                        f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(*queues))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
+                        f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
             else:
                 await queuehandler.process_dream(self, queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1,
                                                                                   upscaler_2, upscaler_2_strength,
                                                                                   gfpgan, codeformer, upscale_first,
                                                                                   view))
                 await ctx.send_response(
-                    f'<@{ctx.author.id}>, {self.wait_message[random.randint(0, message_row_count)]}\nQueue: ``{len(queuehandler.union(*queues))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
+                    f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
 
     # generate the image
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.UpscaleObject):

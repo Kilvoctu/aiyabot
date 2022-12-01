@@ -90,13 +90,13 @@ class DrawModal(Modal):
                 settings.global_var.send_model = True
             queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
             await interaction.response.send_message(
-                f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(*queues))}``{prompt_output}')
+                f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}``{prompt_output}')
         else:
             if self.input_tuple[3] != '':
                 settings.global_var.send_model = True
             await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
             await interaction.response.send_message(
-                f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(*queues))}``{prompt_output}')
+                f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}``{prompt_output}')
 
 
 # creating the view that holds the buttons for /draw output
@@ -172,7 +172,7 @@ class DrawView(View):
                         queuehandler.GlobalQueue.draw_q.append(
                             queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
                         await interaction.followup.send(
-                            f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[17]}``\nNew seed:``{seed_tuple[9]}``')
+                            f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[17]}``\nNew seed:``{seed_tuple[9]}``')
                 else:
                     button.disabled = True
                     await interaction.response.edit_message(view=self)
@@ -183,7 +183,7 @@ class DrawView(View):
                     await queuehandler.process_dream(draw_dream,
                                                      queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
                     await interaction.followup.send(
-                        f'<@{interaction.user.id}>, redrawing the image!\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[17]}``\nNew Seed:``{seed_tuple[9]}``')
+                        f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[17]}``\nNew Seed:``{seed_tuple[9]}``')
             else:
                 await interaction.response.send_message("You can't use other people's 🎲!", ephemeral=True)
         except Exception as e:

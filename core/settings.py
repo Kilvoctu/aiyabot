@@ -2,6 +2,7 @@ import csv
 import discord
 import json
 import os
+import random
 import requests
 import time
 from typing import Optional
@@ -27,6 +28,7 @@ template = {
 class GlobalVar:
     url = ""
     dir = ""
+    wait_message = []
     embed_color = discord.Colour.from_rgb(222, 89, 28)
     gradio_auth = False
     username: Optional[str] = None
@@ -43,6 +45,12 @@ class GlobalVar:
 
 
 global_var = GlobalVar()
+
+
+def messages():
+    message_row_count = len(global_var.wait_message)
+    random_message = global_var.wait_message[random.randint(0, message_row_count)]
+    return random_message
 
 
 def build(guild_id):
@@ -108,6 +116,13 @@ def startup_check():
 
 
 def files_check():
+    # load random messages for aiya to say
+    with open('resources/messages.csv') as csv_file:
+        message_data = list(csv.reader(csv_file, delimiter='|'))
+        for row in message_data:
+            global_var.wait_message.append(row[0])
+    print(global_var.wait_message)
+
     # creating files if they don't exist
     if os.path.isfile('resources/stats.txt'):
         pass
