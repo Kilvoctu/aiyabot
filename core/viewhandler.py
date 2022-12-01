@@ -111,7 +111,7 @@ class DrawView(View):
         emoji="🖋")
     async def button_draw(self, button, interaction):
         try:
-            # check if the /draw output is from the person who requested it
+            # check if the output is from the person who requested it
             end_user = f'{interaction.user.name}#{interaction.user.discriminator}'
             if end_user in self.message.content:
                 # if there's room in the queue, open up the modal
@@ -143,7 +143,7 @@ class DrawView(View):
         emoji="🎲")
     async def button_roll(self, button, interaction):
         try:
-            # check if the /draw output is from the person who requested it
+            # check if the output is from the person who requested it
             end_user = f'{interaction.user.name}#{interaction.user.discriminator}'
             if end_user in self.message.content:
                 # update the tuple with a new seed
@@ -267,6 +267,7 @@ class DrawView(View):
         emoji="❌")
     async def delete(self, button, interaction):
         try:
+            # check if the output is from the person who requested it
             end_user = f'{interaction.user.name}#{interaction.user.discriminator}'
             if end_user in self.message.content:
                 await interaction.message.delete()
@@ -289,6 +290,7 @@ class DeleteView(View):
         custom_id="button_x",
         emoji="❌")
     async def delete(self, button, interaction):
+        # check if the output is from the person who requested it
         if interaction.user.id == self.user:
             button.disabled = True
             await interaction.message.delete()

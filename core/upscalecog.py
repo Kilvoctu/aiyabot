@@ -1,8 +1,6 @@
 import base64
-import csv
 import discord
 import io
-import random
 import requests
 import time
 import traceback
@@ -117,19 +115,14 @@ class UpscaleCog(commands.Cog):
         filename, file_ext = splitext(basename(disassembled.path))
         self.file_name = filename
 
-        # random messages for aiya to say
-        with open('resources/messages.csv') as csv_file:
-            message_data = list(csv.reader(csv_file, delimiter='|'))
-            message_row_count = len(message_data) - 1
-            for row in message_data:
-                self.wait_message.append(row[0])
-
         # formatting aiya initial reply
         reply_adds = ''
         if upscaler_2:
             reply_adds = reply_adds + f'\nUpscaler 2: ``{upscaler_2}``'
             reply_adds = reply_adds + f' - Strength: ``{upscaler_2_strength}``'
 
+        # set up tuple of parameters
+        input_tuple = (ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength, gfpgan, codeformer, upscale_first)
         view = viewhandler.DeleteView(ctx.author.id)
         # set up tuple of queues to pass into union()
         queues = (queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q)
@@ -144,16 +137,11 @@ class UpscaleCog(commands.Cog):
                 if user_already_in_queue:
                     await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
                 else:
-                    queuehandler.GlobalQueue.upscale_q.append(
-                        queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength,
-                                                   gfpgan, codeformer, upscale_first, view))
+                    queuehandler.GlobalQueue.upscale_q.append(queuehandler.UpscaleObject(*input_tuple, view))
                     await ctx.send_response(
                         f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
             else:
-                await queuehandler.process_dream(self, queuehandler.UpscaleObject(ctx, resize, init_image, upscaler_1,
-                                                                                  upscaler_2, upscaler_2_strength,
-                                                                                  gfpgan, codeformer, upscale_first,
-                                                                                  view))
+                await queuehandler.process_dream(self, queuehandler.UpscaleObject(*input_tuple, view))
                 await ctx.send_response(
                     f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
 

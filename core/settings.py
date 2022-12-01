@@ -29,6 +29,7 @@ class GlobalVar:
     url = ""
     dir = ""
     wait_message = []
+    wait_message_count = 0
     embed_color = discord.Colour.from_rgb(222, 89, 28)
     gradio_auth = False
     username: Optional[str] = None
@@ -48,8 +49,7 @@ global_var = GlobalVar()
 
 
 def messages():
-    message_row_count = len(global_var.wait_message)
-    random_message = global_var.wait_message[random.randint(0, message_row_count)]
+    random_message = global_var.wait_message[random.randint(0, global_var.wait_message_count)]
     return random_message
 
 
@@ -121,7 +121,7 @@ def files_check():
         message_data = list(csv.reader(csv_file, delimiter='|'))
         for row in message_data:
             global_var.wait_message.append(row[0])
-    print(global_var.wait_message)
+    global_var.wait_message_count = len(global_var.wait_message)
 
     # creating files if they don't exist
     if os.path.isfile('resources/stats.txt'):
