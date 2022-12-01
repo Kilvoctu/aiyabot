@@ -335,7 +335,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 ]
             }
 
-            # update payload is init_img or init_url is used
+            # update payload if init_img or init_url is used
             if queue_object.init_image is not None:
                 image = base64.b64encode(requests.get(queue_object.init_image.url, stream=True).content).decode('utf-8')
                 img_payload = {
