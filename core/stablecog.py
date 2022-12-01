@@ -424,7 +424,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     pil_image.save(buffer, 'PNG')
                     buffer.seek(0)
                 draw_time = '{0:.3f}'.format(end_time - start_time)
-                message = f'my {noun_descriptor} of ``{queue_object.simple_prompt}`` took me ``{draw_time}`` seconds!'
+                message = f'my {noun_descriptor} of ``{queue_object.simple_prompt}`` took me ``{draw_time}`` ' \
+                          f'seconds!\n> *{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}*'
                 files = [discord.File(fp=buffer, filename=f'{queue_object.seed}-{i}.png') for (i, buffer) in
                          enumerate(buffer_handles)]
                 event_loop.create_task(
