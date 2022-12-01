@@ -212,19 +212,13 @@ class UpscaleCog(commands.Cog):
                 image = Image.open(io.BytesIO(base64.b64decode(image_data)))
                 image.save(buffer, 'PNG')
                 buffer.seek(0)
-                embed = discord.Embed()
 
-                embed.colour = settings.global_var.embed_color
-                embed.add_field(name=f'My upscale of', value=f'``{queue_object.resize}``x', inline=False)
-                embed.add_field(name='took me', value='``{0:.3f}`` seconds'.format(end_time - start_time), inline=False)
-
-                footer_args = dict(text=f'{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}')
-                if queue_object.ctx.author.avatar is not None:
-                    footer_args['icon_url'] = queue_object.ctx.author.avatar.url
-                embed.set_footer(**footer_args)
+                draw_time = '{0:.3f}'.format(end_time - start_time)
+                message = f'my upscale of ``{queue_object.resize}``x took me ``{draw_time}`` ' \
+                          f'seconds!\n> *{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}*'
 
                 event_loop.create_task(
-                    queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>', embed=embed,
+                    queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>, {message}',
                                                   file=discord.File(fp=buffer, filename=file_path),
                                                   view=queue_object.view))
 

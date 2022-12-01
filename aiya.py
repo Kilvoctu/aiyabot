@@ -52,6 +52,10 @@ async def on_raw_reaction_add(ctx):
             message = await self.get_channel(ctx.channel_id).fetch_message(ctx.message_id)
             if end_user in message.content:
                 await message.delete()
+            # this is for deleting outputs from /identify
+            if message.embeds:
+                if message.embeds[0].footer.text == f'{ctx.member.name}#{ctx.member.discriminator}':
+                    await message.delete()
         # this is for deleting generations in DMs. It can indiscriminately delete anything
         except(Exception,):
             channel = await self.fetch_user(ctx.user_id)
