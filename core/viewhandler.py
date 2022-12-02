@@ -169,8 +169,7 @@ class DrawView(View):
                         if self.input_tuple[3] != '':
                             settings.global_var.send_model = True
 
-                        queuehandler.GlobalQueue.draw_q.append(
-                            queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
+                        queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
                         await interaction.followup.send(
                             f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[17]}``\nNew seed:``{seed_tuple[9]}``')
                 else:
@@ -180,8 +179,7 @@ class DrawView(View):
                     if self.input_tuple[3] != '':
                         settings.global_var.send_model = True
 
-                    await queuehandler.process_dream(draw_dream,
-                                                     queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
+                    await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
                     await interaction.followup.send(
                         f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[17]}``\nNew Seed:``{seed_tuple[9]}``')
             else:

@@ -229,13 +229,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             except(Exception,):
                 await ctx.send_response('URL image not found!\nI will do my best without it!')
 
-        # increment number of images generated
-        with open('resources/stats.txt', 'r') as f:
-            data = list(map(int, f.readlines()))
-        data[0] = data[0] + count
-        with open('resources/stats.txt', 'w') as f:
-            f.write('\n'.join(str(x) for x in data))
-
         # formatting aiya initial reply
         reply_adds = ''
         # lower step value to the highest setting if user goes over max steps
@@ -404,6 +397,9 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 file_path = f'{settings.global_var.dir}/{epoch_time}-{queue_object.seed}-{file_name[0:120]}-{i}.png'
                 image.save(file_path, pnginfo=metadata)
                 print(f'Saved image: {file_path}')
+
+            # increment number of images generated
+            settings.stats_count(queue_object.batch_count)
 
             # post to discord
             with contextlib.ExitStack() as stack:

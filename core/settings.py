@@ -48,6 +48,14 @@ class GlobalVar:
 global_var = GlobalVar()
 
 
+def stats_count(number):
+    with open('resources/stats.txt', 'r') as f:
+        data = list(map(int, f.readlines()))
+    data[0] = data[0] + number
+    with open('resources/stats.txt', 'w') as f:
+        f.write('\n'.join(str(x) for x in data))
+
+
 def messages():
     random_message = global_var.wait_message[random.randint(0, global_var.wait_message_count)]
     return random_message
@@ -121,7 +129,7 @@ def files_check():
         message_data = list(csv.reader(csv_file, delimiter='|'))
         for row in message_data:
             global_var.wait_message.append(row[0])
-    global_var.wait_message_count = len(global_var.wait_message)
+    global_var.wait_message_count = len(global_var.wait_message) - 1
 
     # creating files if they don't exist
     if os.path.isfile('resources/stats.txt'):
