@@ -1,4 +1,3 @@
-import csv
 import discord
 import random
 from discord.ui import InputText, Modal, View
@@ -204,13 +203,14 @@ class DrawView(View):
         activator_token = False
         try:
             # the tuple will show the model_full_name. Get the associated display_name and activator_token from it.
-            with open('resources/models.csv', 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f, delimiter='|')
-                for row in reader:
-                    if reader.line_num == rev[18]:
-                        model_name = row['display_name']
-                        full_name = rev[3]
-                        activator_token = row['activator_token']
+            model_index = 0
+            for key, value in settings.global_var.model_tokens.items():
+                if model_index == rev[18]:
+                    model_name = key
+                    full_name = rev[3]
+                    activator_token = value
+                    break
+                model_index = model_index + 1
 
             # strip any folders from model full name
             full_name = full_name.split('/', 1)[-1].split('\\', 1)[-1]

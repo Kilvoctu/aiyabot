@@ -39,7 +39,8 @@ class GlobalVar:
     api_pass: Optional[str] = None
     send_model = False
     model_names = {}
-    model_pairs = {}
+    model_tokens = {}
+    simple_model_pairs = {}
     sampler_names = []
     style_names = {}
     facefix_models = []
@@ -174,10 +175,12 @@ def files_check():
             writer.writerow(unset_model)
 
     # get display_name:model_full_name pairs from models.csv into global variable
+    # do same for display_name:activator token pairs
     with open('resources/models.csv', encoding='utf-8') as csv_file:
         model_data = list(csv.reader(csv_file, delimiter='|'))
         for row in model_data[1:]:
             global_var.model_names[row[0]] = row[1]
+            global_var.model_tokens[row[0]] = row[2]
 
     # if directory in DIR doesn't exist, create it
     dir_exists = os.path.exists(global_var.dir)
@@ -223,7 +226,7 @@ def files_check():
     for s3 in r3.json():
         global_var.facefix_models.append(s3['name'])
     for s4 in r4.json():
-        global_var.model_pairs[s4['title']] = s4['model_name']
+        global_var.simple_model_pairs[s4['title']] = s4['model_name']
 
 
 def guilds_check(self):

@@ -1,6 +1,5 @@
 import base64
 import contextlib
-import csv
 import discord
 import io
 import random
@@ -195,21 +194,21 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
         simple_prompt = prompt
         # take selected data_model and get model_name, then update data_model with the full name
-        with open('resources/models.csv', 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f, delimiter='|')
-            for row in reader:
-                if row['display_name'] == data_model:
-                    model_name = row['display_name']
-                    data_model = row['model_full_name']
-                    # look at the model for activator token and prepend prompt with it
-                    prompt = row['activator_token'] + " " + prompt
-                    # if there's no activator token, remove the extra blank space
-                    prompt = prompt.lstrip(' ')
-                    # get the index of the selected model for later use
-                    model_index = reader.line_num
+        for (key, value), (key2, value2) in zip(settings.global_var.model_names.items(),
+                                                settings.global_var.model_tokens.items()):
+            if key == data_model:
+                model_name = key
+                data_model = value
+                # look at the model for activator token and prepend prompt with it
+                prompt = value2 + " " + prompt
+                # if there's no activator token, remove the extra blank space
+                prompt = prompt.lstrip(' ')
+                break
+            # get the index of the selected model for later use
+            model_index = model_index + 1
 
         # if using model "short name" in csv, find its respective title for payload
-        for title, name in settings.global_var.model_pairs.items():
+        for title, name in settings.global_var.simple_model_pairs.items():
             if name == data_model.replace('\\', '_').replace('/', '_'):
                 data_model = title
 
