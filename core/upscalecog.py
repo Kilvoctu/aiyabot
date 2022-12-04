@@ -88,7 +88,7 @@ class UpscaleCog(commands.Cog):
                             init_image: Optional[discord.Attachment] = None,
                             init_url: Optional[str],
                             resize: float = 2.0,
-                            upscaler_1: str = "None",
+                            upscaler_1: str = "SwinIR_4x",
                             upscaler_2: Optional[str] = "None",
                             upscaler_2_strength: Optional[float] = 0.5,
                             gfpgan: Optional[float] = 0.0,
