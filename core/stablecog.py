@@ -238,10 +238,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             reply_adds = reply_adds + f'\nModel: ``{model_name}``'
         if negative_prompt != '':
             reply_adds = reply_adds + f'\nNegative Prompt: ``{negative_prompt}``'
-        if width != 512:
-            reply_adds = reply_adds + f'\nWidth: ``{width}``'
-        if height != 512:
-            reply_adds = reply_adds + f'\nHeight: ``{height}``'
+        if (width != 512) or (height != 512):
+            reply_adds = reply_adds + f'\nSize: ``{width}``x``{height}``'
         if guidance_scale != 7.0:
             reply_adds = reply_adds + f'\nGuidance Scale: ``{guidance_scale}``'
         if sampler != 'Euler a':
