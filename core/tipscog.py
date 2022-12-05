@@ -75,6 +75,9 @@ class TipsView(View):
         for key, value in settings.global_var.model_names.items():
             if value == '':
                 value = ' '
+            # strip any folders from model full name
+            value = value.split('/', 1)[-1].split('\\', 1)[-1]
+
             model_list = model_list + f'\n{key} - ``{value}``'
         embed_model = discord.Embed(title="Models list", description=model_list)
         embed_model.colour = settings.global_var.embed_color
