@@ -40,11 +40,9 @@ class UpscaleCog(commands.Cog):
     )
     @option(
         'resize',
-        float,
+        str,
         description='The amount to upscale the image by (1.0 to 4.0).',
-        min_value=1,
-        max_value=4,
-        required=True,
+        required=True
     )
     @option(
         'upscaler_1',
@@ -62,19 +60,19 @@ class UpscaleCog(commands.Cog):
     )
     @option(
         'upscaler_2_strength',
-        float,
+        str,
         description='The visibility of the 2nd upscaler model. (0.0 to 1.0)',
         required=False,
     )
     @option(
         'gfpgan',
-        float,
+        str,
         description='The visibility of the GFPGAN face restoration model. (0.0 to 1.0)',
         required=False,
     )
     @option(
         'codeformer',
-        float,
+        str,
         description='The visibility of the codeformer face restoration model. (0.0 to 1.0)',
         required=False,
     )
@@ -87,12 +85,12 @@ class UpscaleCog(commands.Cog):
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
                             init_image: Optional[discord.Attachment] = None,
                             init_url: Optional[str],
-                            resize: float = 2.0,
+                            resize: str = '2.0',
                             upscaler_1: str = "SwinIR_4x",
                             upscaler_2: Optional[str] = "None",
-                            upscaler_2_strength: Optional[float] = 0.5,
-                            gfpgan: Optional[float] = 0.0,
-                            codeformer: Optional[float] = 0.0,
+                            upscaler_2_strength: Optional[str] = '0.5',
+                            gfpgan: Optional[str] = '0.0',
+                            codeformer: Optional[str] = '0.0',
                             upscale_first: Optional[bool] = False):
 
         has_image = True
@@ -120,6 +118,14 @@ class UpscaleCog(commands.Cog):
         if upscaler_2:
             reply_adds = reply_adds + f'\nUpscaler 2: ``{upscaler_2}``'
             reply_adds = reply_adds + f' - Strength: ``{upscaler_2_strength}``'
+
+        # check if resize is within limits
+        if float(resize) < 1.0:
+            resize = 1.0
+            reply_adds = reply_adds + f"\nResize can't go below 1.0x! Setting it to ``{resize}``."
+        if float(resize) > 4.0:
+            resize = 4.0
+            reply_adds = reply_adds + f"\nResize can't go above 4.0x! Setting it to ``{resize}``."
 
         # set up tuple of parameters
         input_tuple = (ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength, gfpgan, codeformer, upscale_first)

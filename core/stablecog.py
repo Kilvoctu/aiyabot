@@ -71,27 +71,27 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     @option(
         'width',
         int,
-        description='Width of the generated image. Default: 512',
+        description='Width of the generated image',
         required=False,
         choices=[x for x in range(192, 1088, 64)]
     )
     @option(
         'height',
         int,
-        description='Height of the generated image. Default: 512',
+        description='Height of the generated image',
         required=False,
         choices=[x for x in range(192, 1088, 64)]
     )
     @option(
         'guidance_scale',
-        float,
-        description='Classifier-Free Guidance scale. Default: 7.0',
+        str,
+        description='Classifier-Free Guidance scale',
         required=False,
     )
     @option(
         'sampler',
         str,
-        description='The sampler to use for generation. Default: Euler a',
+        description='The sampler to use for generation',
         required=False,
         choices=settings.global_var.sampler_names,
     )
@@ -103,7 +103,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     )
     @option(
         'strength',
-        float,
+        str,
         description='The amount in which init_image will be altered (0.0 to 1.0).'
     )
     @option(
@@ -156,10 +156,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             data_model: Optional[str] = None,
                             steps: Optional[int] = -1,
                             width: Optional[int] = 1, height: Optional[int] = 1,
-                            guidance_scale: Optional[float] = 7.0,
+                            guidance_scale: Optional[str] = '7.0',
                             sampler: Optional[str] = 'unset',
                             seed: Optional[int] = -1,
-                            strength: Optional[float] = 0.75,
+                            strength: Optional[str] = '0.75',
                             init_image: Optional[discord.Attachment] = None,
                             init_url: Optional[str],
                             count: Optional[int] = None,
@@ -244,7 +244,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             reply_adds = reply_adds + f'\nNegative Prompt: ``{negative_prompt}``'
         if (width != 512) or (height != 512):
             reply_adds = reply_adds + f'\nSize: ``{width}``x``{height}``'
-        if guidance_scale != 7.0:
+        if guidance_scale != '7.0':
             reply_adds = reply_adds + f'\nGuidance Scale: ``{guidance_scale}``'
         if sampler != 'Euler a':
             reply_adds = reply_adds + f'\nSampler: ``{sampler}``'
