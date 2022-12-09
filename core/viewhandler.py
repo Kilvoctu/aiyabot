@@ -233,7 +233,7 @@ class DrawView(View):
             extra_params = f'Sampling steps: ``{rev[4]}``\nSize: ``{rev[5]}x{rev[6]}``\nClassifier-free guidance scale: ``{rev[7]}``\nSampling method: ``{rev[8]}``\nSeed: ``{rev[9]}``'
             if rev[11]:
                 # not interested in adding embed fields for strength and init_image
-                copy_command = copy_command + f' strength:{rev[10]} init_url:{rev[11]}'
+                copy_command = copy_command + f' strength:{rev[10]} init_url:{rev[11].url}'
             if rev[12] != 1:
                 copy_command = copy_command + f' count:{rev[13]}'
             if rev[13] != 'None':
