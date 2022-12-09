@@ -17,6 +17,8 @@ template = {
     "data_model": "",
     "default_steps": 30,
     "max_steps": 50,
+    "default_width": 512,
+    "default_height": 512,
     "sampler": "Euler a",
     "default_count": 1,
     "max_count": 1,

@@ -155,7 +155,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             prompt: str, negative_prompt: str = 'unset',
                             data_model: Optional[str] = None,
                             steps: Optional[int] = -1,
-                            width: Optional[int] = 512, height: Optional[int] = 512,
+                            width: Optional[int] = 1, height: Optional[int] = 1,
                             guidance_scale: Optional[float] = 7.0,
                             sampler: Optional[str] = 'unset',
                             seed: Optional[int] = -1,
@@ -175,6 +175,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             negative_prompt = settings.read(guild)['negative_prompt']
         if steps == -1:
             steps = settings.read(guild)['default_steps']
+        if width == 1:
+            width = settings.read(guild)['default_width']
+        if height == 1:
+            height = settings.read(guild)['default_height']
         if count is None:
             count = settings.read(guild)['default_count']
         if sampler == 'unset':
