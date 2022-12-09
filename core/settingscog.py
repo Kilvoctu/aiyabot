@@ -24,55 +24,69 @@ class SettingsCog(commands.Cog):
         required=False,
     )
     @option(
-        'set_n_prompt',
+        'n_prompt',
         str,
         description='Set default negative prompt for the server',
         required=False,
     )
     @option(
-        'set_model',
+        'model',
         str,
         description='Set default data model for image generation',
         required=False,
         autocomplete=discord.utils.basic_autocomplete(model_autocomplete),
     )
     @option(
-        'set_steps',
+        'steps',
         int,
         description='Set default amount of steps for the server',
         min_value=1,
         required=False,
     )
     @option(
-        'set_max_steps',
+        'max_steps',
         int,
         description='Set default maximum steps for the server',
         min_value=1,
         required=False,
     )
     @option(
-        'set_sampler',
+        'width',
+        int,
+        description='Set default width for the server',
+        required=False,
+        choices=[x for x in range(192, 1088, 64)]
+    )
+    @option(
+        'height',
+        int,
+        description='Set default height for the server',
+        required=False,
+        choices=[x for x in range(192, 1088, 64)]
+    )
+    @option(
+        'sampler',
         str,
         description='Set default sampler for the server',
         required=False,
         choices=settings.global_var.sampler_names,
     )
     @option(
-        'set_count',
+        'count',
         int,
         description='Set default count for the server',
         min_value=1,
         required=False,
     )
     @option(
-        'set_max_count',
+        'max_count',
         int,
         description='Set default maximum count for the server',
         min_value=1,
         required=False,
     )
     @option(
-        'set_clip_skip',
+        'clip_skip',
         int,
         description='Set default CLIP skip for the server',
         required=False,
@@ -80,14 +94,16 @@ class SettingsCog(commands.Cog):
     )
     async def settings_handler(self, ctx,
                                current_settings: Optional[bool] = True,
-                               set_n_prompt: Optional[str] = 'unset',
-                               set_model: Optional[str] = None,
-                               set_steps: Optional[int] = 1,
-                               set_max_steps: Optional[int] = 1,
-                               set_sampler: Optional[str] = 'unset',
-                               set_count: Optional[int] = None,
-                               set_max_count: Optional[int] = None,
-                               set_clip_skip: Optional[int] = 0):
+                               n_prompt: Optional[str] = 'unset',
+                               model: Optional[str] = None,
+                               steps: Optional[int] = 1,
+                               max_steps: Optional[int] = 1,
+                               width: Optional[int] = 1,
+                               height: Optional[int] = 1,
+                               sampler: Optional[str] = 'unset',
+                               count: Optional[int] = None,
+                               max_count: Optional[int] = None,
+                               clip_skip: Optional[int] = 0):
         guild = '% s' % ctx.guild_id
         reviewer = settings.read(guild)
         # create the embed for the reply
@@ -106,60 +122,70 @@ class SettingsCog(commands.Cog):
             embed.add_field(name=f'Current defaults', value=current, inline=False)
 
         # run through each command and update the defaults user selects
-        if set_n_prompt != 'unset':
-            settings.update(guild, 'negative_prompt', set_n_prompt)
-            new = new + f'\nNegative prompts: ``"{set_n_prompt}"``'
+        if n_prompt != 'unset':
+            settings.update(guild, 'negative_prompt', n_prompt)
+            new = new + f'\nNegative prompts: ``"{n_prompt}"``'
             set_new = True
 
-        if set_model is not None:
-            settings.update(guild, 'data_model', set_model)
-            new = new + f'\nData model: ``"{set_model}"``'
+        if model is not None:
+            settings.update(guild, 'data_model', model)
+            new = new + f'\nData model: ``"{model}"``'
             set_new = True
 
-        if set_max_steps != 1:
-            settings.update(guild, 'max_steps', set_max_steps)
-            new = new + f'\nMax steps: ``{set_max_steps}``'
+        if max_steps != 1:
+            settings.update(guild, 'max_steps', max_steps)
+            new = new + f'\nMax steps: ``{max_steps}``'
             # automatically lower default steps if max steps goes below it
-            if set_max_steps < reviewer['default_steps']:
-                settings.update(guild, 'default_steps', set_max_steps)
-                new = new + f'\nDefault steps is too high! Lowering to ``{set_max_steps}``.'
+            if max_steps < reviewer['default_steps']:
+                settings.update(guild, 'default_steps', max_steps)
+                new = new + f'\nDefault steps is too high! Lowering to ``{max_steps}``.'
             set_new = True
 
-        if set_sampler != 'unset':
-            settings.update(guild, 'sampler', set_sampler)
-            new = new + f'\nSampler: ``"{set_sampler}"``'
+        if width != 1:
+            settings.update(guild, 'default_width', width)
+            new = new + f'\nWidth: ``"{width}"``'
             set_new = True
 
-        if set_max_count is not None:
-            settings.update(guild, 'max_count', set_max_count)
-            new = new + f'\nMax count: ``{set_max_count}``'
+        if height != 1:
+            settings.update(guild, 'default_height', height)
+            new = new + f'\nHeight: ``"{height}"``'
+            set_new = True
+
+        if sampler != 'unset':
+            settings.update(guild, 'sampler', sampler)
+            new = new + f'\nSampler: ``"{sampler}"``'
+            set_new = True
+
+        if max_count is not None:
+            settings.update(guild, 'max_count', max_count)
+            new = new + f'\nMax count: ``{max_count}``'
             # automatically lower default count if max count goes below it
-            if set_max_count < reviewer['default_count']:
-                settings.update(guild, 'default_count', set_max_count)
-                new = new + f'\nDefault count is too high! Lowering to ``{set_max_count}``.'
+            if max_count < reviewer['default_count']:
+                settings.update(guild, 'default_count', max_count)
+                new = new + f'\nDefault count is too high! Lowering to ``{max_count}``.'
             set_new = True
 
-        if set_clip_skip != 0:
-            settings.update(guild, 'clip_skip', set_clip_skip)
-            new = new + f'\nCLIP skip: ``{set_clip_skip}``'
+        if clip_skip != 0:
+            settings.update(guild, 'clip_skip', clip_skip)
+            new = new + f'\nCLIP skip: ``{clip_skip}``'
             set_new = True
 
         # review settings again in case user is trying to set steps/counts and max steps/counts simultaneously
         reviewer = settings.read(guild)
-        if set_steps != 1:
-            if set_steps > reviewer['max_steps']:
+        if steps != 1:
+            if steps > reviewer['max_steps']:
                 new = new + f"\nMax steps is ``{reviewer['max_steps']}``! You can't go beyond it!"
             else:
-                settings.update(guild, 'default_steps', set_steps)
-                new = new + f'\nSteps: ``{set_steps}``'
+                settings.update(guild, 'default_steps', steps)
+                new = new + f'\nSteps: ``{steps}``'
             set_new = True
 
-        if set_count is not None:
-            if set_count > reviewer['max_count']:
+        if count is not None:
+            if count > reviewer['max_count']:
                 new = new + f"\nMax count is ``{reviewer['max_count']}``! You can't go beyond it!"
             else:
-                settings.update(guild, 'default_count', set_count)
-                new = new + f'\nCount: ``{set_count}``'
+                settings.update(guild, 'default_count', count)
+                new = new + f'\nCount: ``{count}``'
             set_new = True
 
         if set_new:
