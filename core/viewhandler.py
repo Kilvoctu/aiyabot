@@ -243,7 +243,7 @@ class DrawView(View):
                 copy_command = copy_command + f' facefix:{rev[14]}'
                 extra_params = extra_params + f'\nFace restoration model: ``{rev[14]}``'
             if rev[15]:
-                copy_command = copy_command + f' enable_hr:{rev[15]}'
+                copy_command = copy_command + f' highres_fix:{rev[15]}'
                 extra_params = extra_params + f'\nHigh-res fix: ``{rev[15]}``'
             if rev[16] != 1:
                 copy_command = copy_command + f' clip_skip:{rev[16]}'
