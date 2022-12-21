@@ -6,6 +6,7 @@ import random
 import requests
 import time
 import traceback
+import json
 from asyncio import AbstractEventLoop
 from PIL import Image, PngImagePlugin
 from discord import option
@@ -367,6 +368,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 s.post(settings.global_var.url + '/login')
 
             # only send model payload if one is defined
+            print(model_payload, payload)
             if settings.global_var.send_model:
                 s.post(url=f'{settings.global_var.url}/sdapi/v1/options', json=model_payload)
             if queue_object.init_image is not None:
@@ -396,7 +398,14 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 epoch_time = int(time.time())
                 metadata.add_text("parameters", png_response.json().get("info"))
                 file_path = f'{settings.global_var.dir}/{epoch_time}-{queue_object.seed}-{file_name[0:120]}-{i}.png'
+                # save json payload to file
+                json_file = file_path.replace(".png", ".json")
+                image_copy = file_path.replace(".png", "-watermark.png")
+                with open(f'{json_file}', 'w') as f:
+                    json.dump(payload, f, indent=4)
+                # save png info to file
                 image.save(file_path, pnginfo=metadata)
+                copy_image(image, image_copy, metadata)
                 print(f'Saved image: {file_path}')
 
             # increment number of images generated
@@ -435,7 +444,32 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             identify_dream = identifycog.IdentifyCog(self)
             event_loop.create_task(
                 queuehandler.process_dream(identify_dream, queuehandler.GlobalQueue.identify_q.pop(0)))
+def copy_image(image_old, file_path, metadata):
+    image = image_old.copy()
 
+    # Open the watermark image
+    watermark = Image.open(f'{settings.global_var.dir}/watermark.png')
+
+    # Calculate the size of the watermark image
+    watermark_size = watermark.size
+
+    # Calculate the size of the pattern
+    pattern_size = (image.size[0], image.size[1])
+
+    # Create a new image to hold the pattern
+    pattern_image = Image.new('RGBA', pattern_size)
+
+    # Paste the watermark image onto the pattern image
+    for i in range(0, pattern_size[0], watermark_size[0]):
+        for j in range(0, pattern_size[1], watermark_size[1]):
+            pattern_image.paste(watermark, (i, j))
+
+    # Convert image to RGBA
+    image = image.convert('RGBA')
+
+    # Paste the pattern image onto the input image
+    image.alpha_composite(pattern_image)
+    image.save(file_path, pnginfo=metadata)
 
 def setup(bot):
     bot.add_cog(StableCog(bot))

@@ -4,6 +4,7 @@ pydata
 venv
 
 outputs/*.png
+outputs/*.json
 resources/models.csv
 resources/stats.txt
 resources/*.json
