@@ -41,6 +41,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             style for style in settings.global_var.style_names
         ]
 
+    # and hypernetworks
+    def hyper_autocomplete(self: discord.AutocompleteContext):
+        return [
+            hyper for hyper in settings.global_var.hyper_names
+        ]
+
     @commands.slash_command(name='draw', description='Create an image')
     @option(
         'prompt',
@@ -57,7 +63,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     @option(
         'data_model',
         str,
-        description='Select the data model for image generation',
+        description='Select the data model for image generation.',
         required=False,
         autocomplete=discord.utils.basic_autocomplete(model_autocomplete),
     )
@@ -71,34 +77,34 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     @option(
         'width',
         int,
-        description='Width of the generated image',
+        description='Width of the generated image.',
         required=False,
         choices=[x for x in range(192, 1088, 64)]
     )
     @option(
         'height',
         int,
-        description='Height of the generated image',
+        description='Height of the generated image.',
         required=False,
         choices=[x for x in range(192, 1088, 64)]
     )
     @option(
         'guidance_scale',
         str,
-        description='Classifier-Free Guidance scale',
+        description='Classifier-Free Guidance scale.',
         required=False,
     )
     @option(
         'sampler',
         str,
-        description='The sampler to use for generation',
+        description='The sampler to use for generation.',
         required=False,
         choices=settings.global_var.sampler_names,
     )
     @option(
         'seed',
         int,
-        description='The seed to use for reproducibility',
+        description='The seed to use for reproducibility.',
         required=False,
     )
     @option(
@@ -147,9 +153,16 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     @option(
         'clip_skip',
         int,
-        description='Number of last layers of CLIP model to skip',
+        description='Number of last layers of CLIP model to skip.',
         required=False,
         choices=[x for x in range(1, 13, 1)]
+    )
+    @option(
+        'hypernet',
+        str,
+        description='Apply a hypernetwork model to influence the output.',
+        required=False,
+        autocomplete=discord.utils.basic_autocomplete(hyper_autocomplete),
     )
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
                             prompt: str, negative_prompt: str = 'unset',
@@ -166,7 +179,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             style: Optional[str] = 'None',
                             facefix: Optional[str] = 'None',
                             highres_fix: Optional[bool] = False,
-                            clip_skip: Optional[int] = 0):
+                            clip_skip: Optional[int] = 0,
+                            hypernet: Optional[str] = 'None'):
 
         settings.global_var.send_model = False
         # update defaults with any new defaults from settingscog
@@ -259,6 +273,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             reply_adds = reply_adds + f'\nCount: ``{count}``'
         if style != 'None':
             reply_adds = reply_adds + f'\nStyle: ``{style}``'
+        if hypernet != 'None':
+            reply_adds = reply_adds + f'\nHypernet: ``{hypernet}``'
         if facefix != 'None':
             reply_adds = reply_adds + f'\nFace restoration: ``{facefix}``'
         if clip_skip != 1:
@@ -267,7 +283,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         # set up tuple of parameters to pass into the Discord view
         input_tuple = (
             ctx, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength,
-            init_image, count, style, facefix, highres_fix, clip_skip, simple_prompt, model_index)
+            init_image, count, style, facefix, highres_fix, clip_skip, simple_prompt, model_index, hypernet)
         view = viewhandler.DrawView(input_tuple)
         # set up tuple of queues to pass into union()
         queues = (queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q)
@@ -349,6 +365,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     "restore_faces": True,
                 }
                 payload.update(facefix_payload)
+            if queue_object.hypernet != 'None':
+                override_settings["sd_hypernetwork"] = queue_object.hypernet
 
             # update payload with override_settings
             override_payload = {

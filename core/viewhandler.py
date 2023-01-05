@@ -27,6 +27,7 @@ input_tuple[0] = ctx
 [16] = clip_skip
 [17] = simple_prompt
 [18] = model_index
+[19] = hypernet
 '''
 
 # set up tuple of queues to pass into union()
@@ -248,6 +249,9 @@ class DrawView(View):
             if rev[16] != 1:
                 copy_command = copy_command + f' clip_skip:{rev[16]}'
                 extra_params = extra_params + f'\nCLIP skip: ``{rev[16]}``'
+            if rev[19] != 'None':
+                copy_command = copy_command + f' hypernet:{rev[19]}'
+                extra_params = extra_params + f'\nHypernetwork model(hash): ``{rev[19]}``'
             embed.add_field(name=f'Other parameters', value=extra_params, inline=False)
             embed.add_field(name=f'Command for copying', value=f'``{copy_command}``', inline=False)
 

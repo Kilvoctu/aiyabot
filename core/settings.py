@@ -48,6 +48,7 @@ class GlobalVar:
     facefix_models = []
     embeddings_1 = []
     embeddings_2 = []
+    hyper_names = []
 
 
 global_var = GlobalVar()
@@ -213,11 +214,13 @@ def files_check():
     else:
         s.post(global_var.url + '/login')
 
+    # load many values from Web UI into global variables
     r = s.get(global_var.url + "/sdapi/v1/samplers")
     r2 = s.get(global_var.url + "/sdapi/v1/prompt-styles")
     r3 = s.get(global_var.url + "/sdapi/v1/face-restorers")
     r4 = s.get(global_var.url + "/sdapi/v1/sd-models")
     r5 = s.get(global_var.url + "/sdapi/v1/embeddings")
+    r6 = s.get(global_var.url + "/sdapi/v1/hypernetworks")
     for s1 in r.json():
         try:
             global_var.sampler_names.append(s1['name'])
@@ -242,6 +245,8 @@ def files_check():
             global_var.embeddings_1.append(s5)
         if shape['shape'] == 1024:
             global_var.embeddings_2.append(s5)
+    for s6 in r6.json():
+        global_var.hyper_names.append(s6['name'])
 
 
 def guilds_check(self):
