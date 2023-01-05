@@ -56,33 +56,121 @@ class DrawModal(Modal):
         )
         self.add_item(
             InputText(
-                label='Keep seed? Delete or set to -1 to randomize',
+                label='Keep seed? Delete to randomize',
                 style=discord.InputTextStyle.short,
                 value=input_tuple[9],
                 required=False
             )
         )
 
+        # set up parameters for full edit mode
+        # first get model display name
+        model_name = 'Default'
+        model_index = 0
+        for name, token in settings.global_var.model_tokens.items():
+            if model_index == input_tuple[18]:
+                model_name = name
+                break
+            model_index = model_index + 1
+        # expose each available option, even if output didn't use them
+        ex_params = f'data_model:{model_name}'
+        ex_params += f'\nsteps:{input_tuple[4]}'
+        ex_params += f'\nwidth:{input_tuple[5]}'
+        ex_params += f'\nheight:{input_tuple[6]}'
+        ex_params += f'\nguidance_scale:{input_tuple[7]}'
+        ex_params += f'\nsampler:{input_tuple[8]}'
+        ex_params += f'\nstyle:{input_tuple[13]}'
+        ex_params += f'\nfacefix:{input_tuple[14]}'
+        ex_params += f'\nhypernet:{input_tuple[19]}'
+
+        self.add_item(
+            InputText(
+                label='Extended edit (for advanced user!)',
+                style=discord.InputTextStyle.long,
+                value=ex_params,
+                required=False
+            )
+        )
+
     async def callback(self, interaction: discord.Interaction):
         # update the tuple with new prompts
-        new_prompt = list(self.input_tuple)
-        new_prompt[1] = new_prompt[1].replace(new_prompt[17], self.children[0].value)
-        new_prompt[17] = self.children[0].value
-        new_prompt[2] = self.children[1].value
+        pen = list(self.input_tuple)
+        pen[1] = pen[1].replace(pen[17], self.children[0].value)
+        pen[17] = self.children[0].value
+        pen[2] = self.children[1].value
 
         # update the tuple new seed (random if set to -1)
-        new_prompt[9] = self.children[2].value
+        pen[9] = self.children[2].value
         if (self.children[2].value == "-1") or (self.children[2].value == ""):
-            new_prompt[9] = random.randint(0, 0xFFFFFFFF)
+            pen[9] = random.randint(0, 0xFFFFFFFF)
 
-        prompt_tuple = tuple(new_prompt)
+        # iterate through extended edit for any changes
+        new_model = ''
+        for line in self.children[3].value.split('\n'):
+            if 'data_model:' in line:
+                model_index = 0
+                new_model = line.split(':', 1)[1]
+                model_found = False
+                # jump through hoops to find model full name from display name
+                for (display, short), (display2, token) in zip(settings.global_var.model_names.items(),
+                                                               settings.global_var.model_tokens.items()):
+                    if display == new_model:
+                        for full_name, short_b in settings.global_var.simple_model_pairs.items():
+                            if short_b == short.replace('\\', '_').replace('/', '_'):
+                                pen[3] = full_name
+                                model_found = True
+                                break
+                        # grab the new activator token
+                        new_token = f'{token} '.lstrip(' ')
+                        pen[1] = pen[1].replace(pen[1].split(pen[17])[0], new_token)
+                        break
+                    model_index += 1
+                if model_found:
+                    pen[18] = model_index
+
+            if 'steps:' in line:
+                pen[4] = line.split(':', 1)[1]
+            if 'width:' in line:
+                pen[5] = line.split(':', 1)[1]
+            if 'height:' in line:
+                pen[6] = line.split(':', 1)[1]
+            if 'guidance_scale:' in line:
+                pen[7] = line.split(':', 1)[1]
+            if 'sampler:' in line:
+                pen[8] = line.split(':', 1)[1]
+            if 'style:' in line:
+                pen[13] = line.split(':', 1)[1]
+            if 'facefix:' in line:
+                pen[14] = line.split(':', 1)[1]
+            if 'hypernet:' in line:
+                pen[19] = line.split(':', 1)[1]
+
+        prompt_tuple = tuple(pen)
 
         draw_dream = stablecog.StableCog(self)
-        prompt_output = f'\nNew prompt: ``{new_prompt[17]}``'
-        if new_prompt[2] != '':
-            prompt_output = prompt_output + f'\nNew negative prompt: ``{new_prompt[2]}``'
-        if str(new_prompt[9]) != str(self.input_tuple[9]):
-            prompt_output = prompt_output + f'\nNew seed: ``{new_prompt[9]}``'
+        prompt_output = f'\nNew prompt: ``{pen[17]}``'
+        if pen[2] != '':
+            prompt_output += f'\nNew negative prompt: ``{pen[2]}``'
+        if str(pen[3]) != str(self.input_tuple[3]):
+            prompt_output += f'\nNew model: ``{new_model}``'
+        if str(pen[4]) != str(self.input_tuple[4]):
+            prompt_output += f'\nNew steps: ``{pen[4]}``'
+        if str(pen[5]) != str(self.input_tuple[5]):
+            prompt_output += f'\nNew width: ``{pen[5]}``'
+        if str(pen[6]) != str(self.input_tuple[6]):
+            prompt_output += f'\nNew height: ``{pen[6]}``'
+        if str(pen[7]) != str(self.input_tuple[7]):
+            prompt_output += f'\nNew guidance_scale: ``{pen[7]}``'
+        if str(pen[8]) != str(self.input_tuple[8]):
+            prompt_output += f'\nNew sampler: ``{pen[8]}``'
+        if str(pen[13]) != str(self.input_tuple[13]):
+            prompt_output += f'\nNew style: ``{pen[13]}``'
+        if str(pen[14]) != str(self.input_tuple[14]):
+            prompt_output += f'\nNew facefix: ``{pen[14]}``'
+        if str(pen[19]) != str(self.input_tuple[19]):
+            prompt_output += f'\nNew hypernet: ``{pen[19]}``'
+        if str(pen[9]) != str(self.input_tuple[9]):
+            prompt_output += f'\nNew seed: ``{pen[9]}``'
 
         # check queue again, but now we know user is not in queue
         if queuehandler.GlobalQueue.dream_thread.is_alive():
@@ -169,7 +257,8 @@ class DrawView(View):
                         if self.input_tuple[3] != '':
                             settings.global_var.send_model = True
 
-                        queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
+                        queuehandler.GlobalQueue.draw_q.append(
+                            queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
                         await interaction.followup.send(
                             f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[17]}``\nNew seed:``{seed_tuple[9]}``')
                 else:
@@ -179,7 +268,8 @@ class DrawView(View):
                     if self.input_tuple[3] != '':
                         settings.global_var.send_model = True
 
-                    await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
+                    await queuehandler.process_dream(draw_dream,
+                                                     queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
                     await interaction.followup.send(
                         f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[17]}``\nNew Seed:``{seed_tuple[9]}``')
             else:
@@ -222,36 +312,37 @@ class DrawView(View):
             embed.add_field(name=f'Prompt', value=f'``{rev[17]}``', inline=False)
             copy_command = f'/draw prompt:{rev[17]} data_model:{model_name} steps:{rev[4]} width:{rev[5]} height:{rev[6]} guidance_scale:{rev[7]} sampler:{rev[8]} seed:{rev[9]}'
             if rev[2] != '':
-                copy_command = copy_command + f' negative_prompt:{rev[2]}'
+                copy_command += f' negative_prompt:{rev[2]}'
                 embed.add_field(name=f'Negative prompt', value=f'``{rev[2]}``', inline=False)
             if activator_token:
                 embed.add_field(name=f'Data model',
                                 value=f'Display name - ``{model_name}``\nFull name - ``{full_name}``\nActivator token - ``{activator_token}``',
                                 inline=False)
             else:
-                embed.add_field(name=f'Data model', value=f'Display name - ``{model_name}``\nFull name - ``{full_name}``',
+                embed.add_field(name=f'Data model',
+                                value=f'Display name - ``{model_name}``\nFull name - ``{full_name}``',
                                 inline=False)
             extra_params = f'Sampling steps: ``{rev[4]}``\nSize: ``{rev[5]}x{rev[6]}``\nClassifier-free guidance scale: ``{rev[7]}``\nSampling method: ``{rev[8]}``\nSeed: ``{rev[9]}``'
             if rev[11]:
                 # not interested in adding embed fields for strength and init_image
-                copy_command = copy_command + f' strength:{rev[10]} init_url:{rev[11].url}'
+                copy_command += f' strength:{rev[10]} init_url:{rev[11].url}'
             if rev[12] != 1:
-                copy_command = copy_command + f' count:{rev[13]}'
+                copy_command += f' count:{rev[12]}'
             if rev[13] != 'None':
-                copy_command = copy_command + f' style:{rev[13]}'
-                extra_params = extra_params + f'\nStyle preset: ``{rev[13]}``'
+                copy_command += f' style:{rev[13]}'
+                extra_params += f'\nStyle preset: ``{rev[13]}``'
             if rev[14] != 'None':
-                copy_command = copy_command + f' facefix:{rev[14]}'
-                extra_params = extra_params + f'\nFace restoration model: ``{rev[14]}``'
+                copy_command += f' facefix:{rev[14]}'
+                extra_params += f'\nFace restoration model: ``{rev[14]}``'
             if rev[15]:
-                copy_command = copy_command + f' highres_fix:{rev[15]}'
-                extra_params = extra_params + f'\nHigh-res fix: ``{rev[15]}``'
+                copy_command += f' highres_fix:{rev[15]}'
+                extra_params += f'\nHigh-res fix: ``{rev[15]}``'
             if rev[16] != 1:
-                copy_command = copy_command + f' clip_skip:{rev[16]}'
-                extra_params = extra_params + f'\nCLIP skip: ``{rev[16]}``'
+                copy_command += f' clip_skip:{rev[16]}'
+                extra_params += f'\nCLIP skip: ``{rev[16]}``'
             if rev[19] != 'None':
-                copy_command = copy_command + f' hypernet:{rev[19]}'
-                extra_params = extra_params + f'\nHypernetwork model(hash): ``{rev[19]}``'
+                copy_command += f' hypernet:{rev[19]}'
+                extra_params += f'\nHypernetwork model(hash): ``{rev[19]}``'
             embed.add_field(name=f'Other parameters', value=extra_params, inline=False)
             embed.add_field(name=f'Command for copying', value=f'``{copy_command}``', inline=False)
 

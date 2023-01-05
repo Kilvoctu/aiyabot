@@ -58,7 +58,7 @@ global_var = GlobalVar()
 def stats_count(number):
     with open('resources/stats.txt', 'r') as f:
         data = list(map(int, f.readlines()))
-    data[0] = data[0] + number
+    data[0] += number
     with open('resources/stats.txt', 'w') as f:
         f.write('\n'.join(str(x) for x in data))
 

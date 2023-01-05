@@ -225,7 +225,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 prompt = prompt.lstrip(' ')
                 break
             # get the index of the selected model for later use
-            model_index = model_index + 1
+            model_index += 1
 
         # if using model "short name" in csv, find its respective title for payload
         for title, name in settings.global_var.simple_model_pairs.items():
@@ -253,34 +253,34 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         # lower step value to the highest setting if user goes over max steps
         if steps > settings.read(guild)['max_steps']:
             steps = settings.read(guild)['max_steps']
-            reply_adds = reply_adds + f'\nExceeded maximum of ``{steps}`` steps! This is the best I can do...'
+            reply_adds += f'\nExceeded maximum of ``{steps}`` steps! This is the best I can do...'
         if model_name != 'Default':
-            reply_adds = reply_adds + f'\nModel: ``{model_name}``'
+            reply_adds += f'\nModel: ``{model_name}``'
         if negative_prompt != '':
-            reply_adds = reply_adds + f'\nNegative Prompt: ``{negative_prompt}``'
+            reply_adds += f'\nNegative Prompt: ``{negative_prompt}``'
         if (width != 512) or (height != 512):
-            reply_adds = reply_adds + f'\nSize: ``{width}``x``{height}``'
+            reply_adds += f'\nSize: ``{width}``x``{height}``'
         if guidance_scale != '7.0':
-            reply_adds = reply_adds + f'\nGuidance Scale: ``{guidance_scale}``'
+            reply_adds += f'\nGuidance Scale: ``{guidance_scale}``'
         if sampler != 'Euler a':
-            reply_adds = reply_adds + f'\nSampler: ``{sampler}``'
+            reply_adds += f'\nSampler: ``{sampler}``'
         if init_image:
-            reply_adds = reply_adds + f'\nStrength: ``{strength}``'
-            reply_adds = reply_adds + f'\nURL Init Image: ``{init_image.url}``'
+            reply_adds += f'\nStrength: ``{strength}``'
+            reply_adds += f'\nURL Init Image: ``{init_image.url}``'
         if count != 1:
             max_count = settings.read(guild)['max_count']
             if count > max_count:
                 count = max_count
-                reply_adds = reply_adds + f'\nExceeded maximum of ``{count}`` images! This is the best I can do...'
-            reply_adds = reply_adds + f'\nCount: ``{count}``'
+                reply_adds += f'\nExceeded maximum of ``{count}`` images! This is the best I can do...'
+            reply_adds += f'\nCount: ``{count}``'
         if style != 'None':
-            reply_adds = reply_adds + f'\nStyle: ``{style}``'
+            reply_adds += f'\nStyle: ``{style}``'
         if hypernet != 'None':
-            reply_adds = reply_adds + f'\nHypernet: ``{hypernet}``'
+            reply_adds += f'\nHypernet: ``{hypernet}``'
         if facefix != 'None':
-            reply_adds = reply_adds + f'\nFace restoration: ``{facefix}``'
+            reply_adds += f'\nFace restoration: ``{facefix}``'
         if clip_skip != 1:
-            reply_adds = reply_adds + f'\nCLIP skip: ``{clip_skip}``'
+            reply_adds += f'\nCLIP skip: ``{clip_skip}``'
 
         # set up tuple of parameters to pass into the Discord view
         input_tuple = (
