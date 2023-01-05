@@ -16,6 +16,7 @@ class SettingsCog(commands.Cog):
             model for model in settings.global_var.model_names
         ]
     # and for hypernetworks
+
     def hyper_autocomplete(self: discord.AutocompleteContext):
         return [
             hyper for hyper in settings.global_var.hyper_names
@@ -104,6 +105,12 @@ class SettingsCog(commands.Cog):
         required=False,
         autocomplete=discord.utils.basic_autocomplete(hyper_autocomplete),
     )
+    @option(
+        'refresh',
+        bool,
+        description='Quick tool to update list of embeddings in /tips.',
+        required=False,
+    )
     async def settings_handler(self, ctx,
                                current_settings: Optional[bool] = True,
                                n_prompt: Optional[str] = 'unset',
@@ -116,7 +123,8 @@ class SettingsCog(commands.Cog):
                                count: Optional[int] = None,
                                max_count: Optional[int] = None,
                                clip_skip: Optional[int] = 0,
-                               hypernet: Optional[str] = None,):
+                               hypernet: Optional[str] = None,
+                               refresh: Optional[bool] = False):
         guild = '% s' % ctx.guild_id
         reviewer = settings.read(guild)
         # create the embed for the reply
@@ -133,6 +141,11 @@ class SettingsCog(commands.Cog):
                     value = ' '
                 current = current + f'\n{key} - ``{value}``'
             embed.add_field(name=f'Current defaults', value=current, inline=False)
+
+        # run function to update embeddings list
+        if refresh:
+            settings.refresh()
+            embed.add_field(name=f'Refreshed!', value=f'Embeddings list updated', inline=False)
 
         # run through each command and update the defaults user selects
         if n_prompt != 'unset':
