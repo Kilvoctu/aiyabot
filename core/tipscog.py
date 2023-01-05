@@ -85,6 +85,28 @@ class TipsView(View):
         await interaction.response.edit_message(embed=embed_model)
 
     @discord.ui.button(
+        custom_id="button_embed",
+        label="Embeddings list")
+    async def button_embed(self, button, interaction):
+
+        embed_1_list, embed_2_list = '', ''
+        for value in settings.global_var.embeddings_1:
+            if value == '':
+                value = ' '
+            embed_1_list = embed_1_list + f'\n``{value}``'
+        for value in settings.global_var.embeddings_2:
+            if value == '':
+                value = ' '
+            embed_2_list = embed_2_list + f'\n``{value}``'
+        embed_embed = discord.Embed(title="Embeddings list")
+        embed_embed.colour = settings.global_var.embed_color
+
+        embed_embed.add_field(name="SD 1.X embeddings", value=embed_1_list, inline=True)
+        embed_embed.add_field(name="SD 2.X embeddings", value=embed_2_list, inline=True)
+
+        await interaction.response.edit_message(embed=embed_embed)
+
+    @discord.ui.button(
         custom_id="button_about",
         label="About me")
     async def button_about(self, button, interaction):

@@ -46,6 +46,8 @@ class GlobalVar:
     sampler_names = []
     style_names = {}
     facefix_models = []
+    embeddings_1 = []
+    embeddings_2 = []
 
 
 global_var = GlobalVar()
@@ -215,6 +217,7 @@ def files_check():
     r2 = s.get(global_var.url + "/sdapi/v1/prompt-styles")
     r3 = s.get(global_var.url + "/sdapi/v1/face-restorers")
     r4 = s.get(global_var.url + "/sdapi/v1/sd-models")
+    r5 = s.get(global_var.url + "/sdapi/v1/embeddings")
     for s1 in r.json():
         try:
             global_var.sampler_names.append(s1['name'])
@@ -229,6 +232,16 @@ def files_check():
         global_var.facefix_models.append(s3['name'])
     for s4 in r4.json():
         global_var.simple_model_pairs[s4['title']] = s4['model_name']
+    for s5, shape in r5.json()['loaded'].items():
+        if shape['shape'] == 768:
+            global_var.embeddings_1.append(s5)
+        if shape['shape'] == 1024:
+            global_var.embeddings_2.append(s5)
+    for s5, shape in r5.json()['skipped'].items():
+        if shape['shape'] == 768:
+            global_var.embeddings_1.append(s5)
+        if shape['shape'] == 1024:
+            global_var.embeddings_2.append(s5)
 
 
 def guilds_check(self):
