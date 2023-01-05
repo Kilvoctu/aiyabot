@@ -22,7 +22,8 @@ template = {
     "sampler": "Euler a",
     "default_count": 1,
     "max_count": 1,
-    "clip_skip": 1
+    "clip_skip": 1,
+    "hypernet": "None"
 }
 
 
@@ -245,6 +246,8 @@ def files_check():
             global_var.embeddings_1.append(s5)
         if shape['shape'] == 1024:
             global_var.embeddings_2.append(s5)
+    # add default "None" hypernetwork as option
+    global_var.hyper_names.append('None')
     for s6 in r6.json():
         global_var.hyper_names.append(s6['name'])
 

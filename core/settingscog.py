@@ -15,6 +15,11 @@ class SettingsCog(commands.Cog):
         return [
             model for model in settings.global_var.model_names
         ]
+    # and for hypernetworks
+    def hyper_autocomplete(self: discord.AutocompleteContext):
+        return [
+            hyper for hyper in settings.global_var.hyper_names
+        ]
 
     @commands.slash_command(name='settings', description='Review and change server defaults')
     @option(
@@ -30,7 +35,7 @@ class SettingsCog(commands.Cog):
         required=False,
     )
     @option(
-        'model',
+        'data_model',
         str,
         description='Set default data model for image generation',
         required=False,
@@ -92,10 +97,17 @@ class SettingsCog(commands.Cog):
         required=False,
         choices=[x for x in range(1, 13, 1)]
     )
+    @option(
+        'hypernet',
+        str,
+        description='Set default hypernetwork model for the server.',
+        required=False,
+        autocomplete=discord.utils.basic_autocomplete(hyper_autocomplete),
+    )
     async def settings_handler(self, ctx,
                                current_settings: Optional[bool] = True,
                                n_prompt: Optional[str] = 'unset',
-                               model: Optional[str] = None,
+                               data_model: Optional[str] = None,
                                steps: Optional[int] = 1,
                                max_steps: Optional[int] = 1,
                                width: Optional[int] = 1,
@@ -103,7 +115,8 @@ class SettingsCog(commands.Cog):
                                sampler: Optional[str] = 'unset',
                                count: Optional[int] = None,
                                max_count: Optional[int] = None,
-                               clip_skip: Optional[int] = 0):
+                               clip_skip: Optional[int] = 0,
+                               hypernet: Optional[str] = None,):
         guild = '% s' % ctx.guild_id
         reviewer = settings.read(guild)
         # create the embed for the reply
@@ -127,9 +140,9 @@ class SettingsCog(commands.Cog):
             new = new + f'\nNegative prompts: ``"{n_prompt}"``'
             set_new = True
 
-        if model is not None:
-            settings.update(guild, 'data_model', model)
-            new = new + f'\nData model: ``"{model}"``'
+        if data_model is not None:
+            settings.update(guild, 'data_model', data_model)
+            new = new + f'\nData model: ``"{data_model}"``'
             set_new = True
 
         if max_steps != 1:
@@ -168,6 +181,11 @@ class SettingsCog(commands.Cog):
         if clip_skip != 0:
             settings.update(guild, 'clip_skip', clip_skip)
             new = new + f'\nCLIP skip: ``{clip_skip}``'
+            set_new = True
+
+        if hypernet is not None:
+            settings.update(guild, 'hypernet', hypernet)
+            new = new + f'\nHypernet: ``"{hypernet}"``'
             set_new = True
 
         # review settings again in case user is trying to set steps/counts and max steps/counts simultaneously

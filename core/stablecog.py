@@ -180,7 +180,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             facefix: Optional[str] = 'None',
                             highres_fix: Optional[bool] = False,
                             clip_skip: Optional[int] = 0,
-                            hypernet: Optional[str] = 'None'):
+                            hypernet: Optional[str] = None):
 
         settings.global_var.send_model = False
         # update defaults with any new defaults from settingscog
@@ -199,6 +199,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             sampler = settings.read(guild)['sampler']
         if clip_skip == 0:
             clip_skip = settings.read(guild)['clip_skip']
+        if hypernet is None:
+            hypernet = settings.read(guild)['hypernet']
 
         # if a model is not selected, do nothing
         model_name = 'Default'

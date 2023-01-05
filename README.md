@@ -39,6 +39,7 @@ To generate an image from text, use the /draw command and include your prompt as
 - face restoration
 - high-res fix
 - CLIP skip
+- hypernetworks
 
 #### Bonus features
 
@@ -51,7 +52,7 @@ To generate an image from text, use the /draw command and include your prompt as
   - CLIP skip
 - /identify command - create a caption for your image.
 - /stats command - shows how many /draw commands have been used.
-- /tips command - basic tips for writing prompts.
+- /tips command - basic tips for writing prompts and other info.
 - /upscale command - resize your image.
 - buttons - certain outputs will contain buttons.
   - 🖋 - edit prompt, then generate a new image with same parameters.
