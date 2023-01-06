@@ -106,11 +106,12 @@ class DrawModal(Modal):
 
         # iterate through extended edit for any changes
         new_model = ''
+        new_token = ''
+        model_found = False
         for line in self.children[3].value.split('\n'):
             if 'data_model:' in line:
                 model_index = 0
                 new_model = line.split(':', 1)[1]
-                model_found = False
                 # jump through hoops to find model full name from display name
                 for (display, short), (display2, token) in zip(settings.global_var.model_names.items(),
                                                                settings.global_var.model_tokens.items()):
@@ -122,7 +123,6 @@ class DrawModal(Modal):
                                 break
                         # grab the new activator token
                         new_token = f'{token} '.lstrip(' ')
-                        pen[1] = pen[1].replace(pen[1].split(pen[17])[0], new_token)
                         break
                     model_index += 1
                 if model_found:
@@ -144,6 +144,9 @@ class DrawModal(Modal):
                 pen[14] = line.split(':', 1)[1]
             if 'hypernet:' in line:
                 pen[19] = line.split(':', 1)[1]
+
+        if model_found:
+            pen[1] = new_token + pen[17]
 
         prompt_tuple = tuple(pen)
 
