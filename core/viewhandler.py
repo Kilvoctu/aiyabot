@@ -68,22 +68,18 @@ class DrawModal(Modal):
         # set up parameters for full edit mode. first get model display name
         model_name = 'Default'
         model_index = 0
+        index_start = 4
         for name, token in settings.global_var.model_tokens.items():
             if model_index == input_tuple[18]:
                 model_name = name
                 break
-            model_index = model_index + 1
-        # expose each available option, even if output didn't use them
+            model_index += 1
+        # expose each available (supported) option, even if output didn't use them
         ex_params = f'data_model:{model_name}'
-        ex_params += f'\nsteps:{input_tuple[4]}'
-        ex_params += f'\nwidth:{input_tuple[5]}'
-        ex_params += f'\nheight:{input_tuple[6]}'
-        ex_params += f'\nguidance_scale:{input_tuple[7]}'
-        ex_params += f'\nsampler:{input_tuple[8]}'
-        ex_params += f'\nstyle:{input_tuple[13]}'
-        ex_params += f'\nfacefix:{input_tuple[14]}'
-        ex_params += f'\nclip_skip:{input_tuple[16]}'
-        ex_params += f'\nhypernet:{input_tuple[19]}'
+        for index, value in enumerate(tuple_names[index_start:], index_start):
+            if 9 <= index <= 12 or index == 15 or 17 <= index <= 18:
+                continue
+            ex_params += f'\n{value}:{input_tuple[index]}'
 
         self.add_item(
             InputText(
@@ -183,7 +179,7 @@ class DrawModal(Modal):
                     pen[13] = line.split(':', 1)[1]
                 else:
                     invalid_input = True
-                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is not my style. Here's the style list!",
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` isn't my style. Here's the style list!",
                                         value=', '.join(['`%s`' % x for x in settings.global_var.style_names]),
                                         inline=False)
             if 'facefix:' in line:
@@ -323,7 +319,9 @@ class DrawView(View):
                         queuehandler.GlobalQueue.draw_q.append(
                             queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
                         await interaction.followup.send(
-                            f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[17]}``\nNew seed:``{seed_tuple[9]}``')
+                            f'<@{interaction.user.id}>, {settings.messages()}\nQueue: '
+                            f'``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[17]}``'
+                            f'\nNew seed:``{seed_tuple[9]}``')
                 else:
                     button.disabled = True
                     await interaction.response.edit_message(view=self)
@@ -334,7 +332,9 @@ class DrawView(View):
                     await queuehandler.process_dream(draw_dream,
                                                      queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
                     await interaction.followup.send(
-                        f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[17]}``\nNew Seed:``{seed_tuple[9]}``')
+                        f'<@{interaction.user.id}>, {settings.messages()}\nQueue: '
+                        f'``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[17]}``'
+                        f'\nNew Seed:``{seed_tuple[9]}``')
             else:
                 await interaction.response.send_message("You can't use other people's 🎲!", ephemeral=True)
         except Exception as e:
@@ -373,19 +373,21 @@ class DrawView(View):
             embed = discord.Embed(title="About the image!", description="")
             embed.colour = settings.global_var.embed_color
             embed.add_field(name=f'Prompt', value=f'``{rev[17]}``', inline=False)
-            copy_command = f'/draw prompt:{rev[17]} data_model:{model_name} steps:{rev[4]} width:{rev[5]} height:{rev[6]} guidance_scale:{rev[7]} sampler:{rev[8]} seed:{rev[9]}'
+            copy_command = f'/draw prompt:{rev[17]} data_model:{model_name} steps:{rev[4]} width:{rev[5]} ' \
+                           f'height:{rev[6]} guidance_scale:{rev[7]} sampler:{rev[8]} seed:{rev[9]}'
             if rev[2] != '':
                 copy_command += f' negative_prompt:{rev[2]}'
                 embed.add_field(name=f'Negative prompt', value=f'``{rev[2]}``', inline=False)
             if activator_token:
                 embed.add_field(name=f'Data model',
-                                value=f'Display name - ``{model_name}``\nFull name - ``{full_name}``\nActivator token - ``{activator_token}``',
-                                inline=False)
+                                value=f'Display name - ``{model_name}``\nFull name - ``{full_name}``'
+                                      f'\nActivator token - ``{activator_token}``', inline=False)
             else:
                 embed.add_field(name=f'Data model',
                                 value=f'Display name - ``{model_name}``\nFull name - ``{full_name}``',
                                 inline=False)
-            extra_params = f'Sampling steps: ``{rev[4]}``\nSize: ``{rev[5]}x{rev[6]}``\nClassifier-free guidance scale: ``{rev[7]}``\nSampling method: ``{rev[8]}``\nSeed: ``{rev[9]}``'
+            extra_params = f'Sampling steps: ``{rev[4]}``\nSize: ``{rev[5]}x{rev[6]}``\nClassifier-free guidance ' \
+                           f'scale: ``{rev[7]}``\nSampling method: ``{rev[8]}``\nSeed: ``{rev[9]}``'
             if rev[11]:
                 # not interested in adding embed fields for strength and init_image
                 copy_command += f' strength:{rev[10]} init_url:{rev[11].url}'
