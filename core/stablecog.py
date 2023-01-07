@@ -261,7 +261,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if (width != 512) or (height != 512):
             reply_adds += f'\nSize: ``{width}``x``{height}``'
         if guidance_scale != '7.0':
-            reply_adds += f'\nGuidance Scale: ``{guidance_scale}``'
+            try:
+                float(guidance_scale)
+                reply_adds += f'\nGuidance Scale: ``{guidance_scale}``'
+            except(Exception,):
+                reply_adds += f"\nGuidance Scale can't be ``{guidance_scale}``! Setting to default of `7.0`."
+                guidance_scale = 7.0
         if sampler != 'Euler a':
             reply_adds += f'\nSampler: ``{sampler}``'
         if init_image:

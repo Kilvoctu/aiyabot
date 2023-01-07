@@ -29,7 +29,9 @@ input_tuple[0] = ctx
 [18] = model_index
 [19] = hypernet
 '''
-
+tuple_names = ['ctx', 'prompt', 'negative_prompt', 'data_model', 'steps', 'width', 'height', 'guidance_scale',
+               'sampler', 'seed', 'strength', 'init_image', 'batch_count', 'style', 'facefix', 'highres_fix',
+               'clip_skip', 'simple_prompt', 'model_index', 'hypernet']
 # set up tuple of queues to pass into union()
 queues = (queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q)
 
@@ -63,8 +65,7 @@ class DrawModal(Modal):
             )
         )
 
-        # set up parameters for full edit mode
-        # first get model display name
+        # set up parameters for full edit mode. first get model display name
         model_name = 'Default'
         model_index = 0
         for name, token in settings.global_var.model_tokens.items():
@@ -81,6 +82,7 @@ class DrawModal(Modal):
         ex_params += f'\nsampler:{input_tuple[8]}'
         ex_params += f'\nstyle:{input_tuple[13]}'
         ex_params += f'\nfacefix:{input_tuple[14]}'
+        ex_params += f'\nclip_skip:{input_tuple[16]}'
         ex_params += f'\nhypernet:{input_tuple[19]}'
 
         self.add_item(
@@ -104,7 +106,6 @@ class DrawModal(Modal):
             pen[9] = int(self.children[2].value)
         except ValueError:
             pen[9] = random.randint(0, 0xFFFFFFFF)
-        print(type(self.children[2].value))
         if (self.children[2].value == "-1") or (self.children[2].value == ""):
             pen[9] = random.randint(0, 0xFFFFFFFF)
 
@@ -193,6 +194,13 @@ class DrawModal(Modal):
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` can't fix faces! I have suggestions.",
                                         value=', '.join(['`%s`' % x for x in settings.global_var.facefix_models]),
                                         inline=False)
+            if 'clip_skip:' in line:
+                try:
+                    pen[16] = [x for x in range(1, 13, 1) if x == int(line.split(':', 1)[1])][0]
+                except(Exception,):
+                    invalid_input = True
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is too much CLIP to skip!",
+                                        value='The range is from `1` to `12`.', inline=False)
             if 'hypernet:' in line:
                 if line.split(':', 1)[1] in settings.global_var.hyper_names:
                     pen[19] = line.split(':', 1)[1]
@@ -220,24 +228,12 @@ class DrawModal(Modal):
                 prompt_output += f'\nNew negative prompt: ``{pen[2]}``'
             if str(pen[3]) != str(self.input_tuple[3]):
                 prompt_output += f'\nNew model: ``{new_model}``'
-            if str(pen[4]) != str(self.input_tuple[4]):
-                prompt_output += f'\nNew steps: ``{pen[4]}``'
-            if str(pen[5]) != str(self.input_tuple[5]):
-                prompt_output += f'\nNew width: ``{pen[5]}``'
-            if str(pen[6]) != str(self.input_tuple[6]):
-                prompt_output += f'\nNew height: ``{pen[6]}``'
-            if str(pen[7]) != str(self.input_tuple[7]):
-                prompt_output += f'\nNew guidance_scale: ``{pen[7]}``'
-            if str(pen[8]) != str(self.input_tuple[8]):
-                prompt_output += f'\nNew sampler: ``{pen[8]}``'
-            if str(pen[13]) != str(self.input_tuple[13]):
-                prompt_output += f'\nNew style: ``{pen[13]}``'
-            if str(pen[14]) != str(self.input_tuple[14]):
-                prompt_output += f'\nNew facefix: ``{pen[14]}``'
-            if str(pen[19]) != str(self.input_tuple[19]):
-                prompt_output += f'\nNew hypernet: ``{pen[19]}``'
-            if str(pen[9]) != str(self.input_tuple[9]):
-                prompt_output += f'\nNew seed: ``{pen[9]}``'
+            index_start = 4
+            for index, value in enumerate(tuple_names[index_start:], index_start):
+                if 17 <= index <= 18:
+                    continue
+                if str(pen[index]) != str(self.input_tuple[index]):
+                    prompt_output += f'\nNew {value}: ``{pen[index]}``'
 
             # check queue again, but now we know user is not in queue
             if queuehandler.GlobalQueue.dream_thread.is_alive():
