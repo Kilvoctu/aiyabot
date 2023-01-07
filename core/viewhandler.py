@@ -99,8 +99,12 @@ class DrawModal(Modal):
         pen[17] = self.children[0].value
         pen[2] = self.children[1].value
 
-        # update the tuple new seed (random if set to -1)
-        pen[9] = self.children[2].value
+        # update the tuple new seed (random if invalid value set)
+        try:
+            pen[9] = int(self.children[2].value)
+        except ValueError:
+            pen[9] = random.randint(0, 0xFFFFFFFF)
+        print(type(self.children[2].value))
         if (self.children[2].value == "-1") or (self.children[2].value == ""):
             pen[9] = random.randint(0, 0xFFFFFFFF)
 
@@ -158,9 +162,13 @@ class DrawModal(Modal):
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` height is no good! These heights I can do.",
                                         value=', '.join(['`%s`' % x for x in settings.global_var.size_range]),
                                         inline=False)
-            # need to add error handling for guidance scale
             if 'guidance_scale:' in line:
-                pen[7] = line.split(':', 1)[1]
+                try:
+                    pen[7] = float(line.split(':', 1)[1])
+                except(Exception,):
+                    invalid_input = True
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is not valid for the guidance scale!",
+                                        value='Make sure you enter a number.', inline=False)
             if 'sampler:' in line:
                 if line.split(':', 1)[1] in settings.global_var.sampler_names:
                     pen[8] = line.split(':', 1)[1]
