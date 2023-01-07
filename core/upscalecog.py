@@ -116,16 +116,16 @@ class UpscaleCog(commands.Cog):
         # formatting aiya initial reply
         reply_adds = ''
         if upscaler_2:
-            reply_adds = reply_adds + f'\nUpscaler 2: ``{upscaler_2}``'
-            reply_adds = reply_adds + f' - Strength: ``{upscaler_2_strength}``'
+            reply_adds += f'\nUpscaler 2: ``{upscaler_2}``'
+            reply_adds += f' - Strength: ``{upscaler_2_strength}``'
 
         # check if resize is within limits
         if float(resize) < 1.0:
             resize = 1.0
-            reply_adds = reply_adds + f"\nResize can't go below 1.0x! Setting it to ``{resize}``."
+            reply_adds += f"\nResize can't go below 1.0x! Setting it to ``{resize}``."
         if float(resize) > 4.0:
             resize = 4.0
-            reply_adds = reply_adds + f"\nResize can't go above 4.0x! Setting it to ``{resize}``."
+            reply_adds += f"\nResize can't go above 4.0x! Setting it to ``{resize}``."
 
         # set up tuple of parameters
         input_tuple = (ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength, gfpgan, codeformer, upscale_first)

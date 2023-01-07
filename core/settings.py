@@ -44,6 +44,7 @@ class GlobalVar:
     model_names = {}
     model_tokens = {}
     simple_model_pairs = {}
+    size_range = range(192, 1088, 64)
     sampler_names = []
     style_names = {}
     facefix_models = []
@@ -58,7 +59,7 @@ global_var = GlobalVar()
 def stats_count(number):
     with open('resources/stats.txt', 'r') as f:
         data = list(map(int, f.readlines()))
-    data[0] = data[0] + number
+    data[0] += number
     with open('resources/stats.txt', 'w') as f:
         f.write('\n'.join(str(x) for x in data))
 
