@@ -104,96 +104,131 @@ class DrawModal(Modal):
         if (self.children[2].value == "-1") or (self.children[2].value == ""):
             pen[9] = random.randint(0, 0xFFFFFFFF)
 
-        # iterate through extended edit for any changes
-        new_model = ''
-        new_token = ''
-        model_search = False
+        # prepare a validity checker
+        new_model, new_token, bad_input = '', '', ''
         model_found = False
+        invalid_input = False
+
+        # iterate through extended edit for any changes
         for line in self.children[3].value.split('\n'):
             if 'data_model:' in line:
-                model_search = True
                 model_index = 0
                 new_model = line.split(':', 1)[1]
                 # jump through hoops to find model full name from display name
                 for (display, short), (display2, token) in zip(settings.global_var.model_names.items(),
                                                                settings.global_var.model_tokens.items()):
                     if display == new_model:
-                        for full_name, short_b in settings.global_var.simple_model_pairs.items():
-                            if short_b == short.replace('\\', '_').replace('/', '_'):
-                                pen[3] = full_name
-                                model_found = True
-                                break
+                        fixed_short = short.replace('\\', '_').replace('/', '_')
+                        pen[3] = [k for k, v in settings.global_var.simple_model_pairs.items() if v == fixed_short][0]
+                        model_found = True
                         # grab the new activator token
                         new_token = f'{token} '.lstrip(' ')
                         break
                     model_index += 1
                 if model_found:
                     pen[18] = model_index
+                else:
+                    invalid_input = True
+                    bad_input += f"\n`{line}`"
 
             if 'steps:' in line:
-                pen[4] = line.split(':', 1)[1]
+                guild = '% s' % pen[0].guild_id
+                if 0 < int(line.split(':', 1)[1]) < settings.read(guild)['max_steps']:
+                    pen[4] = line.split(':', 1)[1]
+                else:
+                    invalid_input = True
+                    bad_input += f"\n`{line}`"
             if 'width:' in line:
-                pen[5] = line.split(':', 1)[1]
+                try:
+                    pen[5] = [x for x in settings.global_var.size_range if x == int(line.split(':', 1)[1])][0]
+                except(Exception,):
+                    invalid_input = True
+                    bad_input += f"\n`{line}`"
             if 'height:' in line:
-                pen[6] = line.split(':', 1)[1]
+                try:
+                    pen[6] = [x for x in settings.global_var.size_range if x == int(line.split(':', 1)[1])][0]
+                except(Exception,):
+                    invalid_input = True
+                    bad_input += f"\n`{line}`"
             if 'guidance_scale:' in line:
                 pen[7] = line.split(':', 1)[1]
             if 'sampler:' in line:
-                pen[8] = line.split(':', 1)[1]
+                if line.split(':', 1)[1] in settings.global_var.sampler_names:
+                    pen[8] = line.split(':', 1)[1]
+                else:
+                    invalid_input = True
+                    bad_input += f"\n`{line}`"
             if 'style:' in line:
-                pen[13] = line.split(':', 1)[1]
+                if line.split(':', 1)[1] in settings.global_var.style_names.keys():
+                    pen[13] = line.split(':', 1)[1]
+                else:
+                    invalid_input = True
+                    bad_input += f"\n`{line}`"
             if 'facefix:' in line:
-                pen[14] = line.split(':', 1)[1]
+                if line.split(':', 1)[1] in settings.global_var.facefix_models:
+                    pen[14] = line.split(':', 1)[1]
+                else:
+                    invalid_input = True
+                    bad_input += f"\n`{line}`"
             if 'hypernet:' in line:
-                pen[19] = line.split(':', 1)[1]
+                if line.split(':', 1)[1] in settings.global_var.hyper_names:
+                    pen[19] = line.split(':', 1)[1]
+                else:
+                    invalid_input = True
+                    bad_input += f"\n`{line}`"
 
-        if model_found:
-            pen[1] = new_token + pen[17]
-
-        prompt_tuple = tuple(pen)
-
-        draw_dream = stablecog.StableCog(self)
-        prompt_output = f'\nNew prompt: ``{pen[17]}``'
-        if pen[2] != '':
-            prompt_output += f'\nNew negative prompt: ``{pen[2]}``'
-        if str(pen[3]) != str(self.input_tuple[3]):
-            prompt_output += f'\nNew model: ``{new_model}``'
-        if str(pen[4]) != str(self.input_tuple[4]):
-            prompt_output += f'\nNew steps: ``{pen[4]}``'
-        if str(pen[5]) != str(self.input_tuple[5]):
-            prompt_output += f'\nNew width: ``{pen[5]}``'
-        if str(pen[6]) != str(self.input_tuple[6]):
-            prompt_output += f'\nNew height: ``{pen[6]}``'
-        if str(pen[7]) != str(self.input_tuple[7]):
-            prompt_output += f'\nNew guidance_scale: ``{pen[7]}``'
-        if str(pen[8]) != str(self.input_tuple[8]):
-            prompt_output += f'\nNew sampler: ``{pen[8]}``'
-        if str(pen[13]) != str(self.input_tuple[13]):
-            prompt_output += f'\nNew style: ``{pen[13]}``'
-        if str(pen[14]) != str(self.input_tuple[14]):
-            prompt_output += f'\nNew facefix: ``{pen[14]}``'
-        if str(pen[19]) != str(self.input_tuple[19]):
-            prompt_output += f'\nNew hypernet: ``{pen[19]}``'
-        if str(pen[9]) != str(self.input_tuple[9]):
-            prompt_output += f'\nNew seed: ``{pen[9]}``'
-
-        if model_search:
-            if not model_found:
-                prompt_output += f"\nI don't recognize this model: ``{new_model}``"
-
-        # check queue again, but now we know user is not in queue
-        if queuehandler.GlobalQueue.dream_thread.is_alive():
-            if self.input_tuple[3] != '':
-                settings.global_var.send_model = True
-            queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
-            await interaction.response.send_message(
-                f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}``{prompt_output}')
+        # stop and give a useful message if any extended edit values aren't recognized
+        if invalid_input:
+            ok_to_generate = False
+            await interaction.response.send_message(f"There's an issue on this line! {bad_input}"
+                                                    f"\nPlease verify the value and try again.", ephemeral=True)
         else:
-            if self.input_tuple[3] != '':
-                settings.global_var.send_model = True
-            await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
-            await interaction.response.send_message(
-                f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}``{prompt_output}')
+            # update the prompt again if a valid model change is requested
+            if model_found:
+                pen[1] = new_token + pen[17]
+
+            # the updated tuple to send to queue
+            prompt_tuple = tuple(pen)
+            draw_dream = stablecog.StableCog(self)
+
+            # message additions if anything was changed
+            prompt_output = f'\nNew prompt: ``{pen[17]}``'
+            if pen[2] != '':
+                prompt_output += f'\nNew negative prompt: ``{pen[2]}``'
+            if str(pen[3]) != str(self.input_tuple[3]):
+                prompt_output += f'\nNew model: ``{new_model}``'
+            if str(pen[4]) != str(self.input_tuple[4]):
+                prompt_output += f'\nNew steps: ``{pen[4]}``'
+            if str(pen[5]) != str(self.input_tuple[5]):
+                prompt_output += f'\nNew width: ``{pen[5]}``'
+            if str(pen[6]) != str(self.input_tuple[6]):
+                prompt_output += f'\nNew height: ``{pen[6]}``'
+            if str(pen[7]) != str(self.input_tuple[7]):
+                prompt_output += f'\nNew guidance_scale: ``{pen[7]}``'
+            if str(pen[8]) != str(self.input_tuple[8]):
+                prompt_output += f'\nNew sampler: ``{pen[8]}``'
+            if str(pen[13]) != str(self.input_tuple[13]):
+                prompt_output += f'\nNew style: ``{pen[13]}``'
+            if str(pen[14]) != str(self.input_tuple[14]):
+                prompt_output += f'\nNew facefix: ``{pen[14]}``'
+            if str(pen[19]) != str(self.input_tuple[19]):
+                prompt_output += f'\nNew hypernet: ``{pen[19]}``'
+            if str(pen[9]) != str(self.input_tuple[9]):
+                prompt_output += f'\nNew seed: ``{pen[9]}``'
+
+            # check queue again, but now we know user is not in queue
+            if queuehandler.GlobalQueue.dream_thread.is_alive():
+                if self.input_tuple[3] != '':
+                    settings.global_var.send_model = True
+                queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
+                await interaction.response.send_message(
+                    f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}``{prompt_output}')
+            else:
+                if self.input_tuple[3] != '':
+                    settings.global_var.send_model = True
+                await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
+                await interaction.response.send_message(
+                    f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}``{prompt_output}')
 
 
 # creating the view that holds the buttons for /draw output

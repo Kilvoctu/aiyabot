@@ -79,14 +79,14 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         int,
         description='Width of the generated image.',
         required=False,
-        choices=[x for x in range(192, 1088, 64)]
+        choices=[x for x in settings.global_var.size_range]
     )
     @option(
         'height',
         int,
         description='Height of the generated image.',
         required=False,
-        choices=[x for x in range(192, 1088, 64)]
+        choices=[x for x in settings.global_var.size_range]
     )
     @option(
         'guidance_scale',
@@ -441,6 +441,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>, {message}', files=files,
                                                   view=queue_object.view))
 
+        except KeyError:
+            embed = discord.Embed(title='txt2img failed', description=f'An invalid parameter was found!',
+                                  color=settings.global_var.embed_color)
+            event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
         except Exception as e:
             embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}',
                                   color=settings.global_var.embed_color)

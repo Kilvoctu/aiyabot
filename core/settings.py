@@ -44,6 +44,7 @@ class GlobalVar:
     model_names = {}
     model_tokens = {}
     simple_model_pairs = {}
+    size_range = range(192, 1088, 64)
     sampler_names = []
     style_names = {}
     facefix_models = []
