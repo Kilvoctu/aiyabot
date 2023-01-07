@@ -107,9 +107,11 @@ class DrawModal(Modal):
         # iterate through extended edit for any changes
         new_model = ''
         new_token = ''
+        model_search = False
         model_found = False
         for line in self.children[3].value.split('\n'):
             if 'data_model:' in line:
+                model_search = True
                 model_index = 0
                 new_model = line.split(':', 1)[1]
                 # jump through hoops to find model full name from display name
@@ -174,6 +176,10 @@ class DrawModal(Modal):
             prompt_output += f'\nNew hypernet: ``{pen[19]}``'
         if str(pen[9]) != str(self.input_tuple[9]):
             prompt_output += f'\nNew seed: ``{pen[9]}``'
+
+        if model_search:
+            if not model_found:
+                prompt_output += f"\nI don't recognize this model: ``{new_model}``"
 
         # check queue again, but now we know user is not in queue
         if queuehandler.GlobalQueue.dream_thread.is_alive():
