@@ -108,6 +108,7 @@ class DrawModal(Modal):
         new_model, new_token, bad_input = '', '', ''
         model_found = False
         invalid_input = False
+        embed_err = discord.Embed(title="I can't redraw this!", description="")
 
         # iterate through extended edit for any changes
         for line in self.children[3].value.split('\n'):
@@ -129,27 +130,35 @@ class DrawModal(Modal):
                     pen[18] = model_index
                 else:
                     invalid_input = True
-                    bad_input += f"\n`{line}`"
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is not found. Try one of these models!",
+                                        value=', '.join(['`%s`' % x for x in settings.global_var.model_names]),
+                                        inline=False)
 
             if 'steps:' in line:
-                guild = '% s' % pen[0].guild_id
-                if 0 < int(line.split(':', 1)[1]) < settings.read(guild)['max_steps']:
+                max_steps = settings.read('% s' % pen[0].guild_id)['max_steps']
+                if 0 < int(line.split(':', 1)[1]) < max_steps:
                     pen[4] = line.split(':', 1)[1]
                 else:
                     invalid_input = True
-                    bad_input += f"\n`{line}`"
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` steps is beyond the boundary!",
+                                        value=f"Keep steps between `0` and `{max_steps}`.", inline=False)
             if 'width:' in line:
                 try:
                     pen[5] = [x for x in settings.global_var.size_range if x == int(line.split(':', 1)[1])][0]
                 except(Exception,):
                     invalid_input = True
-                    bad_input += f"\n`{line}`"
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` width is no good! These widths I can do.",
+                                        value=', '.join(['`%s`' % x for x in settings.global_var.size_range]),
+                                        inline=False)
             if 'height:' in line:
                 try:
                     pen[6] = [x for x in settings.global_var.size_range if x == int(line.split(':', 1)[1])][0]
                 except(Exception,):
                     invalid_input = True
-                    bad_input += f"\n`{line}`"
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` height is no good! These heights I can do.",
+                                        value=', '.join(['`%s`' % x for x in settings.global_var.size_range]),
+                                        inline=False)
+            # need to add error handling for guidance scale
             if 'guidance_scale:' in line:
                 pen[7] = line.split(':', 1)[1]
             if 'sampler:' in line:
@@ -157,31 +166,37 @@ class DrawModal(Modal):
                     pen[8] = line.split(':', 1)[1]
                 else:
                     invalid_input = True
-                    bad_input += f"\n`{line}`"
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is unrecognized. I know of these samplers!",
+                                        value=', '.join(['`%s`' % x for x in settings.global_var.sampler_names]),
+                                        inline=False)
             if 'style:' in line:
                 if line.split(':', 1)[1] in settings.global_var.style_names.keys():
                     pen[13] = line.split(':', 1)[1]
                 else:
                     invalid_input = True
-                    bad_input += f"\n`{line}`"
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is not my style. Here's the style list!",
+                                        value=', '.join(['`%s`' % x for x in settings.global_var.style_names]),
+                                        inline=False)
             if 'facefix:' in line:
                 if line.split(':', 1)[1] in settings.global_var.facefix_models:
                     pen[14] = line.split(':', 1)[1]
                 else:
                     invalid_input = True
-                    bad_input += f"\n`{line}`"
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` can't fix faces! I have suggestions.",
+                                        value=', '.join(['`%s`' % x for x in settings.global_var.facefix_models]),
+                                        inline=False)
             if 'hypernet:' in line:
                 if line.split(':', 1)[1] in settings.global_var.hyper_names:
                     pen[19] = line.split(':', 1)[1]
                 else:
                     invalid_input = True
-                    bad_input += f"\n`{line}`"
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` isn't one of these hypernetworks!",
+                                        value=', '.join(['`%s`' % x for x in settings.global_var.hyper_names]),
+                                        inline=False)
 
         # stop and give a useful message if any extended edit values aren't recognized
         if invalid_input:
-            ok_to_generate = False
-            await interaction.response.send_message(f"There's an issue on this line! {bad_input}"
-                                                    f"\nPlease verify the value and try again.", ephemeral=True)
+            await interaction.response.send_message(embed=embed_err, ephemeral=True)
         else:
             # update the prompt again if a valid model change is requested
             if model_found:
