@@ -101,14 +101,14 @@ class SettingsCog(commands.Cog):
     @option(
         'hypernet',
         str,
-        description='Set default hypernetwork model for the server.',
+        description='Set default hypernetwork model for the server',
         required=False,
         autocomplete=discord.utils.basic_autocomplete(hyper_autocomplete),
     )
     @option(
         'refresh',
         bool,
-        description='Quick tool to update list of embeddings in /tips.',
+        description='Use to update global lists (models, styles, embeddings, etc.)',
         required=False,
     )
     async def settings_handler(self, ctx,
@@ -142,10 +142,19 @@ class SettingsCog(commands.Cog):
                 current += f'\n{key} - ``{value}``'
             embed.add_field(name=f'Current defaults', value=current, inline=False)
 
-        # run function to update embeddings list
+        # run function to update global variables
         if refresh:
-            settings.refresh()
-            embed.add_field(name=f'Refreshed!', value=f'Embeddings list updated', inline=False)
+            settings.global_var.model_names.clear()
+            settings.global_var.model_tokens.clear()
+            settings.global_var.simple_model_pairs.clear()
+            settings.global_var.sampler_names.clear()
+            settings.global_var.facefix_models.clear()
+            settings.global_var.style_names.clear()
+            settings.global_var.embeddings_1.clear()
+            settings.global_var.embeddings_2.clear()
+            settings.global_var.hyper_names.clear()
+            settings.populate_global_vars()
+            embed.add_field(name=f'Refreshed!', value=f'Updated global lists', inline=False)
 
         # run through each command and update the defaults user selects
         if n_prompt != 'unset':

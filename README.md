@@ -51,6 +51,7 @@ To generate an image from text, use the /draw command and include your prompt as
   - batch count / max batch count
   - CLIP skip
   - hypernetworks
+  - refresh (update AIYA's options with any changes from Web UI)
 - /identify command - create a caption for your image.
 - /stats command - shows how many /draw commands have been used.
 - /tips command - basic tips for writing prompts and other info.

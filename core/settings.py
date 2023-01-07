@@ -181,6 +181,16 @@ def files_check():
             writer.writerow(header)
             writer.writerow(unset_model)
 
+    # if directory in DIR doesn't exist, create it
+    dir_exists = os.path.exists(global_var.dir)
+    if dir_exists is False:
+        print(f"The folder for DIR doesn't exist! Creating folder at {global_var.dir}.")
+        os.mkdir(global_var.dir)
+
+    populate_global_vars()
+
+
+def populate_global_vars():
     # get display_name:model_full_name pairs from models.csv into global variable
     # do same for display_name:activator token pairs
     with open('resources/models.csv', encoding='utf-8') as csv_file:
@@ -188,12 +198,6 @@ def files_check():
         for row in model_data[1:]:
             global_var.model_names[row[0]] = row[1]
             global_var.model_tokens[row[0]] = row[2]
-
-    # if directory in DIR doesn't exist, create it
-    dir_exists = os.path.exists(global_var.dir)
-    if dir_exists is False:
-        print(f"The folder for DIR doesn't exist! Creating folder at {global_var.dir}.")
-        os.mkdir(global_var.dir)
 
     # pull list of samplers, styles and face restorers from api
     # create persistent session since we'll need to do a few API calls
@@ -275,33 +279,3 @@ def guilds_check(self):
     else:
         print(f'Setting up settings for DMs, called None.json')
         build("None")
-
-# function updates the list of embeddings on /tips, but maybe it can do more later on
-def refresh():
-    # login first
-    s = requests.Session()
-    if global_var.api_auth:
-        s.auth = (global_var.api_user, global_var.api_pass)
-
-    if global_var.gradio_auth:
-        login_payload = {
-            'username': global_var.username,
-            'password': global_var.password
-        }
-        s.post(global_var.url + '/login', data=login_payload)
-    else:
-        s.post(global_var.url + '/login')
-
-    global_var.embeddings_1.clear()
-    global_var.embeddings_2.clear()
-    get_embeds = s.get(global_var.url + "/sdapi/v1/embeddings")
-    for value, shape in get_embeds.json()['loaded'].items():
-        if shape['shape'] == 768:
-            global_var.embeddings_1.append(value)
-        if shape['shape'] == 1024:
-            global_var.embeddings_2.append(value)
-    for value, shape in get_embeds.json()['skipped'].items():
-        if shape['shape'] == 768:
-            global_var.embeddings_1.append(value)
-        if shape['shape'] == 1024:
-            global_var.embeddings_2.append(value)
