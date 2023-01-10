@@ -121,7 +121,11 @@ class DrawModal(Modal):
                                                                settings.global_var.model_tokens.items()):
                     if display == new_model:
                         fixed_short = short.replace('\\', '_').replace('/', '_')
-                        pen[3] = [k for k, v in settings.global_var.simple_model_pairs.items() if v == fixed_short][0]
+                        try:
+                            # try to look for shorthand model name first (no extension or hash)
+                            pen[3] = [k for k, v in settings.global_var.simple_model_pairs.items() if v == fixed_short][0]
+                        except:
+                            pen[3] = short
                         model_found = True
                         # grab the new activator token
                         new_token = f'{token} '.lstrip(' ')
