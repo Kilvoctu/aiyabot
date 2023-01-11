@@ -153,6 +153,7 @@ class SettingsCog(commands.Cog):
             settings.global_var.embeddings_1.clear()
             settings.global_var.embeddings_2.clear()
             settings.global_var.hyper_names.clear()
+            settings.global_var.upscaler_names.clear()
             settings.populate_global_vars()
             embed.add_field(name=f'Refreshed!', value=f'Updated global lists', inline=False)
 

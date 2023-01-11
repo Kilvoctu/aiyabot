@@ -30,6 +30,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         self.bot.add_view(viewhandler.DrawView(self))
 
     # pulls from model_names list and makes some sort of dynamic list to bypass Discord 25 choices limit
+    # this also updates list when using /settings "refresh" option
     def model_autocomplete(self: discord.AutocompleteContext):
         return [
             model for model in settings.global_var.model_names
