@@ -200,7 +200,7 @@ class SettingsCog(commands.Cog):
                 settings.update(guild, 'guidance_scale', guidance_scale)
                 new += f'\nGuidance Scale: ``{guidance_scale}``'
             except(Exception,):
-                settings.update(guild, 'guidance_scale', 7.0)
+                settings.update(guild, 'guidance_scale', '7.0')
                 new += f'\nHad trouble setting Guidance Scale! Setting to default of `7.0`.'
             set_new = True
 

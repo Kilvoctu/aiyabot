@@ -19,7 +19,7 @@ template = {
     "max_steps": 50,
     "default_width": 512,
     "default_height": 512,
-    "guidance_scale": 7.0,
+    "guidance_scale": "7.0",
     "sampler": "Euler a",
     "default_count": 1,
     "max_count": 1,
