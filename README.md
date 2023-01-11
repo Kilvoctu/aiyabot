@@ -68,6 +68,7 @@ To generate an image from text, use the /draw command and include your prompt as
 - As /settings can be abused, consider reviewing who can access the command. This can be done through Apps -> Integrations in your Server Settings.
 - [See wiki for optional .env variables you can set.](https://github.com/Kilvoctu/aiyabot/wiki/.env-Settings)
 - [See wiki for notes on swapping models.](https://github.com/Kilvoctu/aiyabot/wiki/Model-swapping)
+- AIYA uses Web UI's legacy high-res fix method. To ensure this works correctly, in your Web UI settings, enable this option: `For hires fix, use width/height sliders to set final resolution rather than first pass`
 
 
 ## Credits

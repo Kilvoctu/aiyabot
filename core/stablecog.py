@@ -48,6 +48,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             hyper for hyper in settings.global_var.hyper_names
         ]
 
+    # and upscalers for highres fix
+    def hires_autocomplete(self: discord.AutocompleteContext):
+        return [
+            hires for hires in settings.global_var.hires_upscaler_names
+        ]
+
     @commands.slash_command(name='draw', description='Create an image')
     @option(
         'prompt',
@@ -124,9 +130,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     )
     @option(
         'highres_fix',
-        bool,
-        description='Tries to fix issues from generating high-res images. Takes longer!',
+        str,
+        description='Tries to fix issues from generating high-res images. Recommended: Latent (nearest).',
         required=False,
+        autocomplete=discord.utils.basic_autocomplete(hires_autocomplete),
     )
     @option(
         'clip_skip',
@@ -175,7 +182,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             seed: Optional[int] = -1,
                             style: Optional[str] = 'None',
                             facefix: Optional[str] = 'None',
-                            highres_fix: Optional[bool] = False,
+                            highres_fix: Optional[str] = 'Disabled',
                             clip_skip: Optional[int] = 0,
                             hypernet: Optional[str] = None,
                             strength: Optional[str] = '0.75',
@@ -357,10 +364,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 payload.update(img_payload)
 
             # update payload if high-res fix is used
-            if queue_object.highres_fix:
+            if queue_object.highres_fix != 'Disabled':
                 highres_payload = {
-                    "enable_hr": queue_object.highres_fix,
+                    "enable_hr": True,
+                    "hr_upscaler": queue_object.highres_fix,
                     "hr_scale": 1,
+                    "hr_second_pass_steps": queue_object.steps/2,
                     "denoising_strength": queue_object.strength
                 }
                 payload.update(highres_payload)
