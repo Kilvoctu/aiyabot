@@ -99,9 +99,11 @@ class UpscaleCog(commands.Cog):
                             codeformer: Optional[str] = '0.0',
                             upscale_first: Optional[bool] = False):
 
-        if upscaler_1 == None:
+        if upscaler_1 is None:
             if 'SwinIR_4x' in settings.global_var.upscaler_names:
                 upscaler_1 = 'SwinIR_4x'
+            elif 'SwinIR 4x' in settings.global_var.upscaler_names:
+                upscaler_1 = 'SwinIR 4x'
             else:
                 upscaler_1 = 'ESRGAN_4x'
 
