@@ -177,7 +177,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             data_model: Optional[str] = None,
                             steps: Optional[int] = -1,
                             width: Optional[int] = 1, height: Optional[int] = 1,
-                            guidance_scale: Optional[str] = '7.0',
+                            guidance_scale: Optional[str] = None,
                             sampler: Optional[str] = 'unset',
                             seed: Optional[int] = -1,
                             style: Optional[str] = 'None',
@@ -201,6 +201,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             width = settings.read(guild)['default_width']
         if height == 1:
             height = settings.read(guild)['default_height']
+        if guidance_scale is None:
+            guidance_scale = settings.read(guild)['guidance_scale']
         if count is None:
             count = settings.read(guild)['default_count']
         if sampler == 'unset':

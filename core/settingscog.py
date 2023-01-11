@@ -71,6 +71,12 @@ class SettingsCog(commands.Cog):
         choices=[x for x in range(192, 1088, 64)]
     )
     @option(
+        'guidance_scale',
+        str,
+        description='Set default Classifier-Free Guidance scale for the server.',
+        required=False,
+    )
+    @option(
         'sampler',
         str,
         description='Set default sampler for the server',
@@ -119,6 +125,7 @@ class SettingsCog(commands.Cog):
                                max_steps: Optional[int] = 1,
                                width: Optional[int] = 1,
                                height: Optional[int] = 1,
+                               guidance_scale: Optional[str] = None,
                                sampler: Optional[str] = 'unset',
                                clip_skip: Optional[int] = 0,
                                hypernet: Optional[str] = None,
@@ -185,6 +192,16 @@ class SettingsCog(commands.Cog):
         if height != 1:
             settings.update(guild, 'default_height', height)
             new += f'\nHeight: ``"{height}"``'
+            set_new = True
+
+        if guidance_scale is not None:
+            try:
+                float(guidance_scale)
+                settings.update(guild, 'guidance_scale', guidance_scale)
+                new += f'\nGuidance Scale: ``{guidance_scale}``'
+            except(Exception,):
+                settings.update(guild, 'guidance_scale', 7.0)
+                new += f'\nHad trouble setting Guidance Scale! Setting to default of `7.0`.'
             set_new = True
 
         if sampler != 'unset':
