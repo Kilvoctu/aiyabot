@@ -52,6 +52,7 @@ class GlobalVar:
     embeddings_2 = []
     hyper_names = []
     upscaler_names = []
+    hires_upscaler_names = []
 
 
 global_var = GlobalVar()
@@ -264,14 +265,15 @@ def populate_global_vars():
         for c in old_config['components']:
             try:
                 if c['props']:
-                    # note: 'txt2img_hr_upscaler' pulls the upscaler list for Hires. fix
-                    # I may want those later but for now, only get 'extras_upscaler_1'
                     if c['props']['elem_id'] == 'extras_upscaler_1':
                         global_var.upscaler_names = c['props']['choices']
+                    if c['props']['elem_id'] == 'txt2img_hr_upscaler':
+                        global_var.hires_upscaler_names = c['props']['choices']
             except(Exception,):
                 pass
     except(Exception,):
         print("Trouble accessing Web UI config! I can't pull the upscaler list")
+    global_var.hires_upscaler_names.append('Disabled')
 
 
 def guilds_check(self):
