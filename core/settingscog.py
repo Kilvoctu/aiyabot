@@ -78,20 +78,6 @@ class SettingsCog(commands.Cog):
         choices=settings.global_var.sampler_names,
     )
     @option(
-        'count',
-        int,
-        description='Set default count for the server',
-        min_value=1,
-        required=False,
-    )
-    @option(
-        'max_count',
-        int,
-        description='Set default maximum count for the server',
-        min_value=1,
-        required=False,
-    )
-    @option(
         'clip_skip',
         int,
         description='Set default CLIP skip for the server',
@@ -104,6 +90,20 @@ class SettingsCog(commands.Cog):
         description='Set default hypernetwork model for the server',
         required=False,
         autocomplete=discord.utils.basic_autocomplete(hyper_autocomplete),
+    )
+    @option(
+        'count',
+        int,
+        description='Set default count for the server',
+        min_value=1,
+        required=False,
+    )
+    @option(
+        'max_count',
+        int,
+        description='Set default maximum count for the server',
+        min_value=1,
+        required=False,
     )
     @option(
         'refresh',
@@ -120,10 +120,10 @@ class SettingsCog(commands.Cog):
                                width: Optional[int] = 1,
                                height: Optional[int] = 1,
                                sampler: Optional[str] = 'unset',
-                               count: Optional[int] = None,
-                               max_count: Optional[int] = None,
                                clip_skip: Optional[int] = 0,
                                hypernet: Optional[str] = None,
+                               count: Optional[int] = None,
+                               max_count: Optional[int] = None,
                                refresh: Optional[bool] = False):
         guild = '% s' % ctx.guild_id
         reviewer = settings.read(guild)

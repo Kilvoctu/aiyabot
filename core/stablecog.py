@@ -108,29 +108,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         required=False,
     )
     @option(
-        'strength',
-        str,
-        description='The amount in which init_image will be altered (0.0 to 1.0).'
-    )
-    @option(
-        'init_image',
-        discord.Attachment,
-        description='The starter image for generation. Remember to set strength value!',
-        required=False,
-    )
-    @option(
-        'init_url',
-        str,
-        description='The starter URL image for generation. This overrides init_image!',
-        required=False,
-    )
-    @option(
-        'count',
-        int,
-        description='The number of images to generate. This is "Batch count", not "Batch size".',
-        required=False,
-    )
-    @option(
         'style',
         str,
         description='Apply a predefined style to the generation.',
@@ -164,6 +141,29 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         required=False,
         autocomplete=discord.utils.basic_autocomplete(hyper_autocomplete),
     )
+    @option(
+        'strength',
+        str,
+        description='The amount in which init_image will be altered (0.0 to 1.0).'
+    )
+    @option(
+        'init_image',
+        discord.Attachment,
+        description='The starter image for generation. Remember to set strength value!',
+        required=False,
+    )
+    @option(
+        'init_url',
+        str,
+        description='The starter URL image for generation. This overrides init_image!',
+        required=False,
+    )
+    @option(
+        'count',
+        int,
+        description='The number of images to generate. This is "Batch count", not "Batch size".',
+        required=False,
+    )
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
                             prompt: str, negative_prompt: str = 'unset',
                             data_model: Optional[str] = None,
@@ -172,15 +172,15 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             guidance_scale: Optional[str] = '7.0',
                             sampler: Optional[str] = 'unset',
                             seed: Optional[int] = -1,
-                            strength: Optional[str] = '0.75',
-                            init_image: Optional[discord.Attachment] = None,
-                            init_url: Optional[str],
-                            count: Optional[int] = None,
                             style: Optional[str] = 'None',
                             facefix: Optional[str] = 'None',
                             highres_fix: Optional[bool] = False,
                             clip_skip: Optional[int] = 0,
-                            hypernet: Optional[str] = None):
+                            hypernet: Optional[str] = None,
+                            strength: Optional[str] = '0.75',
+                            init_image: Optional[discord.Attachment] = None,
+                            init_url: Optional[str],
+                            count: Optional[int] = None):
 
         settings.global_var.send_model = False
         # update defaults with any new defaults from settingscog
