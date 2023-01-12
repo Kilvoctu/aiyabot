@@ -141,7 +141,7 @@ class DrawModal(Modal):
 
             if 'steps:' in line:
                 max_steps = settings.read('% s' % pen[0].guild_id)['max_steps']
-                if 0 < int(line.split(':', 1)[1]) < max_steps:
+                if 0 < int(line.split(':', 1)[1]) <= max_steps:
                     pen[4] = line.split(':', 1)[1]
                 else:
                     invalid_input = True
