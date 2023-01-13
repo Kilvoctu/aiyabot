@@ -22,7 +22,7 @@ class SettingsCog(commands.Cog):
             hyper for hyper in settings.global_var.hyper_names
         ]
 
-    @commands.slash_command(name='settings', description='Review and change server defaults')
+    @commands.slash_command(name='settings', description='Review and change server defaults', guild_only=True)
     @option(
         'current_settings',
         bool,

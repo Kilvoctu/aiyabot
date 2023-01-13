@@ -54,7 +54,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             hires for hires in settings.global_var.hires_upscaler_names
         ]
 
-    @commands.slash_command(name='draw', description='Create an image')
+    @commands.slash_command(name='draw', description='Create an image', guild_only=True)
     @option(
         'prompt',
         str,

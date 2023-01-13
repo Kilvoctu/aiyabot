@@ -31,7 +31,7 @@ class UpscaleCog(commands.Cog):
             upscaler for upscaler in settings.global_var.upscaler_names
         ]
 
-    @commands.slash_command(name='upscale', description='Upscale an image')
+    @commands.slash_command(name='upscale', description='Upscale an image', guild_only=True)
     @option(
         'init_image',
         discord.Attachment,

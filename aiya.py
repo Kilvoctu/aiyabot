@@ -56,12 +56,9 @@ async def on_raw_reaction_add(ctx):
             if message.embeds:
                 if message.embeds[0].footer.text == f'{ctx.member.name}#{ctx.member.discriminator}':
                     await message.delete()
-        # this is for deleting generations in DMs. It can indiscriminately delete anything
         except(Exception,):
-            channel = await self.fetch_user(ctx.user_id)
-            message = await channel.fetch_message(ctx.message_id)
-            if ctx.guild_id is None:
-                await message.delete()
+            # so console log isn't spammed with errors
+            pass
 
 
 @self.event
