@@ -13,7 +13,7 @@ class SettingsCog(commands.Cog):
     # pulls from model_names list and makes some sort of dynamic list to bypass Discord 25 choices limit
     def model_autocomplete(self: discord.AutocompleteContext):
         return [
-            model for model in settings.global_var.model_names
+            model for model in settings.global_var.model_info
         ]
     # and for hypernetworks
 
@@ -151,9 +151,7 @@ class SettingsCog(commands.Cog):
 
         # run function to update global variables
         if refresh:
-            settings.global_var.model_names.clear()
-            settings.global_var.model_tokens.clear()
-            settings.global_var.simple_model_pairs.clear()
+            settings.global_var.model_info.clear()
             settings.global_var.sampler_names.clear()
             settings.global_var.facefix_models.clear()
             settings.global_var.style_names.clear()

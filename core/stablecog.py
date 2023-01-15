@@ -33,7 +33,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     # this also updates list when using /settings "refresh" option
     def model_autocomplete(self: discord.AutocompleteContext):
         return [
-            model for model in settings.global_var.model_names
+            model for model in settings.global_var.model_info
         ]
 
     # and for styles
@@ -214,7 +214,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
         # if a model is not selected, do nothing
         model_name = 'Default'
-        model_index = 0
         if data_model is None:
             data_model = settings.read(guild)['data_model']
             if data_model != '':
@@ -224,23 +223,15 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
         simple_prompt = prompt
         # take selected data_model and get model_name, then update data_model with the full name
-        for (key, value), (key2, value2) in zip(settings.global_var.model_names.items(),
-                                                settings.global_var.model_tokens.items()):
-            if key == data_model:
-                model_name = key
-                data_model = value
+        for model in settings.global_var.model_info.items():
+            if model[0] == data_model:
+                model_name = model[0]
+                # go one deeper into nest and grab model full name to send to API
+                data_model = model[1][0]
                 # look at the model for activator token and prepend prompt with it
-                prompt = value2 + " " + prompt
-                # if there's no activator token, remove the extra blank space
-                prompt = prompt.lstrip(' ')
+                if model[1][3]:
+                    prompt = model[1][3] + " " + prompt
                 break
-            # get the index of the selected model for later use
-            model_index += 1
-
-        # if using model "short name" in csv, find its respective title for payload
-        for title, name in settings.global_var.simple_model_pairs.items():
-            if name == data_model.replace('\\', '_').replace('/', '_'):
-                data_model = title
 
         if not settings.global_var.send_model:
             print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
@@ -300,7 +291,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         # set up tuple of parameters to pass into the Discord view
         input_tuple = (
             ctx, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength,
-            init_image, count, style, facefix, highres_fix, clip_skip, simple_prompt, model_index, hypernet)
+            init_image, count, style, facefix, highres_fix, clip_skip, simple_prompt, hypernet)
+        print(input_tuple)
         view = viewhandler.DrawView(input_tuple)
         # set up tuple of queues to pass into union()
         queues = (queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q)
