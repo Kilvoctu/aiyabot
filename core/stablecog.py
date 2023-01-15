@@ -214,7 +214,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
         # if a model is not selected, do nothing
         model_name = 'Default'
-        model_index = 0
         if data_model is None:
             data_model = settings.read(guild)['data_model']
             if data_model != '':
@@ -233,8 +232,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 if model[1][3]:
                     prompt = model[1][3] + " " + prompt
                 break
-            # get the index of the selected model for later use
-            model_index += 1
 
         if not settings.global_var.send_model:
             print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
@@ -294,7 +291,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         # set up tuple of parameters to pass into the Discord view
         input_tuple = (
             ctx, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength,
-            init_image, count, style, facefix, highres_fix, clip_skip, simple_prompt, model_index, hypernet)
+            init_image, count, style, facefix, highres_fix, clip_skip, simple_prompt, hypernet)
+        print(input_tuple)
         view = viewhandler.DrawView(input_tuple)
         # set up tuple of queues to pass into union()
         queues = (queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q)

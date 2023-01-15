@@ -247,8 +247,12 @@ def populate_global_vars():
     for s5 in r5.json():
         global_var.hyper_names.append(s5['name'])
 
-    # create nested dict for models. for each display_name in models.csv, add these values
-    # [0] = title (filename), [1] = name, [2] = shorthash, [3] = activation token
+    # create nested dict for models based on display_name in models.csv
+    # model_info[0] = display name (top level)
+    # model_info[1][0] = filename. this is sent to the API
+    # model_info[1][1] = name of the model
+    # model_info[1][2] = shorthash
+    # model_info[1][3] = activator token
     with open('resources/models.csv', encoding='utf-8') as csv_file:
         model_data = list(csv.reader(csv_file, delimiter='|'))
         for row in model_data[1:]:

@@ -72,13 +72,10 @@ class TipsView(View):
     async def button_model(self, button, interaction):
 
         model_list = ''
-        for key, value in settings.global_var.model_names.items():
-            if value == '':
-                value = ' '
+        for model in settings.global_var.model_info.items():
             # strip any folders from model full name
-            value = value.split('/', 1)[-1].split('\\', 1)[-1]
-
-            model_list += f'\n{key} - ``{value}``'
+            filename = model[1][0].split('/', 1)[-1].split('\\', 1)[-1]
+            model_list += f'\n{model[0]} - ``{filename}``'
         embed_model = discord.Embed(title="Models list", description=model_list)
         embed_model.colour = settings.global_var.embed_color
 

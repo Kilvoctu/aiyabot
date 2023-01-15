@@ -26,12 +26,11 @@ input_tuple[0] = ctx
 [15] = highres_fix
 [16] = clip_skip
 [17] = simple_prompt
-[18] = model_index
-[19] = hypernet
+[18] = hypernet
 '''
 tuple_names = ['ctx', 'prompt', 'negative_prompt', 'data_model', 'steps', 'width', 'height', 'guidance_scale',
                'sampler', 'seed', 'strength', 'init_image', 'batch_count', 'style', 'facefix', 'highres_fix',
-               'clip_skip', 'simple_prompt', 'model_index', 'hypernet']
+               'clip_skip', 'simple_prompt', 'hypernet']
 # set up tuple of queues to pass into union()
 queues = (queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q)
 
@@ -67,17 +66,15 @@ class DrawModal(Modal):
 
         # set up parameters for full edit mode. first get model display name
         model_name = 'Default'
-        model_index = 0
         index_start = 4
-        for name, token in settings.global_var.model_tokens.items():
-            if model_index == input_tuple[18]:
-                model_name = name
+        for model in settings.global_var.model_info.items():
+            if model[1][0] == input_tuple[3]:
+                model_name = model[0]
                 break
-            model_index += 1
         # expose each available (supported) option, even if output didn't use them
         ex_params = f'data_model:{model_name}'
         for index, value in enumerate(tuple_names[index_start:], index_start):
-            if 9 <= index <= 12 or index == 15 or 17 <= index <= 18:
+            if 9 <= index <= 12 or index == 15 or index == 17:
                 continue
             ex_params += f'\n{value}:{input_tuple[index]}'
 
@@ -114,29 +111,18 @@ class DrawModal(Modal):
         # iterate through extended edit for any changes
         for line in self.children[3].value.split('\n'):
             if 'data_model:' in line:
-                model_index = 0
                 new_model = line.split(':', 1)[1]
-                # jump through hoops to find model full name from display name
-                for (display, short), (display2, token) in zip(settings.global_var.model_names.items(),
-                                                               settings.global_var.model_tokens.items()):
-                    if display == new_model:
-                        fixed_short = short.replace('\\', '_').replace('/', '_')
-                        try:
-                            # try to look for shorthand model name first (no extension or hash)
-                            pen[3] = [k for k, v in settings.global_var.simple_model_pairs.items() if v == fixed_short][0]
-                        except:
-                            pen[3] = short
+                for model in settings.global_var.model_info.items():
+                    if model[0] == new_model:
+                        pen[3] = model[1][0]
                         model_found = True
                         # grab the new activator token
-                        new_token = f'{token} '.lstrip(' ')
+                        new_token = f'{model[1][3]} '.lstrip(' ')
                         break
-                    model_index += 1
-                if model_found:
-                    pen[18] = model_index
-                else:
+                if not model_found:
                     invalid_input = True
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is not found. Try one of these models!",
-                                        value=', '.join(['`%s`' % x for x in settings.global_var.model_names]),
+                                        value=', '.join(['`%s`' % x for x in settings.global_var.model_info]),
                                         inline=False)
 
             if 'steps:' in line:
@@ -203,7 +189,7 @@ class DrawModal(Modal):
                                         value='The range is from `1` to `12`.', inline=False)
             if 'hypernet:' in line:
                 if line.split(':', 1)[1] in settings.global_var.hyper_names:
-                    pen[19] = line.split(':', 1)[1]
+                    pen[18] = line.split(':', 1)[1]
                 else:
                     invalid_input = True
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` isn't one of these hypernetworks!",
@@ -357,39 +343,35 @@ class DrawView(View):
         rev = self.input_tuple
         # initial dummy data for a default models.csv
         model_name = 'Default'
-        full_name = 'Unknown'
-        activator_token = False
+        filename, model_hash = 'Unknown', 'Unknown'
+        activator_token = ''
         try:
-            # the tuple will show the model_full_name. Get the associated display_name and activator_token from it.
-            model_index = 0
-            for key, value in settings.global_var.model_tokens.items():
-                if model_index == rev[18]:
-                    model_name = key
-                    full_name = rev[3]
-                    activator_token = value
+            # get the remaining model information we want from the data_model (filename) in the tuple
+            for model in settings.global_var.model_info.items():
+                if model[1][0] == rev[3]:
+                    model_name = model[0]
+                    filename = rev[3]
+                    model_hash = model[1][2]
+                    if model[1][3]:
+                        activator_token = f'\nActivator token - ``{model[1][3]}``'
                     break
-                model_index = model_index + 1
 
-            # strip any folders from model full name
-            full_name = full_name.split('/', 1)[-1].split('\\', 1)[-1]
+            # strip any folders from model filename
+            filename = filename.split('/', 1)[-1].split('\\', 1)[-1]
 
             # generate the command for copy-pasting, and also add embed fields
             embed = discord.Embed(title="About the image!", description="")
             embed.colour = settings.global_var.embed_color
             embed.add_field(name=f'Prompt', value=f'``{rev[17]}``', inline=False)
+            embed.add_field(name='Data model', value=f'Display name - ``{model_name}``\nFilename - ``{filename}``'
+                                      f'\nShorthash - ``{model_hash}``{activator_token}', inline=False)
+
             copy_command = f'/draw prompt:{rev[17]} data_model:{model_name} steps:{rev[4]} width:{rev[5]} ' \
                            f'height:{rev[6]} guidance_scale:{rev[7]} sampler:{rev[8]} seed:{rev[9]}'
             if rev[2] != '':
                 copy_command += f' negative_prompt:{rev[2]}'
                 embed.add_field(name=f'Negative prompt', value=f'``{rev[2]}``', inline=False)
-            if activator_token:
-                embed.add_field(name=f'Data model',
-                                value=f'Display name - ``{model_name}``\nFull name - ``{full_name}``'
-                                      f'\nActivator token - ``{activator_token}``', inline=False)
-            else:
-                embed.add_field(name=f'Data model',
-                                value=f'Display name - ``{model_name}``\nFull name - ``{full_name}``',
-                                inline=False)
+
             extra_params = f'Sampling steps: ``{rev[4]}``\nSize: ``{rev[5]}x{rev[6]}``\nClassifier-free guidance ' \
                            f'scale: ``{rev[7]}``\nSampling method: ``{rev[8]}``\nSeed: ``{rev[9]}``'
             if rev[11]:
@@ -409,9 +391,9 @@ class DrawView(View):
             if rev[16] != 1:
                 copy_command += f' clip_skip:{rev[16]}'
                 extra_params += f'\nCLIP skip: ``{rev[16]}``'
-            if rev[19] != 'None':
-                copy_command += f' hypernet:{rev[19]}'
-                extra_params += f'\nHypernetwork model(hash): ``{rev[19]}``'
+            if rev[18] != 'None':
+                copy_command += f' hypernet:{rev[18]}'
+                extra_params += f'\nHypernetwork model(hash): ``{rev[18]}``'
             embed.add_field(name=f'Other parameters', value=extra_params, inline=False)
             embed.add_field(name=f'Command for copying', value=f'``{copy_command}``', inline=False)
 
