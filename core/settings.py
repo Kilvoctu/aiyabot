@@ -42,9 +42,7 @@ class GlobalVar:
     api_user: Optional[str] = None
     api_pass: Optional[str] = None
     send_model = False
-    model_names = {}
-    model_tokens = {}
-    simple_model_pairs = {}
+    model_info = {}
     size_range = range(192, 1088, 64)
     sampler_names = []
     style_names = {}
@@ -194,14 +192,6 @@ def files_check():
 
 
 def populate_global_vars():
-    # get display_name:model_full_name pairs from models.csv into global variable
-    # do same for display_name:activator token pairs
-    with open('resources/models.csv', encoding='utf-8') as csv_file:
-        model_data = list(csv.reader(csv_file, delimiter='|'))
-        for row in model_data[1:]:
-            global_var.model_names[row[0]] = row[1]
-            global_var.model_tokens[row[0]] = row[2]
-
     # pull list of samplers, styles and face restorers from api
     # create persistent session since we'll need to do a few API calls
     s = requests.Session()
@@ -224,13 +214,13 @@ def populate_global_vars():
         s.post(global_var.url + '/login')
 
     # load many values from Web UI into global variables
-    r = s.get(global_var.url + "/sdapi/v1/samplers")
+    r1 = s.get(global_var.url + "/sdapi/v1/samplers")
     r2 = s.get(global_var.url + "/sdapi/v1/prompt-styles")
     r3 = s.get(global_var.url + "/sdapi/v1/face-restorers")
-    r4 = s.get(global_var.url + "/sdapi/v1/sd-models")
-    r5 = s.get(global_var.url + "/sdapi/v1/embeddings")
-    r6 = s.get(global_var.url + "/sdapi/v1/hypernetworks")
-    for s1 in r.json():
+    r4 = s.get(global_var.url + "/sdapi/v1/embeddings")
+    r5 = s.get(global_var.url + "/sdapi/v1/hypernetworks")
+    r = s.get(global_var.url + "/sdapi/v1/sd-models")
+    for s1 in r1.json():
         try:
             global_var.sampler_names.append(s1['name'])
         except(Exception,):
@@ -242,22 +232,32 @@ def populate_global_vars():
         global_var.style_names[s2['name']] = s2['prompt']
     for s3 in r3.json():
         global_var.facefix_models.append(s3['name'])
-    for s4 in r4.json():
-        global_var.simple_model_pairs[s4['title']] = s4['model_name']
-    for s5, shape in r5.json()['loaded'].items():
+    for s4, shape in r4.json()['loaded'].items():
         if shape['shape'] == 768:
-            global_var.embeddings_1.append(s5)
+            global_var.embeddings_1.append(s4)
         if shape['shape'] == 1024:
-            global_var.embeddings_2.append(s5)
-    for s5, shape in r5.json()['skipped'].items():
+            global_var.embeddings_2.append(s4)
+    for s4, shape in r4.json()['skipped'].items():
         if shape['shape'] == 768:
-            global_var.embeddings_1.append(s5)
+            global_var.embeddings_1.append(s4)
         if shape['shape'] == 1024:
-            global_var.embeddings_2.append(s5)
+            global_var.embeddings_2.append(s4)
     # add default "None" hypernetwork as option
     global_var.hyper_names.append('None')
-    for s6 in r6.json():
-        global_var.hyper_names.append(s6['name'])
+    for s5 in r5.json():
+        global_var.hyper_names.append(s5['name'])
+
+    # create nested dict for models. for each display_name in models.csv, add these values
+    # [0] = title (filename), [1] = name, [2] = shorthash, [3] = activation token
+    with open('resources/models.csv', encoding='utf-8') as csv_file:
+        model_data = list(csv.reader(csv_file, delimiter='|'))
+        for row in model_data[1:]:
+            row_convert = row[1].replace('\\', '_').replace('/', '_')
+            for model in r.json():
+                if row_convert == model['title'] or row_convert == model['model_name'] \
+                        or row[1] == model['title'] or row[1] == model['model_name']:
+                    global_var.model_info[row[0]] = model['title'], model['model_name'], model['hash'], row[2]
+                    break
 
     # upscaler API does not pull info properly, so use the old way
     config_url = s.get(global_var.url + "/config")
