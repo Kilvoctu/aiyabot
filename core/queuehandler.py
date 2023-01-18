@@ -58,20 +58,12 @@ class IdentifyObject:
 
 # the queue object for posting to Discord
 class PostObject:
-    def __init__(self, cog, ctx, content, files, view):
+    def __init__(self, cog, ctx, content, file, files, embed, view):
         self.cog = cog
         self.ctx = ctx
         self.content = content
+        self.file = file
         self.files = files
-        self.view = view
-
-
-# the queue object for posting to Discord, for identify
-class PostIObject:
-    def __init__(self, cog, ctx, content, embed, view):
-        self.cog = cog
-        self.ctx = ctx
-        self.content = content
         self.embed = embed
         self.view = view
 
@@ -79,14 +71,12 @@ class PostIObject:
 # any command that needs to wait on processing should use the dream thread
 class GlobalQueue:
     dream_thread = Thread()
-    event_loop = asyncio.get_event_loop()
+    post_event_loop = asyncio.get_event_loop()
     queue: list[DrawObject | UpscaleObject | IdentifyObject] = []
 
-
-class GlobalPostQueue:
     post_thread = Thread()
     event_loop = asyncio.get_event_loop()
-    queue: list[PostObject | PostIObject] = []
+    post_queue: list[PostObject] = []
 
 
 def process_queue():
@@ -98,26 +88,14 @@ def process_queue():
         start(GlobalQueue.queue)
 
 
-def continue_posting():
-    def start(target_queue: list[PostObject | PostIObject]):
-        queue_object = target_queue.pop(0)
-        queue_object.cog.post(GlobalPostQueue.event_loop, queue_object)
-
-    if GlobalPostQueue.queue:
-        start(GlobalPostQueue.queue)
-
-
 async def process_dream(self, queue_object: DrawObject | UpscaleObject | IdentifyObject):
-    GlobalQueue.dream_thread = Thread(target=self.dream,
-                                      args=(GlobalQueue.event_loop, queue_object))
+    GlobalQueue.dream_thread = Thread(target=self.dream, args=(GlobalQueue.event_loop, queue_object))
     GlobalQueue.dream_thread.start()
 
 
-def process_post(self, queue_object: PostObject | PostIObject):
-    if GlobalPostQueue.post_thread.is_alive():
-        print('Appending to post queue')
-        GlobalPostQueue.queue.append(queue_object)
+def process_post(self, queue_object: PostObject):
+    if GlobalQueue.post_thread.is_alive():
+        GlobalQueue.post_queue.append(queue_object)
     else:
-        GlobalPostQueue.post_thread = Thread(target=self.post,
-                                             args=(GlobalPostQueue.event_loop, queue_object))
-        GlobalPostQueue.post_thread.start()
+        GlobalQueue.post_thread = Thread(target=self.post, args=(GlobalQueue.post_event_loop, queue_object))
+        GlobalQueue.post_thread.start()

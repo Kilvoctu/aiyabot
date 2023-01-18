@@ -167,11 +167,12 @@ class UpscaleCog(commands.Cog):
         event_loop.create_task(
             post_queue_object.ctx.channel.send(
                 content=post_queue_object.content,
-                files=post_queue_object.files,
+                file=post_queue_object.file,
                 view=post_queue_object.view
             )
         )
-        queuehandler.continue_posting()
+        if queuehandler.GlobalQueue.post_queue:
+            self.post(self.event_loop, self.queue.pop(0))
 
     # generate the image
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.UpscaleObject):
@@ -225,25 +226,19 @@ class UpscaleCog(commands.Cog):
 
             # post to discord
             def post_dream():
-                try:
-                    with io.BytesIO() as buffer:
-                        image = Image.open(io.BytesIO(base64.b64decode(image_data)))
-                        image.save(buffer, 'PNG')
-                        buffer.seek(0)
+                with io.BytesIO() as buffer:
+                    image = Image.open(io.BytesIO(base64.b64decode(image_data)))
+                    image.save(buffer, 'PNG')
+                    buffer.seek(0)
 
-                        draw_time = '{0:.3f}'.format(end_time - start_time)
-                        message = f'my upscale of ``{queue_object.resize}``x took me ``{draw_time}`` ' \
-                                  f'seconds!\n> *{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}*'
+                    draw_time = '{0:.3f}'.format(end_time - start_time)
+                    message = f'my upscale of ``{queue_object.resize}``x took me ``{draw_time}`` ' \
+                              f'seconds!\n> *{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}*'
+                    file = discord.File(fp=buffer, filename=file_path)
 
-                        queuehandler.process_post(
-                            self, queuehandler.PostObject(
-                                self, queue_object.ctx, content=f'<@{queue_object.ctx.author.id}>, {message}',
-                                files=discord.File(fp=buffer, filename=file_path), view=queue_object.view))
-
-                except Exception as e:
-                    embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}',
-                                          color=settings.global_var.embed_color)
-                    event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
+                    queuehandler.process_post(
+                        self, queuehandler.PostObject(
+                            self, queue_object.ctx, content=f'<@{queue_object.ctx.author.id}>, {message}', file=file, files='', embed='', view=queue_object.view))
             Thread(target=post_dream, daemon=True).start()
 
         except Exception as e:

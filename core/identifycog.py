@@ -72,7 +72,7 @@ class IdentifyCog(commands.Cog):
                     delete_after=45.0)
 
     # the function to queue Discord posts
-    def post(self, event_loop: AbstractEventLoop, post_queue_object: queuehandler.PostIObject):
+    def post(self, event_loop: AbstractEventLoop, post_queue_object: queuehandler.PostObject):
         event_loop.create_task(
             post_queue_object.ctx.channel.send(
                 content=post_queue_object.content,
@@ -80,7 +80,8 @@ class IdentifyCog(commands.Cog):
                 view=post_queue_object.view
             )
         )
-        queuehandler.continue_posting()
+        if queuehandler.GlobalQueue.post_queue:
+            self.post(self.event_loop, self.queue.pop(0))
 
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.IdentifyObject):
         try:
@@ -109,25 +110,19 @@ class IdentifyCog(commands.Cog):
 
             # post to discord
             def post_dream():
-                try:
-                    embed = discord.Embed()
-                    embed.set_image(url=queue_object.init_image.url)
-                    embed.colour = settings.global_var.embed_color
-                    embed.add_field(name=f'I think this is', value=f'``{response_data.get("caption")}``', inline=False)
+                embed = discord.Embed()
+                embed.set_image(url=queue_object.init_image.url)
+                embed.colour = settings.global_var.embed_color
+                embed.add_field(name=f'I think this is', value=f'``{response_data.get("caption")}``', inline=False)
 
-                    footer_args = dict(text=f'{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}')
-                    if queue_object.ctx.author.avatar is not None:
-                        footer_args['icon_url'] = queue_object.ctx.author.avatar.url
-                    embed.set_footer(**footer_args)
+                footer_args = dict(text=f'{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}')
+                if queue_object.ctx.author.avatar is not None:
+                    footer_args['icon_url'] = queue_object.ctx.author.avatar.url
+                embed.set_footer(**footer_args)
 
-                    queuehandler.process_post(
-                        self, queuehandler.PostIObject(
-                            self, queue_object.ctx, content=f'<@{queue_object.ctx.author.id}>', embed=embed, view=queue_object.view))
-
-                except Exception as e:
-                    embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}',
-                                          color=settings.global_var.embed_color)
-                    event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
+                queuehandler.process_post(
+                    self, queuehandler.PostObject(
+                        self, queue_object.ctx, content=f'<@{queue_object.ctx.author.id}>', file='', files='', embed=embed, view=queue_object.view))
             Thread(target=post_dream, daemon=True).start()
 
         except Exception as e:

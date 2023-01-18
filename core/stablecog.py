@@ -235,8 +235,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if not settings.global_var.send_model:
             print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
         else:
-            print(
-                f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt} -- Using model: {data_model}')
+            print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt} -- Using model: {data_model}')
 
         if seed == -1:
             seed = random.randint(0, 0xFFFFFFFF)
@@ -319,7 +318,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 view=post_queue_object.view
             )
         )
-        queuehandler.continue_posting()
+        if queuehandler.GlobalQueue.post_queue:
+            self.post(self.event_loop, self.queue.pop(0))
 
     # generate the image
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.DrawObject):
@@ -441,30 +441,24 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
             # post to discord
             def post_dream():
-                try:
-                    with contextlib.ExitStack() as stack:
-                        buffer_handles = [stack.enter_context(io.BytesIO()) for _ in pil_images]
+                with contextlib.ExitStack() as stack:
+                    buffer_handles = [stack.enter_context(io.BytesIO()) for _ in pil_images]
 
-                        image_count = len(pil_images)
-                        noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
+                    image_count = len(pil_images)
+                    noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
 
-                        for (pil_image, buffer) in zip(pil_images, buffer_handles):
-                            pil_image.save(buffer, 'PNG')
-                            buffer.seek(0)
-                        draw_time = '{0:.3f}'.format(end_time - start_time)
-                        message = f'my {noun_descriptor} of ``{queue_object.simple_prompt}`` took me ``{draw_time}`` ' \
-                                  f'seconds!\n> *{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}*'
-                        files = [discord.File(fp=buffer, filename=f'{queue_object.seed}-{i}.png') for (i, buffer) in
-                                 enumerate(buffer_handles)]
+                    for (pil_image, buffer) in zip(pil_images, buffer_handles):
+                        pil_image.save(buffer, 'PNG')
+                        buffer.seek(0)
+                    draw_time = '{0:.3f}'.format(end_time - start_time)
+                    message = f'my {noun_descriptor} of ``{queue_object.simple_prompt}`` took me ``{draw_time}`` ' \
+                              f'seconds!\n> *{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}*'
+                    files = [discord.File(fp=buffer, filename=f'{queue_object.seed}-{i}.png') for (i, buffer) in
+                             enumerate(buffer_handles)]
 
-                        queuehandler.process_post(
-                            self, queuehandler.PostObject(
-                                self, queue_object.ctx, content=f'<@{queue_object.ctx.author.id}>, {message}', files=files, view=queue_object.view))
-
-                except Exception as e:
-                    embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}',
-                                          color=settings.global_var.embed_color)
-                    event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
+                    queuehandler.process_post(
+                        self, queuehandler.PostObject(
+                            self, queue_object.ctx, content=f'<@{queue_object.ctx.author.id}>, {message}', file='', files=files, embed='', view=queue_object.view))
             Thread(target=post_dream, daemon=True).start()
 
         except KeyError:
