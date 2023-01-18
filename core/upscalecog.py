@@ -15,8 +15,6 @@ from urllib.parse import urlparse
 from core import queuehandler
 from core import viewhandler
 from core import settings
-from core import stablecog
-from core import identifycog
 
 
 class UpscaleCog(commands.Cog):
@@ -144,26 +142,24 @@ class UpscaleCog(commands.Cog):
         # set up tuple of parameters
         input_tuple = (ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength, gfpgan, codeformer, upscale_first)
         view = viewhandler.DeleteView(ctx.author.id)
-        # set up tuple of queues to pass into union()
-        queues = (queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q)
         # set up the queue if an image was found
         if has_image:
             if queuehandler.GlobalQueue.dream_thread.is_alive():
                 user_already_in_queue = False
-                for queue_object in queuehandler.union(*queues):
+                for queue_object in queuehandler.GlobalQueue.queue:
                     if queue_object.ctx.author.id == ctx.author.id:
                         user_already_in_queue = True
                         break
                 if user_already_in_queue:
                     await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
                 else:
-                    queuehandler.GlobalQueue.upscale_q.append(queuehandler.UpscaleObject(*input_tuple, view))
+                    queuehandler.GlobalQueue.queue.append(queuehandler.UpscaleObject(self, *input_tuple, view))
                     await ctx.send_response(
-                        f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
+                        f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
             else:
-                await queuehandler.process_dream(self, queuehandler.UpscaleObject(*input_tuple, view))
+                await queuehandler.process_dream(self, queuehandler.UpscaleObject(self, *input_tuple, view))
                 await ctx.send_response(
-                    f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
+                    f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
 
     # generate the image
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.UpscaleObject):
@@ -235,15 +231,7 @@ class UpscaleCog(commands.Cog):
                                   color=settings.global_var.embed_color)
             event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
         # check each queue for any remaining tasks
-        if queuehandler.GlobalQueue.draw_q:
-            draw_dream = stablecog.StableCog(self)
-            event_loop.create_task(queuehandler.process_dream(draw_dream, queuehandler.GlobalQueue.draw_q.pop(0)))
-        if queuehandler.GlobalQueue.upscale_q:
-            event_loop.create_task(queuehandler.process_dream(self, queuehandler.GlobalQueue.upscale_q.pop(0)))
-        if queuehandler.GlobalQueue.identify_q:
-            identify_dream = identifycog.IdentifyCog(self)
-            event_loop.create_task(
-                queuehandler.process_dream(identify_dream, queuehandler.GlobalQueue.identify_q.pop(0)))
+        queuehandler.process_queue()
 
 
 def setup(bot):

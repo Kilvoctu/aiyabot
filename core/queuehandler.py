@@ -4,9 +4,10 @@ from threading import Thread
 
 # the queue object for txt2image and img2img
 class DrawObject:
-    def __init__(self, ctx, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed,
+    def __init__(self, cog, ctx, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed,
                  strength, init_image, batch_count, style, facefix, highres_fix, clip_skip, simple_prompt,
                  hypernet, view):
+        self.cog = cog
         self.ctx = ctx
         self.prompt = prompt
         self.negative_prompt = negative_prompt
@@ -31,8 +32,9 @@ class DrawObject:
 
 # the queue object for extras - upscale
 class UpscaleObject:
-    def __init__(self, ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength, gfpgan, codeformer,
+    def __init__(self, cog, ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength, gfpgan, codeformer,
                  upscale_first, view):
+        self.cog = cog
         self.ctx = ctx
         self.resize = resize
         self.init_image = init_image
@@ -47,7 +49,8 @@ class UpscaleObject:
 
 # the queue object for identify (interrogate)
 class IdentifyObject:
-    def __init__(self, ctx, init_image, view):
+    def __init__(self, cog, ctx, init_image, view):
+        self.cog = cog
         self.ctx = ctx
         self.init_image = init_image
         self.view = view
@@ -57,19 +60,19 @@ class IdentifyObject:
 class GlobalQueue:
     dream_thread = Thread()
     event_loop = asyncio.get_event_loop()
-    master_queue = []
-    draw_q = []
-    upscale_q = []
-    identify_q = []
+    queue: list[DrawObject | UpscaleObject | IdentifyObject] = []
 
 
-# this creates the master queue that oversees all queues
-def union(list_1, list_2, list_3):
-    master_queue = list_1 + list_2 + list_3
-    return master_queue
+def process_queue():
+    def start(target_queue: list[DrawObject | UpscaleObject | IdentifyObject]):
+        queue_object = target_queue.pop(0)
+        queue_object.cog.dream(GlobalQueue.event_loop, queue_object)
+
+    if GlobalQueue.queue:
+        start(GlobalQueue.queue)
 
 
-async def process_dream(self, queue_object):
+async def process_dream(self, queue_object: DrawObject | UpscaleObject | IdentifyObject):
     GlobalQueue.dream_thread = Thread(target=self.dream,
                                       args=(GlobalQueue.event_loop, queue_object))
     GlobalQueue.dream_thread.start()

@@ -10,8 +10,6 @@ from typing import Optional
 from core import queuehandler
 from core import viewhandler
 from core import settings
-from core import stablecog
-from core import upscalecog
 
 
 class IdentifyCog(commands.Cog):
@@ -51,27 +49,25 @@ class IdentifyCog(commands.Cog):
                 has_image = False
 
         view = viewhandler.DeleteView(ctx.author.id)
-        # set up tuple of queues to pass into union()
-        queues = (queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q)
         # set up the queue if an image was found
         if has_image:
             if queuehandler.GlobalQueue.dream_thread.is_alive():
                 user_already_in_queue = False
-                for queue_object in queuehandler.union(*queues):
+                for queue_object in queuehandler.GlobalQueue.queue:
                     if queue_object.ctx.author.id == ctx.author.id:
                         user_already_in_queue = True
                         break
                 if user_already_in_queue:
                     await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
                 else:
-                    queuehandler.GlobalQueue.identify_q.append(queuehandler.IdentifyObject(ctx, init_image, view))
+                    queuehandler.GlobalQueue.queue.append(queuehandler.IdentifyObject(self, ctx, init_image, view))
                     await ctx.send_response(
-                        f"<@{ctx.author.id}>, I'm identifying the image!\nQueue: ``{len(queuehandler.union(*queues))}``",
+                        f"<@{ctx.author.id}>, I'm identifying the image!\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``",
                         delete_after=45.0)
             else:
-                await queuehandler.process_dream(self, queuehandler.IdentifyObject(ctx, init_image, view))
+                await queuehandler.process_dream(self, queuehandler.IdentifyObject(self, ctx, init_image, view))
                 await ctx.send_response(
-                    f"<@{ctx.author.id}>, I'm identifying the image!\nQueue: ``{len(queuehandler.union(*queues))}``",
+                    f"<@{ctx.author.id}>, I'm identifying the image!\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``",
                     delete_after=45.0)
 
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.IdentifyObject):
@@ -119,14 +115,7 @@ class IdentifyCog(commands.Cog):
                                   color=settings.global_var.embed_color)
             event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
         # check each queue for any remaining tasks
-        if queuehandler.GlobalQueue.draw_q:
-            draw_dream = stablecog.StableCog(self)
-            event_loop.create_task(queuehandler.process_dream(draw_dream, queuehandler.GlobalQueue.draw_q.pop(0)))
-        if queuehandler.GlobalQueue.upscale_q:
-            upscale_dream = upscalecog.UpscaleCog(self)
-            event_loop.create_task(queuehandler.process_dream(upscale_dream, queuehandler.GlobalQueue.upscale_q.pop(0)))
-        if queuehandler.GlobalQueue.identify_q:
-            event_loop.create_task(queuehandler.process_dream(self, queuehandler.GlobalQueue.identify_q.pop(0)))
+        queuehandler.process_queue()
 
 
 def setup(bot):

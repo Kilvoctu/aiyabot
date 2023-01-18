@@ -15,8 +15,6 @@ from typing import Optional
 from core import queuehandler
 from core import viewhandler
 from core import settings
-from core import upscalecog
-from core import identifycog
 
 
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
@@ -293,25 +291,23 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             ctx, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength,
             init_image, count, style, facefix, highres_fix, clip_skip, simple_prompt, hypernet)
         view = viewhandler.DrawView(input_tuple)
-        # set up tuple of queues to pass into union()
-        queues = (queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q)
         # setup the queue
         if queuehandler.GlobalQueue.dream_thread.is_alive():
             user_already_in_queue = False
-            for queue_object in queuehandler.union(*queues):
+            for queue_object in queuehandler.GlobalQueue.queue:
                 if queue_object.ctx.author.id == ctx.author.id:
                     user_already_in_queue = True
                     break
             if user_already_in_queue:
                 await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
             else:
-                queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(*input_tuple, view))
+                queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(self, *input_tuple, view))
                 await ctx.send_response(
-                    f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{reply_adds}')
+                    f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{reply_adds}')
         else:
-            await queuehandler.process_dream(self, queuehandler.DrawObject(*input_tuple, view))
+            await queuehandler.process_dream(self, queuehandler.DrawObject(self, *input_tuple, view))
             await ctx.send_response(
-                f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{reply_adds}')
+                f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{reply_adds}')
 
     # generate the image
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.DrawObject):
@@ -459,15 +455,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                                   color=settings.global_var.embed_color)
             event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
         # check each queue for any remaining tasks
-        if queuehandler.GlobalQueue.draw_q:
-            event_loop.create_task(queuehandler.process_dream(self, queuehandler.GlobalQueue.draw_q.pop(0)))
-        if queuehandler.GlobalQueue.upscale_q:
-            upscale_dream = upscalecog.UpscaleCog(self)
-            event_loop.create_task(queuehandler.process_dream(upscale_dream, queuehandler.GlobalQueue.upscale_q.pop(0)))
-        if queuehandler.GlobalQueue.identify_q:
-            identify_dream = identifycog.IdentifyCog(self)
-            event_loop.create_task(
-                queuehandler.process_dream(identify_dream, queuehandler.GlobalQueue.identify_q.pop(0)))
+        queuehandler.process_queue()
 
 
 def setup(bot):
