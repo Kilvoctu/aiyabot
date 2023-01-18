@@ -5,6 +5,7 @@ import requests
 from asyncio import AbstractEventLoop
 from discord import option
 from discord.ext import commands
+from threading import Thread
 from typing import Optional
 
 from core import queuehandler
@@ -70,6 +71,17 @@ class IdentifyCog(commands.Cog):
                     f"<@{ctx.author.id}>, I'm identifying the image!\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``",
                     delete_after=45.0)
 
+    # the function to queue Discord posts
+    def post(self, event_loop: AbstractEventLoop, post_queue_object: queuehandler.PostIObject):
+        event_loop.create_task(
+            post_queue_object.ctx.channel.send(
+                content=post_queue_object.content,
+                embed=post_queue_object.embed,
+                view=post_queue_object.view
+            )
+        )
+        queuehandler.continue_posting()
+
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.IdentifyObject):
         try:
             # construct a payload
@@ -96,19 +108,27 @@ class IdentifyCog(commands.Cog):
             response_data = response.json()
 
             # post to discord
-            embed = discord.Embed()
-            embed.set_image(url=queue_object.init_image.url)
-            embed.colour = settings.global_var.embed_color
-            embed.add_field(name=f'I think this is', value=f'``{response_data.get("caption")}``', inline=False)
+            def post_dream():
+                try:
+                    embed = discord.Embed()
+                    embed.set_image(url=queue_object.init_image.url)
+                    embed.colour = settings.global_var.embed_color
+                    embed.add_field(name=f'I think this is', value=f'``{response_data.get("caption")}``', inline=False)
 
-            footer_args = dict(text=f'{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}')
-            if queue_object.ctx.author.avatar is not None:
-                footer_args['icon_url'] = queue_object.ctx.author.avatar.url
-            embed.set_footer(**footer_args)
+                    footer_args = dict(text=f'{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}')
+                    if queue_object.ctx.author.avatar is not None:
+                        footer_args['icon_url'] = queue_object.ctx.author.avatar.url
+                    embed.set_footer(**footer_args)
 
-            event_loop.create_task(
-                queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>', embed=embed,
-                                              view=queue_object.view))
+                    queuehandler.process_post(
+                        self, queuehandler.PostIObject(
+                            self, queue_object.ctx, content=f'<@{queue_object.ctx.author.id}>', embed=embed, view=queue_object.view))
+
+                except Exception as e:
+                    embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}',
+                                          color=settings.global_var.embed_color)
+                    event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
+            Thread(target=post_dream, daemon=True).start()
 
         except Exception as e:
             embed = discord.Embed(title='identify failed', description=f'{e}\n{traceback.print_exc()}',

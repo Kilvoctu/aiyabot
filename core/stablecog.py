@@ -10,6 +10,7 @@ from asyncio import AbstractEventLoop
 from PIL import Image, PngImagePlugin
 from discord import option
 from discord.ext import commands
+from threading import Thread
 from typing import Optional
 
 from core import queuehandler
@@ -309,6 +310,17 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             await ctx.send_response(
                 f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{reply_adds}')
 
+    # the function to queue Discord posts
+    def post(self, event_loop: AbstractEventLoop, post_queue_object: queuehandler.PostObject):
+        event_loop.create_task(
+            post_queue_object.ctx.channel.send(
+                content=post_queue_object.content,
+                files=post_queue_object.files,
+                view=post_queue_object.view
+            )
+        )
+        queuehandler.continue_posting()
+
     # generate the image
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.DrawObject):
         try:
@@ -428,23 +440,32 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             settings.stats_count(queue_object.batch_count)
 
             # post to discord
-            with contextlib.ExitStack() as stack:
-                buffer_handles = [stack.enter_context(io.BytesIO()) for _ in pil_images]
+            def post_dream():
+                try:
+                    with contextlib.ExitStack() as stack:
+                        buffer_handles = [stack.enter_context(io.BytesIO()) for _ in pil_images]
 
-                image_count = len(pil_images)
-                noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
+                        image_count = len(pil_images)
+                        noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
 
-                for (pil_image, buffer) in zip(pil_images, buffer_handles):
-                    pil_image.save(buffer, 'PNG')
-                    buffer.seek(0)
-                draw_time = '{0:.3f}'.format(end_time - start_time)
-                message = f'my {noun_descriptor} of ``{queue_object.simple_prompt}`` took me ``{draw_time}`` ' \
-                          f'seconds!\n> *{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}*'
-                files = [discord.File(fp=buffer, filename=f'{queue_object.seed}-{i}.png') for (i, buffer) in
-                         enumerate(buffer_handles)]
-                event_loop.create_task(
-                    queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>, {message}', files=files,
-                                                  view=queue_object.view))
+                        for (pil_image, buffer) in zip(pil_images, buffer_handles):
+                            pil_image.save(buffer, 'PNG')
+                            buffer.seek(0)
+                        draw_time = '{0:.3f}'.format(end_time - start_time)
+                        message = f'my {noun_descriptor} of ``{queue_object.simple_prompt}`` took me ``{draw_time}`` ' \
+                                  f'seconds!\n> *{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}*'
+                        files = [discord.File(fp=buffer, filename=f'{queue_object.seed}-{i}.png') for (i, buffer) in
+                                 enumerate(buffer_handles)]
+
+                        queuehandler.process_post(
+                            self, queuehandler.PostObject(
+                                self, queue_object.ctx, content=f'<@{queue_object.ctx.author.id}>, {message}', files=files, view=queue_object.view))
+
+                except Exception as e:
+                    embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}',
+                                          color=settings.global_var.embed_color)
+                    event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
+            Thread(target=post_dream, daemon=True).start()
 
         except KeyError:
             embed = discord.Embed(title='txt2img failed', description=f'An invalid parameter was found!',

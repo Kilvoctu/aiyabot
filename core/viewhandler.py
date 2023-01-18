@@ -223,13 +223,13 @@ class DrawModal(Modal):
             if queuehandler.GlobalQueue.dream_thread.is_alive():
                 if self.input_tuple[3] != '':
                     settings.global_var.send_model = True
-                queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
+                queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(stablecog.StableCog(self), *prompt_tuple, DrawView(prompt_tuple)))
                 await interaction.response.send_message(
                     f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``{prompt_output}')
             else:
                 if self.input_tuple[3] != '':
                     settings.global_var.send_model = True
-                await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
+                await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(stablecog.StableCog(self), *prompt_tuple, DrawView(prompt_tuple)))
                 await interaction.response.send_message(
                     f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``{prompt_output}')
 
@@ -304,8 +304,7 @@ class DrawView(View):
                         if self.input_tuple[3] != '':
                             settings.global_var.send_model = True
 
-                        queuehandler.GlobalQueue.queue.append(
-                            queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
+                        queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(stablecog.StableCog(self), *seed_tuple, DrawView(seed_tuple)))
                         await interaction.followup.send(
                             f'<@{interaction.user.id}>, {settings.messages()}\nQueue: '
                             f'``{len(queuehandler.GlobalQueue.queue)}`` - ``{seed_tuple[17]}``'
@@ -317,8 +316,7 @@ class DrawView(View):
                     if self.input_tuple[3] != '':
                         settings.global_var.send_model = True
 
-                    await queuehandler.process_dream(draw_dream,
-                                                     queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
+                    await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(stablecog.StableCog(self), *seed_tuple, DrawView(seed_tuple)))
                     await interaction.followup.send(
                         f'<@{interaction.user.id}>, {settings.messages()}\nQueue: '
                         f'``{len(queuehandler.GlobalQueue.queue)}`` - ``{seed_tuple[17]}``'

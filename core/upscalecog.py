@@ -9,6 +9,7 @@ from discord import option
 from discord.ext import commands
 from os.path import splitext, basename
 from PIL import Image
+from threading import Thread
 from typing import Optional
 from urllib.parse import urlparse
 
@@ -161,6 +162,17 @@ class UpscaleCog(commands.Cog):
                 await ctx.send_response(
                     f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
 
+    # the function to queue Discord posts
+    def post(self, event_loop: AbstractEventLoop, post_queue_object: queuehandler.PostObject):
+        event_loop.create_task(
+            post_queue_object.ctx.channel.send(
+                content=post_queue_object.content,
+                files=post_queue_object.files,
+                view=post_queue_object.view
+            )
+        )
+        queuehandler.continue_posting()
+
     # generate the image
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.UpscaleObject):
         try:
@@ -212,19 +224,27 @@ class UpscaleCog(commands.Cog):
             print(f'Saved image: {file_path}')
 
             # post to discord
-            with io.BytesIO() as buffer:
-                image = Image.open(io.BytesIO(base64.b64decode(image_data)))
-                image.save(buffer, 'PNG')
-                buffer.seek(0)
+            def post_dream():
+                try:
+                    with io.BytesIO() as buffer:
+                        image = Image.open(io.BytesIO(base64.b64decode(image_data)))
+                        image.save(buffer, 'PNG')
+                        buffer.seek(0)
 
-                draw_time = '{0:.3f}'.format(end_time - start_time)
-                message = f'my upscale of ``{queue_object.resize}``x took me ``{draw_time}`` ' \
-                          f'seconds!\n> *{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}*'
+                        draw_time = '{0:.3f}'.format(end_time - start_time)
+                        message = f'my upscale of ``{queue_object.resize}``x took me ``{draw_time}`` ' \
+                                  f'seconds!\n> *{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}*'
 
-                event_loop.create_task(
-                    queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>, {message}',
-                                                  file=discord.File(fp=buffer, filename=file_path),
-                                                  view=queue_object.view))
+                        queuehandler.process_post(
+                            self, queuehandler.PostObject(
+                                self, queue_object.ctx, content=f'<@{queue_object.ctx.author.id}>, {message}',
+                                files=discord.File(fp=buffer, filename=file_path), view=queue_object.view))
+
+                except Exception as e:
+                    embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}',
+                                          color=settings.global_var.embed_color)
+                    event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
+            Thread(target=post_dream, daemon=True).start()
 
         except Exception as e:
             embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}',
