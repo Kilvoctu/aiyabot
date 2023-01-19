@@ -342,24 +342,24 @@ class DrawView(View):
         filename, model_hash = 'Unknown', 'Unknown'
         activator_token = ''
         try:
-            # get the remaining model information we want from the data_model (filename) in the tuple
+            # get the remaining model information we want from the data_model ("title") in the tuple
             for model in settings.global_var.model_info.items():
                 if model[1][0] == rev[3]:
                     model_name = model[0]
-                    filename = rev[3]
+                    filename = model[1][1]
                     model_hash = model[1][2]
                     if model[1][3]:
                         activator_token = f'\nActivator token - ``{model[1][3]}``'
                     break
 
             # strip any folders from model filename
-            filename = filename.split('/', 1)[-1].split('\\', 1)[-1]
+            filename = filename.split('_', 1)[-1]
 
             # generate the command for copy-pasting, and also add embed fields
             embed = discord.Embed(title="About the image!", description="")
             embed.colour = settings.global_var.embed_color
             embed.add_field(name=f'Prompt', value=f'``{rev[17]}``', inline=False)
-            embed.add_field(name='Data model', value=f'Display name - ``{model_name}``\nFilename - ``{filename}``'
+            embed.add_field(name='Data model', value=f'Display name - ``{model_name}``\nModel name - ``{filename}``'
                                                      f'\nShorthash - ``{model_hash}``{activator_token}', inline=False)
 
             copy_command = f'/draw prompt:{rev[17]} data_model:{model_name} steps:{rev[4]} width:{rev[5]} ' \
