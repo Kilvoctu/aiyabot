@@ -448,7 +448,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
 
                     for (pil_image, buffer) in zip(pil_images, buffer_handles):
-                        pil_image.save(buffer, 'PNG')
+                        pil_image.save(buffer, 'PNG', pnginfo=metadata)
                         buffer.seek(0)
                     draw_time = '{0:.3f}'.format(end_time - start_time)
                     message = f'my {noun_descriptor} of ``{queue_object.simple_prompt}`` took me ``{draw_time}`` ' \
