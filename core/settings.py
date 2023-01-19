@@ -230,6 +230,9 @@ def populate_global_vars():
             os.system("pause")
     for s2 in r2.json():
         global_var.style_names[s2['name']] = s2['prompt']
+    # add default "None" style as option if Web UI has no styles.csv
+    if not global_var.style_names:
+        global_var.style_names['None'] = ''
     for s3 in r3.json():
         global_var.facefix_models.append(s3['name'])
     for s4, shape in r4.json()['loaded'].items():
