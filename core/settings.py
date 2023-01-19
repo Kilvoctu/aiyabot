@@ -252,7 +252,7 @@ def populate_global_vars():
 
     # create nested dict for models based on display_name in models.csv
     # model_info[0] = display name (top level)
-    # model_info[1][0] = filename. this is sent to the API
+    # model_info[1][0] = "title". this is sent to the API
     # model_info[1][1] = name of the model
     # model_info[1][2] = shorthash
     # model_info[1][3] = activator token
