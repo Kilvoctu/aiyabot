@@ -63,14 +63,14 @@ class DrawModal(Modal):
         )
 
         # set up parameters for full edit mode. first get model display name
-        model_name = 'Default'
+        display_name = 'Default'
         index_start = 4
         for model in settings.global_var.model_info.items():
             if model[1][0] == input_tuple[3]:
-                model_name = model[0]
+                display_name = model[0]
                 break
         # expose each available (supported) option, even if output didn't use them
-        ex_params = f'data_model:{model_name}'
+        ex_params = f'data_model:{display_name}'
         for index, value in enumerate(tuple_names[index_start:], index_start):
             if 9 <= index <= 12 or index == 15 or index == 17:
                 continue
@@ -338,31 +338,31 @@ class DrawView(View):
         # simpler variable name
         rev = self.input_tuple
         # initial dummy data for a default models.csv
-        model_name = 'Default'
-        filename, model_hash = 'Unknown', 'Unknown'
+        display_name = 'Default'
+        model_name, model_hash = 'Unknown', 'Unknown'
         activator_token = ''
         try:
             # get the remaining model information we want from the data_model ("title") in the tuple
             for model in settings.global_var.model_info.items():
                 if model[1][0] == rev[3]:
-                    model_name = model[0]
-                    filename = model[1][1]
+                    display_name = model[0]
+                    model_name = model[1][1]
                     model_hash = model[1][2]
                     if model[1][3]:
                         activator_token = f'\nActivator token - ``{model[1][3]}``'
                     break
 
-            # strip any folders from model filename
-            filename = filename.split('_', 1)[-1]
+            # strip any folders from model name
+            model_name = model_name.split('_', 1)[-1]
 
             # generate the command for copy-pasting, and also add embed fields
             embed = discord.Embed(title="About the image!", description="")
             embed.colour = settings.global_var.embed_color
             embed.add_field(name=f'Prompt', value=f'``{rev[17]}``', inline=False)
-            embed.add_field(name='Data model', value=f'Display name - ``{model_name}``\nModel name - ``{filename}``'
+            embed.add_field(name='Data model', value=f'Display name - ``{display_name}``\nModel name - ``{model_name}``'
                                                      f'\nShorthash - ``{model_hash}``{activator_token}', inline=False)
 
-            copy_command = f'/draw prompt:{rev[17]} data_model:{model_name} steps:{rev[4]} width:{rev[5]} ' \
+            copy_command = f'/draw prompt:{rev[17]} data_model:{display_name} steps:{rev[4]} width:{rev[5]} ' \
                            f'height:{rev[6]} guidance_scale:{rev[7]} sampler:{rev[8]} seed:{rev[9]}'
             if rev[2] != '':
                 copy_command += f' negative_prompt:{rev[2]}'
