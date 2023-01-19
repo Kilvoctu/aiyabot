@@ -9,14 +9,13 @@ from discord import option
 from discord.ext import commands
 from os.path import splitext, basename
 from PIL import Image
+from threading import Thread
 from typing import Optional
 from urllib.parse import urlparse
 
 from core import queuehandler
 from core import viewhandler
 from core import settings
-from core import stablecog
-from core import identifycog
 
 
 class UpscaleCog(commands.Cog):
@@ -144,26 +143,36 @@ class UpscaleCog(commands.Cog):
         # set up tuple of parameters
         input_tuple = (ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength, gfpgan, codeformer, upscale_first)
         view = viewhandler.DeleteView(ctx.author.id)
-        # set up tuple of queues to pass into union()
-        queues = (queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q)
         # set up the queue if an image was found
         if has_image:
             if queuehandler.GlobalQueue.dream_thread.is_alive():
                 user_already_in_queue = False
-                for queue_object in queuehandler.union(*queues):
+                for queue_object in queuehandler.GlobalQueue.queue:
                     if queue_object.ctx.author.id == ctx.author.id:
                         user_already_in_queue = True
                         break
                 if user_already_in_queue:
                     await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
                 else:
-                    queuehandler.GlobalQueue.upscale_q.append(queuehandler.UpscaleObject(*input_tuple, view))
+                    queuehandler.GlobalQueue.queue.append(queuehandler.UpscaleObject(self, *input_tuple, view))
                     await ctx.send_response(
-                        f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
+                        f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
             else:
-                await queuehandler.process_dream(self, queuehandler.UpscaleObject(*input_tuple, view))
+                await queuehandler.process_dream(self, queuehandler.UpscaleObject(self, *input_tuple, view))
                 await ctx.send_response(
-                    f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
+                    f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
+
+    # the function to queue Discord posts
+    def post(self, event_loop: AbstractEventLoop, post_queue_object: queuehandler.PostObject):
+        event_loop.create_task(
+            post_queue_object.ctx.channel.send(
+                content=post_queue_object.content,
+                file=post_queue_object.file,
+                view=post_queue_object.view
+            )
+        )
+        if queuehandler.GlobalQueue.post_queue:
+            self.post(self.event_loop, self.queue.pop(0))
 
     # generate the image
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.UpscaleObject):
@@ -216,34 +225,28 @@ class UpscaleCog(commands.Cog):
             print(f'Saved image: {file_path}')
 
             # post to discord
-            with io.BytesIO() as buffer:
-                image = Image.open(io.BytesIO(base64.b64decode(image_data)))
-                image.save(buffer, 'PNG')
-                buffer.seek(0)
+            def post_dream():
+                with io.BytesIO() as buffer:
+                    image = Image.open(io.BytesIO(base64.b64decode(image_data)))
+                    image.save(buffer, 'PNG')
+                    buffer.seek(0)
 
-                draw_time = '{0:.3f}'.format(end_time - start_time)
-                message = f'my upscale of ``{queue_object.resize}``x took me ``{draw_time}`` ' \
-                          f'seconds!\n> *{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}*'
+                    draw_time = '{0:.3f}'.format(end_time - start_time)
+                    message = f'my upscale of ``{queue_object.resize}``x took me ``{draw_time}`` ' \
+                              f'seconds!\n> *{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}*'
+                    file = discord.File(fp=buffer, filename=file_path)
 
-                event_loop.create_task(
-                    queue_object.ctx.channel.send(content=f'<@{queue_object.ctx.author.id}>, {message}',
-                                                  file=discord.File(fp=buffer, filename=file_path),
-                                                  view=queue_object.view))
+                    queuehandler.process_post(
+                        self, queuehandler.PostObject(
+                            self, queue_object.ctx, content=f'<@{queue_object.ctx.author.id}>, {message}', file=file, files='', embed='', view=queue_object.view))
+            Thread(target=post_dream, daemon=True).start()
 
         except Exception as e:
             embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}',
                                   color=settings.global_var.embed_color)
             event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
         # check each queue for any remaining tasks
-        if queuehandler.GlobalQueue.draw_q:
-            draw_dream = stablecog.StableCog(self)
-            event_loop.create_task(queuehandler.process_dream(draw_dream, queuehandler.GlobalQueue.draw_q.pop(0)))
-        if queuehandler.GlobalQueue.upscale_q:
-            event_loop.create_task(queuehandler.process_dream(self, queuehandler.GlobalQueue.upscale_q.pop(0)))
-        if queuehandler.GlobalQueue.identify_q:
-            identify_dream = identifycog.IdentifyCog(self)
-            event_loop.create_task(
-                queuehandler.process_dream(identify_dream, queuehandler.GlobalQueue.identify_q.pop(0)))
+        queuehandler.process_queue()
 
 
 def setup(bot):

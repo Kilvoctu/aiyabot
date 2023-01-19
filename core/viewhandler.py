@@ -31,8 +31,6 @@ input_tuple[0] = ctx
 tuple_names = ['ctx', 'prompt', 'negative_prompt', 'data_model', 'steps', 'width', 'height', 'guidance_scale',
                'sampler', 'seed', 'strength', 'init_image', 'batch_count', 'style', 'facefix', 'highres_fix',
                'clip_skip', 'simple_prompt', 'hypernet']
-# set up tuple of queues to pass into union()
-queues = (queuehandler.GlobalQueue.draw_q, queuehandler.GlobalQueue.upscale_q, queuehandler.GlobalQueue.identify_q)
 
 
 # the modal that is used for the 🖋 button
@@ -225,15 +223,15 @@ class DrawModal(Modal):
             if queuehandler.GlobalQueue.dream_thread.is_alive():
                 if self.input_tuple[3] != '':
                     settings.global_var.send_model = True
-                queuehandler.GlobalQueue.draw_q.append(queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
+                queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(stablecog.StableCog(self), *prompt_tuple, DrawView(prompt_tuple)))
                 await interaction.response.send_message(
-                    f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}``{prompt_output}')
+                    f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``{prompt_output}')
             else:
                 if self.input_tuple[3] != '':
                     settings.global_var.send_model = True
-                await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(*prompt_tuple, DrawView(prompt_tuple)))
+                await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(stablecog.StableCog(self), *prompt_tuple, DrawView(prompt_tuple)))
                 await interaction.response.send_message(
-                    f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.union(*queues))}``{prompt_output}')
+                    f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``{prompt_output}')
 
 
 # creating the view that holds the buttons for /draw output
@@ -254,7 +252,7 @@ class DrawView(View):
                 # if there's room in the queue, open up the modal
                 if queuehandler.GlobalQueue.dream_thread.is_alive():
                     user_already_in_queue = False
-                    for queue_object in queuehandler.union(*queues):
+                    for queue_object in queuehandler.GlobalQueue.queue:
                         if queue_object.ctx.author.id == interaction.user.id:
                             user_already_in_queue = True
                             break
@@ -292,7 +290,7 @@ class DrawView(View):
                 draw_dream = stablecog.StableCog(self)
                 if queuehandler.GlobalQueue.dream_thread.is_alive():
                     user_already_in_queue = False
-                    for queue_object in queuehandler.union(*queues):
+                    for queue_object in queuehandler.GlobalQueue.queue:
                         if queue_object.ctx.author.id == interaction.user.id:
                             user_already_in_queue = True
                             break
@@ -306,11 +304,10 @@ class DrawView(View):
                         if self.input_tuple[3] != '':
                             settings.global_var.send_model = True
 
-                        queuehandler.GlobalQueue.draw_q.append(
-                            queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
+                        queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(stablecog.StableCog(self), *seed_tuple, DrawView(seed_tuple)))
                         await interaction.followup.send(
                             f'<@{interaction.user.id}>, {settings.messages()}\nQueue: '
-                            f'``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[17]}``'
+                            f'``{len(queuehandler.GlobalQueue.queue)}`` - ``{seed_tuple[17]}``'
                             f'\nNew seed:``{seed_tuple[9]}``')
                 else:
                     button.disabled = True
@@ -319,11 +316,10 @@ class DrawView(View):
                     if self.input_tuple[3] != '':
                         settings.global_var.send_model = True
 
-                    await queuehandler.process_dream(draw_dream,
-                                                     queuehandler.DrawObject(*seed_tuple, DrawView(seed_tuple)))
+                    await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(stablecog.StableCog(self), *seed_tuple, DrawView(seed_tuple)))
                     await interaction.followup.send(
                         f'<@{interaction.user.id}>, {settings.messages()}\nQueue: '
-                        f'``{len(queuehandler.union(*queues))}`` - ``{seed_tuple[17]}``'
+                        f'``{len(queuehandler.GlobalQueue.queue)}`` - ``{seed_tuple[17]}``'
                         f'\nNew Seed:``{seed_tuple[9]}``')
             else:
                 await interaction.response.send_message("You can't use other people's 🎲!", ephemeral=True)
@@ -364,7 +360,7 @@ class DrawView(View):
             embed.colour = settings.global_var.embed_color
             embed.add_field(name=f'Prompt', value=f'``{rev[17]}``', inline=False)
             embed.add_field(name='Data model', value=f'Display name - ``{model_name}``\nFilename - ``{filename}``'
-                                      f'\nShorthash - ``{model_hash}``{activator_token}', inline=False)
+                                                     f'\nShorthash - ``{model_hash}``{activator_token}', inline=False)
 
             copy_command = f'/draw prompt:{rev[17]} data_model:{model_name} steps:{rev[4]} width:{rev[5]} ' \
                            f'height:{rev[6]} guidance_scale:{rev[7]} sampler:{rev[8]} seed:{rev[9]}'
