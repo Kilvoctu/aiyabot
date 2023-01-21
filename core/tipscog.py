@@ -128,7 +128,7 @@ class TipsCog(commands.Cog):
     async def on_ready(self):
         self.bot.add_view(TipsView())
 
-    @commands.slash_command(name="tips", description="Some quick tips for generating images!")
+    @commands.slash_command(name="tips", description="Lots of useful information!")
     async def tips(self, ctx):
         first_embed = discord.Embed(title='Select a button!')
         first_embed.colour = settings.global_var.embed_color
