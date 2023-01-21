@@ -208,7 +208,7 @@ class DrawModal(Modal):
 
             # message additions if anything was changed
             prompt_output = f'\nNew prompt: ``{pen[17]}``'
-            if pen[2] != '':
+            if pen[2] != '' and pen[2] != self.input_tuple[2]:
                 prompt_output += f'\nNew negative prompt: ``{pen[2]}``'
             if str(pen[3]) != str(self.input_tuple[3]):
                 prompt_output += f'\nNew model: ``{new_model}``'
