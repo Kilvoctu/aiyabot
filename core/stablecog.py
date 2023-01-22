@@ -181,7 +181,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             seed: Optional[int] = -1,
                             style: Optional[str] = 'None',
                             facefix: Optional[str] = 'None',
-                            highres_fix: Optional[str] = 'Disabled',
+                            highres_fix: Optional[str] = None,
                             clip_skip: Optional[int] = 0,
                             hypernet: Optional[str] = None,
                             strength: Optional[str] = '0.75',
@@ -202,14 +202,16 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             height = settings.read(guild)['default_height']
         if guidance_scale is None:
             guidance_scale = settings.read(guild)['guidance_scale']
-        if count is None:
-            count = settings.read(guild)['default_count']
         if sampler == 'unset':
             sampler = settings.read(guild)['sampler']
+        if highres_fix is None:
+            highres_fix = settings.read(guild)['highres_fix']
         if clip_skip == 0:
             clip_skip = settings.read(guild)['clip_skip']
         if hypernet is None:
             hypernet = settings.read(guild)['hypernet']
+        if count is None:
+            count = settings.read(guild)['default_count']
 
         # if a model is not selected, do nothing
         model_name = 'Default'

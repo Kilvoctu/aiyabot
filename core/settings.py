@@ -23,6 +23,7 @@ template = {
     "sampler": "Euler a",
     "default_count": 1,
     "max_count": 1,
+    "highres_fix": 'Disabled',
     "clip_skip": 1,
     "hypernet": "None"
 }

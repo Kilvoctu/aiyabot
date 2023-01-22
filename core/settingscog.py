@@ -22,6 +22,12 @@ class SettingsCog(commands.Cog):
             hyper for hyper in settings.global_var.hyper_names
         ]
 
+    # and upscalers for highres fix
+    def hires_autocomplete(self: discord.AutocompleteContext):
+        return [
+            hires for hires in settings.global_var.hires_upscaler_names
+        ]
+
     @commands.slash_command(name='settings', description='Review and change server defaults', guild_only=True)
     @option(
         'current_settings',
@@ -84,6 +90,13 @@ class SettingsCog(commands.Cog):
         choices=settings.global_var.sampler_names,
     )
     @option(
+        'highres_fix',
+        str,
+        description='Set default highres fix model for the server',
+        required=False,
+        autocomplete=discord.utils.basic_autocomplete(hires_autocomplete),
+    )
+    @option(
         'clip_skip',
         int,
         description='Set default CLIP skip for the server',
@@ -127,6 +140,7 @@ class SettingsCog(commands.Cog):
                                height: Optional[int] = 1,
                                guidance_scale: Optional[str] = None,
                                sampler: Optional[str] = 'unset',
+                               highres_fix: Optional[str] = None,
                                clip_skip: Optional[int] = 0,
                                hypernet: Optional[str] = None,
                                count: Optional[int] = None,
@@ -207,13 +221,9 @@ class SettingsCog(commands.Cog):
             new += f'\nSampler: ``"{sampler}"``'
             set_new = True
 
-        if max_count is not None:
-            settings.update(guild, 'max_count', max_count)
-            new += f'\nMax count: ``{max_count}``'
-            # automatically lower default count if max count goes below it
-            if max_count < reviewer['default_count']:
-                settings.update(guild, 'default_count', max_count)
-                new += f'\nDefault count is too high! Lowering to ``{max_count}``.'
+        if highres_fix is not None:
+            settings.update(guild, 'highres_fix', highres_fix)
+            new += f'\nhighres_fix: ``"{highres_fix}"``'
             set_new = True
 
         if clip_skip != 0:
@@ -224,6 +234,15 @@ class SettingsCog(commands.Cog):
         if hypernet is not None:
             settings.update(guild, 'hypernet', hypernet)
             new += f'\nHypernet: ``"{hypernet}"``'
+            set_new = True
+
+        if max_count is not None:
+            settings.update(guild, 'max_count', max_count)
+            new += f'\nMax count: ``{max_count}``'
+            # automatically lower default count if max count goes below it
+            if max_count < reviewer['default_count']:
+                settings.update(guild, 'default_count', max_count)
+                new += f'\nDefault count is too high! Lowering to ``{max_count}``.'
             set_new = True
 
         # review settings again in case user is trying to set steps/counts and max steps/counts simultaneously
