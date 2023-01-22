@@ -203,7 +203,7 @@ class DrawModal(Modal):
                 pen[1] = new_token + pen[17]
             # if a hypernetwork is added, append it to prompt
             if pen[18] != 'None':
-                pen[1] += pen[18]
+                pen[1] += f' <hypernet:{pen[18]}:1>'
 
             # the updated tuple to send to queue
             prompt_tuple = tuple(pen)
