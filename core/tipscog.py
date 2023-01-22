@@ -52,6 +52,21 @@ class TipsView(View):
         await interaction.response.edit_message(embed=embed_tips)
 
     @discord.ui.button(
+        custom_id="button_model",
+        label="Models list")
+    async def button_model(self, button, interaction):
+
+        model_list = ''
+        for model in settings.global_var.model_info.items():
+            # strip any folders from model full name
+            filename = model[1][0].split('/', 1)[-1].split('\\', 1)[-1]
+            model_list += f'\n{model[0]} - ``{filename}``'
+        embed_model = discord.Embed(title="Models list", description=model_list)
+        embed_model.colour = settings.global_var.embed_color
+
+        await interaction.response.edit_message(embed=embed_model)
+
+    @discord.ui.button(
         custom_id="button_styles",
         label="Styles list")
     async def button_style(self, button, interaction):
@@ -67,19 +82,19 @@ class TipsView(View):
         await interaction.response.edit_message(embed=embed_styles)
 
     @discord.ui.button(
-        custom_id="button_model",
-        label="Models list")
-    async def button_model(self, button, interaction):
+        custom_id="button_hyper",
+        label="Hypernets list")
+    async def button_hyper(self, button, interaction):
 
-        model_list = ''
-        for model in settings.global_var.model_info.items():
-            # strip any folders from model full name
-            filename = model[1][0].split('/', 1)[-1].split('\\', 1)[-1]
-            model_list += f'\n{model[0]} - ``{filename}``'
-        embed_model = discord.Embed(title="Models list", description=model_list)
-        embed_model.colour = settings.global_var.embed_color
+        hyper_list = ''
+        for value in settings.global_var.hyper_names:
+            if value == '':
+                value = ' '
+            hyper_list += f'\n``{value}``'
+        embed_hyper = discord.Embed(title="Hypernets list", description=hyper_list)
+        embed_hyper.colour = settings.global_var.embed_color
 
-        await interaction.response.edit_message(embed=embed_model)
+        await interaction.response.edit_message(embed=embed_hyper)
 
     @discord.ui.button(
         custom_id="button_embed",
