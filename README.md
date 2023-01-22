@@ -47,7 +47,10 @@ To generate an image from text, use the /draw command and include your prompt as
   - negative prompts
   - model/checkpoint
   - sampling steps / max steps
+  - width/height
+  - CFG scale
   - sampling method
+  - high-res fix
   - CLIP skip
   - hypernetworks
   - batch count / max batch count
