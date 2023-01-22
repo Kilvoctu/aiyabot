@@ -127,7 +127,8 @@ class TipsView(View):
         url2 = 'https://raw.githubusercontent.com/Kilvoctu/kilvoctu.github.io/master/pics/previewthumb.png'
         embed_about = discord.Embed(title="About me",
                                     description=f"Hi! I'm an open-source Discord bot written in Python.\n"
-                                                f"[My home is here]({url}) if you'd like to check it out!")
+                                                f"[My home is here]({url}) if you'd like to check it out!\n"
+                                                f"Feel free to report bugs or leave feedback.")
         embed_about.colour = settings.global_var.embed_color
         embed_about.set_thumbnail(url=url2)
         embed_about.set_footer(text='Have a lovely day!', icon_url=url2)
