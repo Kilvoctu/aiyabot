@@ -250,7 +250,6 @@ def populate_global_vars():
             global_var.embeddings_2.append(s4)
     for s5 in r5.json():
         global_var.hyper_names.append(s5['name'])
-    print(global_var.style_names)
 
     # create nested dict for models based on display_name in models.csv
     # model_info[0] = display name (top level)
