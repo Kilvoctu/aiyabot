@@ -41,7 +41,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             style for style in settings.global_var.style_names
         ]
 
-    # and hypernetworks
+    # and hyper networks
     def hyper_autocomplete(self: discord.AutocompleteContext):
         return [
             hyper for hyper in settings.global_var.hyper_names
@@ -227,12 +227,15 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         for model in settings.global_var.model_info.items():
             if model[0] == data_model:
                 model_name = model[0]
-                # go one deeper into nest and grab model full name to send to API
                 data_model = model[1][0]
                 # look at the model for activator token and prepend prompt with it
                 if model[1][3]:
                     prompt = model[1][3] + " " + prompt
                 break
+
+        # if a hyper network is used, append it to the prompt
+        if hypernet != 'None':
+            prompt += f' <hypernet:{hypernet}:1>'
 
         if not settings.global_var.send_model:
             print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
@@ -386,8 +389,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     "restore_faces": True,
                 }
                 payload.update(facefix_payload)
-            if queue_object.hypernet != 'None':
-                override_settings["sd_hypernetwork"] = queue_object.hypernet
 
             # update payload with override_settings
             override_payload = {
@@ -417,7 +418,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
             # create safe/sanitized filename
             keep_chars = (' ', '.', '_')
-            file_name = "".join(c for c in queue_object.prompt if c.isalnum() or c in keep_chars).rstrip()
+            file_name = "".join(c for c in queue_object.simple_prompt if c.isalnum() or c in keep_chars).rstrip()
 
             # save local copy of image and prepare PIL images
             pil_images = []
