@@ -21,11 +21,11 @@ template = {
     "default_height": 512,
     "guidance_scale": "7.0",
     "sampler": "Euler a",
-    "default_count": 1,
-    "max_count": 1,
     "highres_fix": 'Disabled',
     "clip_skip": 1,
-    "hypernet": "None"
+    "hypernet": "None",
+    "default_count": 1,
+    "max_count": 1
 }
 
 

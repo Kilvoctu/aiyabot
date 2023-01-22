@@ -21,7 +21,7 @@ class IdentifyCog(commands.Cog):
     @option(
         'init_image',
         discord.Attachment,
-        description='The image to identify',
+        description='The image to identify.',
         required=False,
     )
     @option(
@@ -30,9 +30,17 @@ class IdentifyCog(commands.Cog):
         description='The URL image to identify. This overrides init_image!',
         required=False,
     )
+    @option(
+        'phrasing',
+        str,
+        description='The way the image will be described.',
+        required=False,
+        choices=['Normal', 'Tags']
+    )
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
                             init_image: Optional[discord.Attachment] = None,
-                            init_url: Optional[str]):
+                            init_url: Optional[str],
+                            phrasing: Optional[str] = 'Normal'):
 
         has_image = True
         # url *will* override init image for compatibility, can be changed here
@@ -49,6 +57,12 @@ class IdentifyCog(commands.Cog):
                 await ctx.send_response('I need an image to identify!', ephemeral=True)
                 has_image = False
 
+        # Update layman-friendly "phrasing" choices into what API understands
+        if phrasing == 'Normal':
+            phrasing = 'clip'
+        else:
+            phrasing = 'deepdanbooru'
+
         view = viewhandler.DeleteView(ctx.author.id)
         # set up the queue if an image was found
         if has_image:
@@ -61,15 +75,15 @@ class IdentifyCog(commands.Cog):
                 if user_already_in_queue:
                     await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
                 else:
-                    queuehandler.GlobalQueue.queue.append(queuehandler.IdentifyObject(self, ctx, init_image, view))
+                    queuehandler.GlobalQueue.queue.append(queuehandler.IdentifyObject(self, ctx, init_image, phrasing, view))
                     await ctx.send_response(
-                        f"<@{ctx.author.id}>, I'm identifying the image!\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``",
-                        delete_after=45.0)
+                        f"<@{ctx.author.id}>, I'm identifying the image!"
+                        f"\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``", delete_after=45.0)
             else:
-                await queuehandler.process_dream(self, queuehandler.IdentifyObject(self, ctx, init_image, view))
+                await queuehandler.process_dream(self, queuehandler.IdentifyObject(self, ctx, init_image, phrasing, view))
                 await ctx.send_response(
-                    f"<@{ctx.author.id}>, I'm identifying the image!\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``",
-                    delete_after=45.0)
+                    f"<@{ctx.author.id}>, I'm identifying the image!"
+                    f"\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``", delete_after=45.0)
 
     # the function to queue Discord posts
     def post(self, event_loop: AbstractEventLoop, post_queue_object: queuehandler.PostObject):
@@ -88,7 +102,8 @@ class IdentifyCog(commands.Cog):
             # construct a payload
             image = base64.b64encode(requests.get(queue_object.init_image.url, stream=True).content).decode('utf-8')
             payload = {
-                "image": 'data:image/png;base64,' + image
+                "image": 'data:image/png;base64,' + image,
+                "model": queue_object.phrasing
             }
 
             # send normal payload to webui

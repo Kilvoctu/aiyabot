@@ -58,7 +58,7 @@ class SettingsCog(commands.Cog):
     @option(
         'max_steps',
         int,
-        description='Set default maximum steps for the server',
+        description='Set maximum steps for the server',
         min_value=1,
         required=False,
     )
@@ -120,7 +120,7 @@ class SettingsCog(commands.Cog):
     @option(
         'max_count',
         int,
-        description='Set default maximum count for the server',
+        description='Set maximum count for the server',
         min_value=1,
         required=False,
     )
