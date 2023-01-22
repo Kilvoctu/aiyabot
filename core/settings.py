@@ -229,11 +229,13 @@ def populate_global_vars():
             print("Can't connect to API for some reason!"
                   "Please check your .env URL or credentials.")
             os.system("pause")
+
+    # add default "None" options
+    global_var.style_names['None'] = ''
+    global_var.hyper_names.append('None')
+    # populate remaining options
     for s2 in r2.json():
         global_var.style_names[s2['name']] = s2['prompt']
-    # add default "None" style as option if Web UI has no styles.csv
-    if not global_var.style_names:
-        global_var.style_names['None'] = ''
     for s3 in r3.json():
         global_var.facefix_models.append(s3['name'])
     for s4, shape in r4.json()['loaded'].items():
@@ -246,10 +248,9 @@ def populate_global_vars():
             global_var.embeddings_1.append(s4)
         if shape['shape'] == 1024:
             global_var.embeddings_2.append(s4)
-    # add default "None" hypernetwork as option
-    global_var.hyper_names.append('None')
     for s5 in r5.json():
         global_var.hyper_names.append(s5['name'])
+    print(global_var.style_names)
 
     # create nested dict for models based on display_name in models.csv
     # model_info[0] = display name (top level)
