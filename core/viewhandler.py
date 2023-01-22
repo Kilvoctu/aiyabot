@@ -201,6 +201,9 @@ class DrawModal(Modal):
             # update the prompt again if a valid model change is requested
             if model_found:
                 pen[1] = new_token + pen[17]
+            # if a hypernetwork is added, append it to prompt
+            if pen[18] != 'None':
+                pen[1] += pen[18]
 
             # the updated tuple to send to queue
             prompt_tuple = tuple(pen)
@@ -214,7 +217,7 @@ class DrawModal(Modal):
                 prompt_output += f'\nNew model: ``{new_model}``'
             index_start = 4
             for index, value in enumerate(tuple_names[index_start:], index_start):
-                if 17 <= index <= 18:
+                if index == 17:
                     continue
                 if str(pen[index]) != str(self.input_tuple[index]):
                     prompt_output += f'\nNew {value}: ``{pen[index]}``'
@@ -389,7 +392,7 @@ class DrawView(View):
                 extra_params += f'\nCLIP skip: ``{rev[16]}``'
             if rev[18] != 'None':
                 copy_command += f' hypernet:{rev[18]}'
-                extra_params += f'\nHypernetwork model(hash): ``{rev[18]}``'
+                extra_params += f'\nHypernetwork model: ``{rev[18]}``'
             embed.add_field(name=f'Other parameters', value=extra_params, inline=False)
             embed.add_field(name=f'Command for copying', value=f'``{copy_command}``', inline=False)
 
