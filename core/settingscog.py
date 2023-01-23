@@ -133,6 +133,11 @@ class SettingsCog(commands.Cog):
         autocomplete=discord.utils.basic_autocomplete(hyper_autocomplete),
     )
     @option(
+        'strength',
+        str,
+        description='Set default strength (for init_img) for the channel (0.0 to 1.0).'
+    )
+    @option(
         'count',
         int,
         description='Set default count for the channel',
@@ -167,6 +172,7 @@ class SettingsCog(commands.Cog):
                                highres_fix: Optional[str] = None,
                                clip_skip: Optional[int] = 0,
                                hypernet: Optional[str] = None,
+                               strength: Optional[str] = None,
                                count: Optional[int] = None,
                                max_count: Optional[int] = None,
                                refresh: Optional[bool] = False):
@@ -217,18 +223,18 @@ class SettingsCog(commands.Cog):
             settings.update(channel, 'max_steps', max_steps)
             new += f'\nMax steps: ``{max_steps}``'
             # automatically lower default steps if max steps goes below it
-            if max_steps < reviewer['default_steps']:
-                settings.update(channel, 'default_steps', max_steps)
+            if max_steps < reviewer['steps']:
+                settings.update(channel, 'steps', max_steps)
                 new += f'\nDefault steps is too high! Lowering to ``{max_steps}``.'
             set_new = True
 
         if width != 1:
-            settings.update(channel, 'default_width', width)
+            settings.update(channel, 'width', width)
             new += f'\nWidth: ``"{width}"``'
             set_new = True
 
         if height != 1:
-            settings.update(channel, 'default_height', height)
+            settings.update(channel, 'height', height)
             new += f'\nHeight: ``"{height}"``'
             set_new = True
 
@@ -272,12 +278,17 @@ class SettingsCog(commands.Cog):
             new += f'\nHypernet: ``"{hypernet}"``'
             set_new = True
 
+        if strength is not None:
+            settings.update(channel, 'strength', strength)
+            new += f'\nStrength: ``"{strength}"``'
+            set_new = True
+
         if max_count is not None:
             settings.update(channel, 'max_count', max_count)
             new += f'\nMax count: ``{max_count}``'
             # automatically lower default count if max count goes below it
-            if max_count < reviewer['default_count']:
-                settings.update(channel, 'default_count', max_count)
+            if max_count < reviewer['count']:
+                settings.update(channel, 'count', max_count)
                 new += f'\nDefault count is too high! Lowering to ``{max_count}``.'
             set_new = True
 
@@ -287,7 +298,7 @@ class SettingsCog(commands.Cog):
             if steps > reviewer['max_steps']:
                 new += f"\nMax steps is ``{reviewer['max_steps']}``! You can't go beyond it!"
             else:
-                settings.update(channel, 'default_steps', steps)
+                settings.update(channel, 'steps', steps)
                 new += f'\nSteps: ``{steps}``'
             set_new = True
 
@@ -295,7 +306,7 @@ class SettingsCog(commands.Cog):
             if count > reviewer['max_count']:
                 new += f"\nMax count is ``{reviewer['max_count']}``! You can't go beyond it!"
             else:
-                settings.update(channel, 'default_count', count)
+                settings.update(channel, 'count', count)
                 new += f'\nCount: ``{count}``'
             set_new = True
 

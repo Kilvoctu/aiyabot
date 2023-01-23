@@ -160,7 +160,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             highres_fix: Optional[str] = None,
                             clip_skip: Optional[int] = 0,
                             hypernet: Optional[str] = None,
-                            strength: Optional[str] = '0.75',
+                            strength: Optional[str] = None,
                             init_image: Optional[discord.Attachment] = None,
                             init_url: Optional[str],
                             count: Optional[int] = None):
@@ -172,11 +172,11 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if negative_prompt == 'unset':
             negative_prompt = settings.read(channel)['negative_prompt']
         if steps == -1:
-            steps = settings.read(channel)['default_steps']
+            steps = settings.read(channel)['steps']
         if width == 1:
-            width = settings.read(channel)['default_width']
+            width = settings.read(channel)['width']
         if height == 1:
-            height = settings.read(channel)['default_height']
+            height = settings.read(channel)['height']
         if guidance_scale is None:
             guidance_scale = settings.read(channel)['guidance_scale']
         if sampler is None:
@@ -191,8 +191,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             clip_skip = settings.read(channel)['clip_skip']
         if hypernet is None:
             hypernet = settings.read(channel)['hypernet']
+        if strength is None:
+            strength = settings.read(channel)['strength']
         if count is None:
-            count = settings.read(channel)['default_count']
+            count = settings.read(channel)['count']
 
         # if a model is not selected, do nothing
         model_name = 'Default'

@@ -15,10 +15,10 @@ path = 'resources/'.format(dir_path)
 template = {
     "negative_prompt": "",
     "data_model": "",
-    "default_steps": 30,
+    "steps": 30,
     "max_steps": 50,
-    "default_width": 512,
-    "default_height": 512,
+    "width": 512,
+    "height": 512,
     "guidance_scale": "7.0",
     "sampler": "Euler a",
     "style": "None",
@@ -26,7 +26,8 @@ template = {
     "highres_fix": 'Disabled',
     "clip_skip": 1,
     "hypernet": "None",
-    "default_count": 1,
+    "strength": "0.75",
+    "count": 1,
     "max_count": 1
 }
 
