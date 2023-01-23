@@ -159,18 +159,17 @@ class SettingsCog(commands.Cog):
     )
     async def settings_handler(self, ctx,
                                current_settings: Optional[bool] = True,
-                               n_prompt: Optional[str] = 'unset',
+                               n_prompt: Optional[str] = None,
                                data_model: Optional[str] = None,
-                               steps: Optional[int] = 1,
+                               steps: Optional[int] = None,
                                max_steps: Optional[int] = 1,
-                               width: Optional[int] = 1,
-                               height: Optional[int] = 1,
+                               width: Optional[int] = None, height: Optional[int] = None,
                                guidance_scale: Optional[str] = None,
                                sampler: Optional[str] = None,
                                style: Optional[str] = None,
                                facefix: Optional[str] = None,
                                highres_fix: Optional[str] = None,
-                               clip_skip: Optional[int] = 0,
+                               clip_skip: Optional[int] = None,
                                hypernet: Optional[str] = None,
                                strength: Optional[str] = None,
                                count: Optional[int] = None,
@@ -209,7 +208,7 @@ class SettingsCog(commands.Cog):
             embed.add_field(name=f'Refreshed!', value=f'Updated global lists', inline=False)
 
         # run through each command and update the defaults user selects
-        if n_prompt != 'unset':
+        if n_prompt is not None:
             settings.update(channel, 'negative_prompt', n_prompt)
             new += f'\nNegative prompts: ``"{n_prompt}"``'
             set_new = True
@@ -228,12 +227,12 @@ class SettingsCog(commands.Cog):
                 new += f'\nDefault steps is too high! Lowering to ``{max_steps}``.'
             set_new = True
 
-        if width != 1:
+        if width is not None:
             settings.update(channel, 'width', width)
             new += f'\nWidth: ``"{width}"``'
             set_new = True
 
-        if height != 1:
+        if height is not None:
             settings.update(channel, 'height', height)
             new += f'\nHeight: ``"{height}"``'
             set_new = True
@@ -268,7 +267,7 @@ class SettingsCog(commands.Cog):
             new += f'\nhighres_fix: ``"{highres_fix}"``'
             set_new = True
 
-        if clip_skip != 0:
+        if clip_skip is not None:
             settings.update(channel, 'clip_skip', clip_skip)
             new += f'\nCLIP skip: ``{clip_skip}``'
             set_new = True
@@ -294,7 +293,7 @@ class SettingsCog(commands.Cog):
 
         # review settings again in case user is trying to set steps/counts and max steps/counts simultaneously
         reviewer = settings.read(channel)
-        if steps != 1:
+        if steps is not None:
             if steps > reviewer['max_steps']:
                 new += f"\nMax steps is ``{reviewer['max_steps']}``! You can't go beyond it!"
             else:

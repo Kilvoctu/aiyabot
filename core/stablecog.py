@@ -148,17 +148,17 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         required=False,
     )
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
-                            prompt: str, negative_prompt: str = 'unset',
+                            prompt: str, negative_prompt: str = None,
                             data_model: Optional[str] = None,
-                            steps: Optional[int] = -1,
-                            width: Optional[int] = 1, height: Optional[int] = 1,
+                            steps: Optional[int] = None,
+                            width: Optional[int] = None, height: Optional[int] = None,
                             guidance_scale: Optional[str] = None,
                             sampler: Optional[str] = None,
                             seed: Optional[int] = -1,
                             style: Optional[str] = None,
                             facefix: Optional[str] = None,
                             highres_fix: Optional[str] = None,
-                            clip_skip: Optional[int] = 0,
+                            clip_skip: Optional[int] = None,
                             hypernet: Optional[str] = None,
                             strength: Optional[str] = None,
                             init_image: Optional[discord.Attachment] = None,
@@ -169,13 +169,13 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         # update defaults with any new defaults from settingscog
         channel = '% s' % ctx.channel.id
         settings.check(channel)
-        if negative_prompt == 'unset':
+        if negative_prompt is None:
             negative_prompt = settings.read(channel)['negative_prompt']
-        if steps == -1:
+        if steps is None:
             steps = settings.read(channel)['steps']
-        if width == 1:
+        if width is None:
             width = settings.read(channel)['width']
-        if height == 1:
+        if height is None:
             height = settings.read(channel)['height']
         if guidance_scale is None:
             guidance_scale = settings.read(channel)['guidance_scale']
@@ -187,7 +187,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             facefix = settings.read(channel)['facefix']
         if highres_fix is None:
             highres_fix = settings.read(channel)['highres_fix']
-        if clip_skip == 0:
+        if clip_skip is None:
             clip_skip = settings.read(channel)['clip_skip']
         if hypernet is None:
             hypernet = settings.read(channel)['hypernet']
