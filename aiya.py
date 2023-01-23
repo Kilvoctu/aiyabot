@@ -63,7 +63,7 @@ async def on_raw_reaction_add(ctx):
 
 @self.event
 async def on_guild_join(guild):
-    print(f'Wow, I joined {guild.name}!.')
+    print(f'Wow, I joined {guild.name}!')
 
 
 async def shutdown(bot):

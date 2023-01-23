@@ -80,13 +80,13 @@ def check(channel_id):
     except FileNotFoundError:
         build(str(channel_id))
         print(f'This is a new channel!? Creating default settings file for this channel ({channel_id}).')
-        # if models.csv has the blank "Default" data, update guild settings
+        # if models.csv has the blank "Default" data, update default settings
         with open('resources/models.csv', 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter='|')
             for row in reader:
                 if row['display_name'] == 'Default' and row['model_full_name'] == '':
                     update(str(channel_id), 'data_model', '')
-                    print('I see models.csv is on defaults. Updating guild model settings to default.')
+                    print('I see models.csv is on defaults. Updating model settings to default.')
 
 
 def build(channel_id):
