@@ -11,12 +11,20 @@ class SettingsCog(commands.Cog):
         self.bot = bot
 
     # pulls from model_names list and makes some sort of dynamic list to bypass Discord 25 choices limit
+    # these are used also by stablecog /draw command
+    # this also updates list when using /settings "refresh" option
     def model_autocomplete(self: discord.AutocompleteContext):
         return [
             model for model in settings.global_var.model_info
         ]
-    # and for hypernetworks
 
+    # and for styles
+    def style_autocomplete(self: discord.AutocompleteContext):
+        return [
+            style for style in settings.global_var.style_names
+        ]
+
+    # and hyper networks
     def hyper_autocomplete(self: discord.AutocompleteContext):
         return [
             hyper for hyper in settings.global_var.hyper_names
@@ -28,17 +36,17 @@ class SettingsCog(commands.Cog):
             hires for hires in settings.global_var.hires_upscaler_names
         ]
 
-    @commands.slash_command(name='settings', description='Review and change server defaults', guild_only=True)
+    @commands.slash_command(name='settings', description='Review and change channel defaults', guild_only=True)
     @option(
         'current_settings',
         bool,
-        description='Show the current defaults for the server.',
+        description='Show the current defaults for the channel.',
         required=False,
     )
     @option(
         'n_prompt',
         str,
-        description='Set default negative prompt for the server',
+        description='Set default negative prompt for the channel',
         required=False,
     )
     @option(
@@ -51,76 +59,90 @@ class SettingsCog(commands.Cog):
     @option(
         'steps',
         int,
-        description='Set default amount of steps for the server',
+        description='Set default amount of steps for the channel',
         min_value=1,
         required=False,
     )
     @option(
         'max_steps',
         int,
-        description='Set maximum steps for the server',
+        description='Set maximum steps for the channel',
         min_value=1,
         required=False,
     )
     @option(
         'width',
         int,
-        description='Set default width for the server',
+        description='Set default width for the channel',
         required=False,
         choices=[x for x in range(192, 1088, 64)]
     )
     @option(
         'height',
         int,
-        description='Set default height for the server',
+        description='Set default height for the channel',
         required=False,
         choices=[x for x in range(192, 1088, 64)]
     )
     @option(
         'guidance_scale',
         str,
-        description='Set default Classifier-Free Guidance scale for the server.',
+        description='Set default Classifier-Free Guidance scale for the channel.',
         required=False,
     )
     @option(
         'sampler',
         str,
-        description='Set default sampler for the server',
+        description='Set default sampler for the channel',
         required=False,
         choices=settings.global_var.sampler_names,
     )
     @option(
+        'style',
+        str,
+        description='Apply a predefined style to the generation.',
+        required=False,
+        autocomplete=discord.utils.basic_autocomplete(style_autocomplete),
+    )
+    @option(
+        'facefix',
+        str,
+        description='Tries to improve faces in images.',
+        required=False,
+        choices=settings.global_var.facefix_models,
+    )
+    @option(
         'highres_fix',
         str,
-        description='Set default highres fix model for the server',
+        description='Set default highres fix model for the channel',
         required=False,
         autocomplete=discord.utils.basic_autocomplete(hires_autocomplete),
     )
     @option(
         'clip_skip',
         int,
-        description='Set default CLIP skip for the server',
+        description='Set default CLIP skip for the channel',
         required=False,
         choices=[x for x in range(1, 13, 1)]
     )
     @option(
         'hypernet',
         str,
-        description='Set default hypernetwork model for the server',
+        description='Set default hypernetwork model for the channel',
         required=False,
         autocomplete=discord.utils.basic_autocomplete(hyper_autocomplete),
     )
     @option(
         'count',
         int,
-        description='Set default count for the server',
+        description='Set default count for the channel',
         min_value=1,
         required=False,
     )
     @option(
         'max_count',
         int,
-        description='Set maximum count for the server',
+        description='Set maximum count for the channel',
         min_value=1,
         required=False,
     )
@@ -139,7 +161,9 @@ class SettingsCog(commands.Cog):
                                width: Optional[int] = 1,
                                height: Optional[int] = 1,
                                guidance_scale: Optional[str] = None,
-                               sampler: Optional[str] = 'unset',
+                               sampler: Optional[str] = None,
+                               style: Optional[str] = None,
+                               facefix: Optional[str] = None,
                                highres_fix: Optional[str] = None,
                                clip_skip: Optional[int] = 0,
                                hypernet: Optional[str] = None,
@@ -218,9 +242,19 @@ class SettingsCog(commands.Cog):
                 new += f'\nHad trouble setting Guidance Scale! Setting to default of `7.0`.'
             set_new = True
 
-        if sampler != 'unset':
+        if sampler is not None:
             settings.update(channel, 'sampler', sampler)
             new += f'\nSampler: ``"{sampler}"``'
+            set_new = True
+
+        if style is not None:
+            settings.update(channel, 'style', style)
+            new += f'\nStyle: ``"{style}"``'
+            set_new = True
+
+        if facefix is not None:
+            settings.update(channel, 'facefix', facefix)
+            new += f'\nFacefix: ``"{facefix}"``'
             set_new = True
 
         if highres_fix is not None:

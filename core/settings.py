@@ -21,6 +21,8 @@ template = {
     "default_height": 512,
     "guidance_scale": "7.0",
     "sampler": "Euler a",
+    "style": "None",
+    "facefix": "None",
     "highres_fix": 'Disabled',
     "clip_skip": 1,
     "hypernet": "None",

@@ -16,6 +16,7 @@ from typing import Optional
 from core import queuehandler
 from core import viewhandler
 from core import settings
+from core import settingscog
 
 
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
@@ -27,31 +28,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     @commands.Cog.listener()
     async def on_ready(self):
         self.bot.add_view(viewhandler.DrawView(self))
-
-    # pulls from model_names list and makes some sort of dynamic list to bypass Discord 25 choices limit
-    # this also updates list when using /settings "refresh" option
-    def model_autocomplete(self: discord.AutocompleteContext):
-        return [
-            model for model in settings.global_var.model_info
-        ]
-
-    # and for styles
-    def style_autocomplete(self: discord.AutocompleteContext):
-        return [
-            style for style in settings.global_var.style_names
-        ]
-
-    # and hyper networks
-    def hyper_autocomplete(self: discord.AutocompleteContext):
-        return [
-            hyper for hyper in settings.global_var.hyper_names
-        ]
-
-    # and upscalers for highres fix
-    def hires_autocomplete(self: discord.AutocompleteContext):
-        return [
-            hires for hires in settings.global_var.hires_upscaler_names
-        ]
 
     @commands.slash_command(name='draw', description='Create an image', guild_only=True)
     @option(
@@ -71,7 +47,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         str,
         description='Select the data model for image generation.',
         required=False,
-        autocomplete=discord.utils.basic_autocomplete(model_autocomplete),
+        autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.model_autocomplete),
     )
     @option(
         'steps',
@@ -118,7 +94,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         str,
         description='Apply a predefined style to the generation.',
         required=False,
-        autocomplete=discord.utils.basic_autocomplete(style_autocomplete),
+        autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.style_autocomplete),
     )
     @option(
         'facefix',
@@ -132,7 +108,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         str,
         description='Tries to fix issues from generating high-res images. Recommended: Latent (nearest).',
         required=False,
-        autocomplete=discord.utils.basic_autocomplete(hires_autocomplete),
+        autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.hires_autocomplete),
     )
     @option(
         'clip_skip',
@@ -146,7 +122,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         str,
         description='Apply a hypernetwork model to influence the output.',
         required=False,
-        autocomplete=discord.utils.basic_autocomplete(hyper_autocomplete),
+        autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.hyper_autocomplete),
     )
     @option(
         'strength',
@@ -177,10 +153,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             steps: Optional[int] = -1,
                             width: Optional[int] = 1, height: Optional[int] = 1,
                             guidance_scale: Optional[str] = None,
-                            sampler: Optional[str] = 'unset',
+                            sampler: Optional[str] = None,
                             seed: Optional[int] = -1,
-                            style: Optional[str] = 'None',
-                            facefix: Optional[str] = 'None',
+                            style: Optional[str] = None,
+                            facefix: Optional[str] = None,
                             highres_fix: Optional[str] = None,
                             clip_skip: Optional[int] = 0,
                             hypernet: Optional[str] = None,
@@ -203,8 +179,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             height = settings.read(channel)['default_height']
         if guidance_scale is None:
             guidance_scale = settings.read(channel)['guidance_scale']
-        if sampler == 'unset':
+        if sampler is None:
             sampler = settings.read(channel)['sampler']
+        if style is None:
+            style = settings.read(channel)['style']
+        if facefix is None:
+            facefix = settings.read(channel)['facefix']
         if highres_fix is None:
             highres_fix = settings.read(channel)['highres_fix']
         if clip_skip == 0:
