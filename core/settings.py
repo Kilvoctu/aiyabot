@@ -275,10 +275,9 @@ def populate_global_vars():
     with open('resources/models.csv', encoding='utf-8') as csv_file:
         model_data = list(csv.reader(csv_file, delimiter='|'))
         for row in model_data[1:]:
-            row_convert = row[1].replace('\\', '_').replace('/', '_')
             for model in r.json():
-                if row_convert == model['title'] or row_convert == model['model_name'] \
-                        or row[1] == model['title'] or row[1] == model['model_name']:
+                if row[1].split('\\')[-1] == model['filename'].split('\\')[-1] \
+                        or row[1].replace('\\', '_').replace('/', '_') == model['model_name']:
                     global_var.model_info[row[0]] = model['title'], model['model_name'], model['hash'], row[2]
                     break
 
