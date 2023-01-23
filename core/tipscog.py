@@ -127,9 +127,9 @@ class TipsView(View):
         url2 = 'https://raw.githubusercontent.com/Kilvoctu/kilvoctu.github.io/master/pics/previewthumb.png'
         url3 = 'https://github.com/Kilvoctu/aiyabot/wiki#using-aiya'
         embed_about = discord.Embed(title="About me",
-                                    description=f"Hi! I'm an open-source Discord bot written in Python.\n"
-                                                f"[My home is here]({url}) if you'd like to check it out,\n"
-                                                f" and the [wiki]({url3}) has some basic info on usage!\n\n"
+                                    description=f"Hi! I'm open-source Discord bot AIYA, written in Python.\n"
+                                                f"[My home is here]({url}) if you'd like to check it out, "
+                                                f"and the [wiki]({url3}) has some basic info on usage!\n\n"
                                                 f"Feel free to report bugs or leave feedback!")
         embed_about.colour = settings.global_var.embed_color
         embed_about.set_thumbnail(url=url2)
