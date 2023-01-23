@@ -39,8 +39,8 @@ async def stats(ctx):
 async def on_ready():
     self.logger.info(f'Logged in as {self.user.name} ({self.user.id})')
     await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='drawing tutorials.'))
-    # because guilds are only known when on_ready, run files check for guilds
-    settings.guilds_check(self)
+    for guild in self.guilds:
+        print(f"I'm active in {guild.id} a.k.a {guild}!")
 
 
 # fallback feature to delete generations if aiya has been restarted
@@ -63,8 +63,7 @@ async def on_raw_reaction_add(ctx):
 
 @self.event
 async def on_guild_join(guild):
-    print(f'Wow, I joined {guild.name}! Refreshing settings.')
-    settings.guilds_check(self)
+    print(f'Wow, I joined {guild.name}!')
 
 
 async def shutdown(bot):

@@ -43,17 +43,8 @@ To generate an image from text, use the /draw command and include your prompt as
 
 #### Bonus features
 
-- /settings command - set per-server defaults for the following (_see Notes!_):
-  - negative prompts
-  - model/checkpoint
-  - sampling steps / max steps
-  - width/height
-  - CFG scale
-  - sampling method
-  - high-res fix
-  - CLIP skip
-  - hypernetworks
-  - batch count / max batch count
+- /settings command - set per-channel defaults for supported options (_see Notes!_):
+  - also can set maximum steps limit and max batch count limit
   - refresh (update AIYA's options with any changes from Web UI)
 - /identify command - create a caption for your image.
 - /stats command - shows how many /draw commands have been used.

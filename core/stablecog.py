@@ -16,6 +16,7 @@ from typing import Optional
 from core import queuehandler
 from core import viewhandler
 from core import settings
+from core import settingscog
 
 
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
@@ -27,31 +28,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     @commands.Cog.listener()
     async def on_ready(self):
         self.bot.add_view(viewhandler.DrawView(self))
-
-    # pulls from model_names list and makes some sort of dynamic list to bypass Discord 25 choices limit
-    # this also updates list when using /settings "refresh" option
-    def model_autocomplete(self: discord.AutocompleteContext):
-        return [
-            model for model in settings.global_var.model_info
-        ]
-
-    # and for styles
-    def style_autocomplete(self: discord.AutocompleteContext):
-        return [
-            style for style in settings.global_var.style_names
-        ]
-
-    # and hyper networks
-    def hyper_autocomplete(self: discord.AutocompleteContext):
-        return [
-            hyper for hyper in settings.global_var.hyper_names
-        ]
-
-    # and upscalers for highres fix
-    def hires_autocomplete(self: discord.AutocompleteContext):
-        return [
-            hires for hires in settings.global_var.hires_upscaler_names
-        ]
 
     @commands.slash_command(name='draw', description='Create an image', guild_only=True)
     @option(
@@ -71,7 +47,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         str,
         description='Select the data model for image generation.',
         required=False,
-        autocomplete=discord.utils.basic_autocomplete(model_autocomplete),
+        autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.model_autocomplete),
     )
     @option(
         'steps',
@@ -118,7 +94,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         str,
         description='Apply a predefined style to the generation.',
         required=False,
-        autocomplete=discord.utils.basic_autocomplete(style_autocomplete),
+        autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.style_autocomplete),
     )
     @option(
         'facefix',
@@ -132,7 +108,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         str,
         description='Tries to fix issues from generating high-res images. Recommended: Latent (nearest).',
         required=False,
-        autocomplete=discord.utils.basic_autocomplete(hires_autocomplete),
+        autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.hires_autocomplete),
     )
     @option(
         'clip_skip',
@@ -146,7 +122,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         str,
         description='Apply a hypernetwork model to influence the output.',
         required=False,
-        autocomplete=discord.utils.basic_autocomplete(hyper_autocomplete),
+        autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.hyper_autocomplete),
     )
     @option(
         'strength',
@@ -172,51 +148,58 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         required=False,
     )
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
-                            prompt: str, negative_prompt: str = 'unset',
+                            prompt: str, negative_prompt: str = None,
                             data_model: Optional[str] = None,
-                            steps: Optional[int] = -1,
-                            width: Optional[int] = 1, height: Optional[int] = 1,
+                            steps: Optional[int] = None,
+                            width: Optional[int] = None, height: Optional[int] = None,
                             guidance_scale: Optional[str] = None,
-                            sampler: Optional[str] = 'unset',
+                            sampler: Optional[str] = None,
                             seed: Optional[int] = -1,
-                            style: Optional[str] = 'None',
-                            facefix: Optional[str] = 'None',
+                            style: Optional[str] = None,
+                            facefix: Optional[str] = None,
                             highres_fix: Optional[str] = None,
-                            clip_skip: Optional[int] = 0,
+                            clip_skip: Optional[int] = None,
                             hypernet: Optional[str] = None,
-                            strength: Optional[str] = '0.75',
+                            strength: Optional[str] = None,
                             init_image: Optional[discord.Attachment] = None,
                             init_url: Optional[str],
                             count: Optional[int] = None):
 
         settings.global_var.send_model = False
         # update defaults with any new defaults from settingscog
-        guild = '% s' % ctx.guild_id
-        if negative_prompt == 'unset':
-            negative_prompt = settings.read(guild)['negative_prompt']
-        if steps == -1:
-            steps = settings.read(guild)['default_steps']
-        if width == 1:
-            width = settings.read(guild)['default_width']
-        if height == 1:
-            height = settings.read(guild)['default_height']
+        channel = '% s' % ctx.channel.id
+        settings.check(channel)
+        if negative_prompt is None:
+            negative_prompt = settings.read(channel)['negative_prompt']
+        if steps is None:
+            steps = settings.read(channel)['steps']
+        if width is None:
+            width = settings.read(channel)['width']
+        if height is None:
+            height = settings.read(channel)['height']
         if guidance_scale is None:
-            guidance_scale = settings.read(guild)['guidance_scale']
-        if sampler == 'unset':
-            sampler = settings.read(guild)['sampler']
+            guidance_scale = settings.read(channel)['guidance_scale']
+        if sampler is None:
+            sampler = settings.read(channel)['sampler']
+        if style is None:
+            style = settings.read(channel)['style']
+        if facefix is None:
+            facefix = settings.read(channel)['facefix']
         if highres_fix is None:
-            highres_fix = settings.read(guild)['highres_fix']
-        if clip_skip == 0:
-            clip_skip = settings.read(guild)['clip_skip']
+            highres_fix = settings.read(channel)['highres_fix']
+        if clip_skip is None:
+            clip_skip = settings.read(channel)['clip_skip']
         if hypernet is None:
-            hypernet = settings.read(guild)['hypernet']
+            hypernet = settings.read(channel)['hypernet']
+        if strength is None:
+            strength = settings.read(channel)['strength']
         if count is None:
-            count = settings.read(guild)['default_count']
+            count = settings.read(channel)['count']
 
         # if a model is not selected, do nothing
         model_name = 'Default'
         if data_model is None:
-            data_model = settings.read(guild)['data_model']
+            data_model = settings.read(channel)['data_model']
             if data_model != '':
                 settings.global_var.send_model = True
         else:
@@ -255,8 +238,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         # formatting aiya initial reply
         reply_adds = ''
         # lower step value to the highest setting if user goes over max steps
-        if steps > settings.read(guild)['max_steps']:
-            steps = settings.read(guild)['max_steps']
+        if steps > settings.read(channel)['max_steps']:
+            steps = settings.read(channel)['max_steps']
             reply_adds += f'\nExceeded maximum of ``{steps}`` steps! This is the best I can do...'
         if model_name != 'Default':
             reply_adds += f'\nModel: ``{model_name}``'
@@ -277,7 +260,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             reply_adds += f'\nStrength: ``{strength}``'
             reply_adds += f'\nURL Init Image: ``{init_image.url}``'
         if count != 1:
-            max_count = settings.read(guild)['max_count']
+            max_count = settings.read(channel)['max_count']
             if count > max_count:
                 count = max_count
                 reply_adds += f'\nExceeded maximum of ``{count}`` images! This is the best I can do...'

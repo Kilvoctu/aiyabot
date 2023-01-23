@@ -124,7 +124,7 @@ class DrawModal(Modal):
                                         inline=False)
 
             if 'steps:' in line:
-                max_steps = settings.read('% s' % pen[0].guild_id)['max_steps']
+                max_steps = settings.read('% s' % pen[0].channel.id)['max_steps']
                 if 0 < int(line.split(':', 1)[1]) <= max_steps:
                     pen[4] = line.split(':', 1)[1]
                 else:
@@ -394,7 +394,7 @@ class DrawView(View):
                 copy_command += f' hypernet:{rev[18]}'
                 extra_params += f'\nHypernetwork model: ``{rev[18]}``'
             embed.add_field(name=f'Other parameters', value=extra_params, inline=False)
-            embed.add_field(name=f'Command for copying', value=f'``{copy_command}``', inline=False)
+            embed.add_field(name=f'Command for copying', value=f'{copy_command}', inline=False)
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
         except Exception as e:
