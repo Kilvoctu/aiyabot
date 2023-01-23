@@ -191,32 +191,33 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
         settings.global_var.send_model = False
         # update defaults with any new defaults from settingscog
-        guild = '% s' % ctx.guild_id
+        channel = '% s' % ctx.channel.id
+        settings.check(channel)
         if negative_prompt == 'unset':
-            negative_prompt = settings.read(guild)['negative_prompt']
+            negative_prompt = settings.read(channel)['negative_prompt']
         if steps == -1:
-            steps = settings.read(guild)['default_steps']
+            steps = settings.read(channel)['default_steps']
         if width == 1:
-            width = settings.read(guild)['default_width']
+            width = settings.read(channel)['default_width']
         if height == 1:
-            height = settings.read(guild)['default_height']
+            height = settings.read(channel)['default_height']
         if guidance_scale is None:
-            guidance_scale = settings.read(guild)['guidance_scale']
+            guidance_scale = settings.read(channel)['guidance_scale']
         if sampler == 'unset':
-            sampler = settings.read(guild)['sampler']
+            sampler = settings.read(channel)['sampler']
         if highres_fix is None:
-            highres_fix = settings.read(guild)['highres_fix']
+            highres_fix = settings.read(channel)['highres_fix']
         if clip_skip == 0:
-            clip_skip = settings.read(guild)['clip_skip']
+            clip_skip = settings.read(channel)['clip_skip']
         if hypernet is None:
-            hypernet = settings.read(guild)['hypernet']
+            hypernet = settings.read(channel)['hypernet']
         if count is None:
-            count = settings.read(guild)['default_count']
+            count = settings.read(channel)['default_count']
 
         # if a model is not selected, do nothing
         model_name = 'Default'
         if data_model is None:
-            data_model = settings.read(guild)['data_model']
+            data_model = settings.read(channel)['data_model']
             if data_model != '':
                 settings.global_var.send_model = True
         else:
@@ -255,8 +256,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         # formatting aiya initial reply
         reply_adds = ''
         # lower step value to the highest setting if user goes over max steps
-        if steps > settings.read(guild)['max_steps']:
-            steps = settings.read(guild)['max_steps']
+        if steps > settings.read(channel)['max_steps']:
+            steps = settings.read(channel)['max_steps']
             reply_adds += f'\nExceeded maximum of ``{steps}`` steps! This is the best I can do...'
         if model_name != 'Default':
             reply_adds += f'\nModel: ``{model_name}``'
@@ -277,7 +278,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             reply_adds += f'\nStrength: ``{strength}``'
             reply_adds += f'\nURL Init Image: ``{init_image.url}``'
         if count != 1:
-            max_count = settings.read(guild)['max_count']
+            max_count = settings.read(channel)['max_count']
             if count > max_count:
                 count = max_count
                 reply_adds += f'\nExceeded maximum of ``{count}`` images! This is the best I can do...'

@@ -146,22 +146,24 @@ class SettingsCog(commands.Cog):
                                count: Optional[int] = None,
                                max_count: Optional[int] = None,
                                refresh: Optional[bool] = False):
-        guild = '% s' % ctx.guild_id
-        reviewer = settings.read(guild)
+        # get the channel id and check if a settings file exists
+        channel = '% s' % ctx.channel.id
+        settings.check(channel)
+        reviewer = settings.read(channel)
         # create the embed for the reply
         embed = discord.Embed(title="Summary", description="")
+        embed.set_footer(text=f'Channel id: {channel}')
         embed.colour = settings.global_var.embed_color
-        current = ''
-        new = ''
+        current, new = '', ''
         set_new = False
 
         if current_settings:
-            cur_set = settings.read(guild)
+            cur_set = settings.read(channel)
             for key, value in cur_set.items():
                 if value == '':
                     value = ' '
                 current += f'\n{key} - ``{value}``'
-            embed.add_field(name=f'Current defaults', value=current, inline=False)
+            embed.add_field(name=f'Current channel defaults', value=current, inline=False)
 
         # run function to update global variables
         if refresh:
@@ -178,80 +180,80 @@ class SettingsCog(commands.Cog):
 
         # run through each command and update the defaults user selects
         if n_prompt != 'unset':
-            settings.update(guild, 'negative_prompt', n_prompt)
+            settings.update(channel, 'negative_prompt', n_prompt)
             new += f'\nNegative prompts: ``"{n_prompt}"``'
             set_new = True
 
         if data_model is not None:
-            settings.update(guild, 'data_model', data_model)
+            settings.update(channel, 'data_model', data_model)
             new += f'\nData model: ``"{data_model}"``'
             set_new = True
 
         if max_steps != 1:
-            settings.update(guild, 'max_steps', max_steps)
+            settings.update(channel, 'max_steps', max_steps)
             new += f'\nMax steps: ``{max_steps}``'
             # automatically lower default steps if max steps goes below it
             if max_steps < reviewer['default_steps']:
-                settings.update(guild, 'default_steps', max_steps)
+                settings.update(channel, 'default_steps', max_steps)
                 new += f'\nDefault steps is too high! Lowering to ``{max_steps}``.'
             set_new = True
 
         if width != 1:
-            settings.update(guild, 'default_width', width)
+            settings.update(channel, 'default_width', width)
             new += f'\nWidth: ``"{width}"``'
             set_new = True
 
         if height != 1:
-            settings.update(guild, 'default_height', height)
+            settings.update(channel, 'default_height', height)
             new += f'\nHeight: ``"{height}"``'
             set_new = True
 
         if guidance_scale is not None:
             try:
                 float(guidance_scale)
-                settings.update(guild, 'guidance_scale', guidance_scale)
+                settings.update(channel, 'guidance_scale', guidance_scale)
                 new += f'\nGuidance Scale: ``{guidance_scale}``'
             except(Exception,):
-                settings.update(guild, 'guidance_scale', '7.0')
+                settings.update(channel, 'guidance_scale', '7.0')
                 new += f'\nHad trouble setting Guidance Scale! Setting to default of `7.0`.'
             set_new = True
 
         if sampler != 'unset':
-            settings.update(guild, 'sampler', sampler)
+            settings.update(channel, 'sampler', sampler)
             new += f'\nSampler: ``"{sampler}"``'
             set_new = True
 
         if highres_fix is not None:
-            settings.update(guild, 'highres_fix', highres_fix)
+            settings.update(channel, 'highres_fix', highres_fix)
             new += f'\nhighres_fix: ``"{highres_fix}"``'
             set_new = True
 
         if clip_skip != 0:
-            settings.update(guild, 'clip_skip', clip_skip)
+            settings.update(channel, 'clip_skip', clip_skip)
             new += f'\nCLIP skip: ``{clip_skip}``'
             set_new = True
 
         if hypernet is not None:
-            settings.update(guild, 'hypernet', hypernet)
+            settings.update(channel, 'hypernet', hypernet)
             new += f'\nHypernet: ``"{hypernet}"``'
             set_new = True
 
         if max_count is not None:
-            settings.update(guild, 'max_count', max_count)
+            settings.update(channel, 'max_count', max_count)
             new += f'\nMax count: ``{max_count}``'
             # automatically lower default count if max count goes below it
             if max_count < reviewer['default_count']:
-                settings.update(guild, 'default_count', max_count)
+                settings.update(channel, 'default_count', max_count)
                 new += f'\nDefault count is too high! Lowering to ``{max_count}``.'
             set_new = True
 
         # review settings again in case user is trying to set steps/counts and max steps/counts simultaneously
-        reviewer = settings.read(guild)
+        reviewer = settings.read(channel)
         if steps != 1:
             if steps > reviewer['max_steps']:
                 new += f"\nMax steps is ``{reviewer['max_steps']}``! You can't go beyond it!"
             else:
-                settings.update(guild, 'default_steps', steps)
+                settings.update(channel, 'default_steps', steps)
                 new += f'\nSteps: ``{steps}``'
             set_new = True
 
@@ -259,14 +261,14 @@ class SettingsCog(commands.Cog):
             if count > reviewer['max_count']:
                 new += f"\nMax count is ``{reviewer['max_count']}``! You can't go beyond it!"
             else:
-                settings.update(guild, 'default_count', count)
+                settings.update(channel, 'default_count', count)
                 new += f'\nCount: ``{count}``'
             set_new = True
 
         if set_new:
             embed.add_field(name=f'New defaults', value=new, inline=False)
 
-        await ctx.send_response(embed=embed)
+        await ctx.send_response(embed=embed, ephemeral=True)
 
 
 def setup(bot):

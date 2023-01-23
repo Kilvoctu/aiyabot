@@ -9,9 +9,9 @@ from typing import Optional
 
 self = discord.Bot()
 dir_path = os.path.dirname(os.path.realpath(__file__))
-
 path = 'resources/'.format(dir_path)
 
+# the fallback defaults for AIYA if bot host doesn't set anything
 template = {
     "negative_prompt": "",
     "data_model": "",
@@ -71,24 +71,39 @@ def messages():
     return random_message
 
 
-def build(guild_id):
+def check(channel_id):
+    try:
+        read(str(channel_id))
+    except FileNotFoundError:
+        build(str(channel_id))
+        print(f'This is a new channel!? Creating default settings file for this channel ({channel_id}).')
+        # if models.csv has the blank "Default" data, update guild settings
+        with open('resources/models.csv', 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f, delimiter='|')
+            for row in reader:
+                if row['display_name'] == 'Default' and row['model_full_name'] == '':
+                    update(str(channel_id), 'data_model', '')
+                    print('I see models.csv is on defaults. Updating guild model settings to default.')
+
+
+def build(channel_id):
     settings = json.dumps(template)
-    with open(path + guild_id + '.json', 'w') as configfile:
+    with open(path + channel_id + '.json', 'w') as configfile:
         configfile.write(settings)
 
 
-def read(guild_id):
-    with open(path + guild_id + '.json', 'r') as configfile:
+def read(channel_id):
+    with open(path + channel_id + '.json', 'r') as configfile:
         settings = dict(template)
         settings.update(json.load(configfile))
     return settings
 
 
-def update(guild_id: str, sett: str, value):
-    with open(path + guild_id + '.json', 'r') as configfile:
+def update(channel_id: str, sett: str, value):
+    with open(path + channel_id + '.json', 'r') as configfile:
         settings = json.load(configfile)
     settings[sett] = value
-    with open(path + guild_id + '.json', 'w') as configfile:
+    with open(path + channel_id + '.json', 'w') as configfile:
         json.dump(settings, configfile)
 
 
@@ -283,27 +298,3 @@ def populate_global_vars():
     except(Exception,):
         print("Trouble accessing Web UI config! I can't pull the upscaler list")
     global_var.hires_upscaler_names.append('Disabled')
-
-
-def guilds_check(self):
-    # guild settings files. has to be done after on_ready
-    for guild in self.guilds:
-        try:
-            read(str(guild.id))
-            print(f'I\'m using local settings for {guild.id} a.k.a {guild}.')
-            # if models.csv has the blank "Default" data, update guild settings
-            with open('resources/models.csv', 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f, delimiter='|')
-                for row in reader:
-                    if row['display_name'] == 'Default' and row['model_full_name'] == '':
-                        update(str(guild.id), 'data_model', '')
-                        print('I see models.csv is on defaults. Updating guild model settings to default.')
-        except FileNotFoundError:
-            build(str(guild.id))
-            print(f'Creating new settings file for {guild.id} a.k.a {guild}.')
-
-    if os.path.isfile('resources/None.json'):
-        pass
-    else:
-        print(f'Setting up settings for DMs, called None.json')
-        build("None")
