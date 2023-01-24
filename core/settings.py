@@ -283,6 +283,9 @@ def populate_global_vars():
                         or row[1].replace('\\', '_').replace('/', '_') == model['model_name']:
                     global_var.model_info[row[0]] = model['title'], model['model_name'], model['hash'], row[2]
                     break
+    # add "Default" if models.csv is on default, or if no model matches are found
+    if not global_var.model_info:
+        global_var.model_info[row[0]] = '', '', '', ''
 
     # upscaler API does not pull info properly, so use the old way
     config_url = s.get(global_var.url + "/config")
