@@ -28,7 +28,8 @@ template = {
     "hypernet": "None",
     "strength": "0.75",
     "count": 1,
-    "max_count": 1
+    "max_count": 1,
+    "upscaler_1": "ESRGAN_4x"
 }
 
 
@@ -303,3 +304,5 @@ def populate_global_vars():
     except(Exception,):
         print("Trouble accessing Web UI config! I can't pull the upscaler list")
     global_var.hires_upscaler_names.append('Disabled')
+    if 'SwinIR_4x' in global_var.upscaler_names:
+        template['upscaler_1'] = 'SwinIR_4x'

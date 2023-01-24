@@ -16,6 +16,7 @@ from urllib.parse import urlparse
 from core import queuehandler
 from core import viewhandler
 from core import settings
+from core import settingscog
 
 
 class UpscaleCog(commands.Cog):
@@ -24,11 +25,6 @@ class UpscaleCog(commands.Cog):
         self.bot = bot
         self.file_name = ''
 
-    # pulls from model_names list and makes some sort of dynamic list to bypass Discord 25 choices limit
-    def upscaler_autocomplete(self: discord.AutocompleteContext):
-        return [
-            upscaler for upscaler in settings.global_var.upscaler_names
-        ]
 
     @commands.slash_command(name='upscale', description='Upscale an image', guild_only=True)
     @option(
@@ -54,14 +50,14 @@ class UpscaleCog(commands.Cog):
         str,
         description='The upscaler model to use.',
         required=True,
-        autocomplete=discord.utils.basic_autocomplete(upscaler_autocomplete),
+        autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.upscaler_autocomplete),
     )
     @option(
         'upscaler_2',
         str,
         description='The 2nd upscaler model to use.',
         required=False,
-        autocomplete=discord.utils.basic_autocomplete(upscaler_autocomplete),
+        autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.upscaler_autocomplete),
     )
     @option(
         'upscaler_2_strength',
@@ -98,13 +94,11 @@ class UpscaleCog(commands.Cog):
                             codeformer: Optional[str] = '0.0',
                             upscale_first: Optional[bool] = False):
 
+        # update defaults with any new defaults from settingscog
+        channel = '% s' % ctx.channel.id
+        settings.check(channel)
         if upscaler_1 is None:
-            if 'SwinIR_4x' in settings.global_var.upscaler_names:
-                upscaler_1 = 'SwinIR_4x'
-            elif 'SwinIR 4x' in settings.global_var.upscaler_names:
-                upscaler_1 = 'SwinIR 4x'
-            else:
-                upscaler_1 = 'ESRGAN_4x'
+            upscaler_1 = settings.read(channel)['upscaler_1']
 
         has_image = True
         # url *will* override init image for compatibility, can be changed here

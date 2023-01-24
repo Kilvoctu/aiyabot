@@ -30,7 +30,11 @@ class SettingsCog(commands.Cog):
             hyper for hyper in settings.global_var.hyper_names
         ]
 
-    # and upscalers for highres fix
+    # and upscalers
+    def upscaler_autocomplete(self: discord.AutocompleteContext):
+        return [
+            upscaler for upscaler in settings.global_var.upscaler_names
+        ]
     def hires_autocomplete(self: discord.AutocompleteContext):
         return [
             hires for hires in settings.global_var.hires_upscaler_names
@@ -152,6 +156,13 @@ class SettingsCog(commands.Cog):
         required=False,
     )
     @option(
+        'upscaler_1',
+        str,
+        description='Set default upscaler model for the channel.',
+        required=True,
+        autocomplete=discord.utils.basic_autocomplete(upscaler_autocomplete),
+    )
+    @option(
         'refresh',
         bool,
         description='Use to update global lists (models, styles, embeddings, etc.)',
@@ -174,6 +185,7 @@ class SettingsCog(commands.Cog):
                                strength: Optional[str] = None,
                                count: Optional[int] = None,
                                max_count: Optional[int] = None,
+                               upscaler_1: Optional[str] = None,
                                refresh: Optional[bool] = False):
         # get the channel id and check if a settings file exists
         channel = '% s' % ctx.channel.id
@@ -280,6 +292,11 @@ class SettingsCog(commands.Cog):
         if strength is not None:
             settings.update(channel, 'strength', strength)
             new += f'\nStrength: ``"{strength}"``'
+            set_new = True
+
+        if upscaler_1 is not None:
+            settings.update(channel, 'upscaler_1', upscaler_1)
+            new += f'\nUpscaler 1: ``"{upscaler_1}"``'
             set_new = True
 
         if max_count is not None:
