@@ -72,7 +72,7 @@ class DrawModal(Modal):
         # expose each available (supported) option, even if output didn't use them
         ex_params = f'data_model:{display_name}'
         for index, value in enumerate(tuple_names[index_start:], index_start):
-            if 9 <= index <= 12 or index == 15 or index == 17:
+            if index == 9 or 11 <= index <= 12 or index == 15 or index == 17:
                 continue
             ex_params += f'\n{value}:{input_tuple[index]}'
 
@@ -161,6 +161,14 @@ class DrawModal(Modal):
                     invalid_input = True
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is unrecognized. I know of these samplers!",
                                         value=', '.join(['`%s`' % x for x in settings.global_var.sampler_names]),
+                                        inline=False)
+            if 'strength:' in line:
+                try:
+                    pen[10] = float(line.split(':', 1)[1])
+                except(Exception,):
+                    invalid_input = True
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is not valid for strength!.",
+                                        value='Make sure you enter a number (preferably between 0.0 and 1.0).',
                                         inline=False)
             if 'style:' in line:
                 if line.split(':', 1)[1] in settings.global_var.style_names.keys():
