@@ -235,14 +235,15 @@ class DrawModal(Modal):
                     prompt_output += f'\nNew {value}: ``{pen[index]}``'
 
             # check queue again, but now we know user is not in queue
+            settings.global_var.send_model = False
             if queuehandler.GlobalQueue.dream_thread.is_alive():
-                if self.input_tuple[3] != '':
+                if prompt_tuple[3] != '' and self.input_tuple[3] != prompt_tuple[3]:
                     settings.global_var.send_model = True
                 queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(stablecog.StableCog(self), *prompt_tuple, DrawView(prompt_tuple)))
                 await interaction.response.send_message(
                     f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``{prompt_output}')
             else:
-                if self.input_tuple[3] != '':
+                if prompt_tuple[3] != '' and self.input_tuple[3] != prompt_tuple[3]:
                     settings.global_var.send_model = True
                 await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(stablecog.StableCog(self), *prompt_tuple, DrawView(prompt_tuple)))
                 await interaction.response.send_message(
