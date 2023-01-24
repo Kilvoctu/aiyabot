@@ -110,18 +110,22 @@ class DrawModal(Modal):
         for line in self.children[3].value.split('\n'):
             if 'data_model:' in line:
                 new_model = line.split(':', 1)[1]
-                for model in settings.global_var.model_info.items():
-                    if model[0] == new_model:
-                        pen[3] = model[1][0]
-                        model_found = True
-                        # grab the new activator token
-                        new_token = f'{model[1][3]} '.lstrip(' ')
-                        break
-                if not model_found:
-                    invalid_input = True
-                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is not found. Try one of these models!",
-                                        value=', '.join(['`%s`' % x for x in settings.global_var.model_info]),
-                                        inline=False)
+                # if keeping the "Default" model, don't attempt a model swap
+                if new_model == 'Default':
+                    pass
+                else:
+                    for model in settings.global_var.model_info.items():
+                        if model[0] == new_model:
+                            pen[3] = model[1][0]
+                            model_found = True
+                            # grab the new activator token
+                            new_token = f'{model[1][3]} '.lstrip(' ')
+                            break
+                    if not model_found:
+                        invalid_input = True
+                        embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is not found. Try one of these models!",
+                                            value=', '.join(['`%s`' % x for x in settings.global_var.model_info]),
+                                            inline=False)
 
             if 'steps:' in line:
                 max_steps = settings.read('% s' % pen[0].channel.id)['max_steps']
