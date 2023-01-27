@@ -165,7 +165,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             init_url: Optional[str],
                             count: Optional[int] = None):
 
-        settings.global_var.send_model = False
         # update defaults with any new defaults from settingscog
         channel = '% s' % ctx.channel.id
         settings.check(channel)
@@ -200,10 +199,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         model_name = 'Default'
         if data_model is None:
             data_model = settings.read(channel)['data_model']
-            if data_model != '':
-                settings.global_var.send_model = True
-        else:
-            settings.global_var.send_model = True
 
         simple_prompt = prompt
         # take selected data_model and get model_name, then update data_model with the full name
@@ -220,7 +215,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if hypernet != 'None':
             prompt += f' <hypernet:{hypernet}:1>'
 
-        if not settings.global_var.send_model:
+        if data_model != '':
             print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
         else:
             print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt} -- Using model: {data_model}')
@@ -390,7 +385,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 s.post(settings.global_var.url + '/login')
 
             # only send model payload if one is defined
-            if settings.global_var.send_model:
+            if queue_object.data_model != '':
                 s.post(url=f'{settings.global_var.url}/sdapi/v1/options', json=model_payload)
             if queue_object.init_image is not None:
                 response = s.post(url=f'{settings.global_var.url}/sdapi/v1/img2img', json=payload)

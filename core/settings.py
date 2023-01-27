@@ -46,7 +46,6 @@ class GlobalVar:
     api_auth = False
     api_user: Optional[str] = None
     api_pass: Optional[str] = None
-    send_model = False
     model_info = {}
     size_range = range(192, 1088, 64)
     sampler_names = []
