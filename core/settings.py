@@ -54,6 +54,7 @@ class GlobalVar:
     embeddings_1 = []
     embeddings_2 = []
     hyper_names = []
+    lora_names = []
     upscaler_names = []
     hires_upscaler_names = []
 
@@ -300,10 +301,14 @@ def populate_global_vars():
         for c in old_config['components']:
             try:
                 if c['props']:
+                    if c['props']['elem_id'] == 'setting_sd_lora':
+                        global_var.lora_names = c['props']['choices']
                     if c['props']['elem_id'] == 'txt2img_hr_upscaler':
                         global_var.hires_upscaler_names = c['props']['choices']
             except(Exception,):
                 pass
     except(Exception,):
-        print("Trouble accessing Web UI config! I can't pull the upscaler list")
-    global_var.hires_upscaler_names.append('Disabled')
+        print("Trouble accessing Web UI config! I can't pull the LoRAs or High-res upscaler lists!")
+    global_var.lora_names.remove('')
+    global_var.lora_names.insert(0, 'None')
+    global_var.hires_upscaler_names.insert(0, 'Disabled')
