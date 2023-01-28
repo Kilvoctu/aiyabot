@@ -97,6 +97,21 @@ class TipsView(View):
         await interaction.response.edit_message(embed=embed_hyper)
 
     @discord.ui.button(
+        custom_id="button_lora",
+        label="LoRA list")
+    async def button_lora(self, button, interaction):
+
+        lora_list = ''
+        for value in settings.global_var.lora_names:
+            if value == '':
+                value = ' '
+            lora_list += f'\n``{value}``'
+        embed_lora = discord.Embed(title="LoRA list", description=lora_list)
+        embed_lora.colour = settings.global_var.embed_color
+
+        await interaction.response.edit_message(embed=embed_lora)
+
+    @discord.ui.button(
         custom_id="button_embed",
         label="Embeddings list")
     async def button_embed(self, button, interaction):
