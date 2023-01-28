@@ -26,6 +26,7 @@ template = {
     "highres_fix": 'Disabled',
     "clip_skip": 1,
     "hypernet": "None",
+    "lora": "None",
     "strength": "0.75",
     "count": 1,
     "max_count": 1,

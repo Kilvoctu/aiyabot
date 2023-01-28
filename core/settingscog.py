@@ -18,23 +18,27 @@ class SettingsCog(commands.Cog):
             model for model in settings.global_var.model_info
         ]
 
-    # and for styles
+    # do for any other lists that may exceed 25 values
     def style_autocomplete(self: discord.AutocompleteContext):
         return [
             style for style in settings.global_var.style_names
         ]
 
-    # and hyper networks
     def hyper_autocomplete(self: discord.AutocompleteContext):
         return [
             hyper for hyper in settings.global_var.hyper_names
         ]
 
-    # and upscalers
+    def lora_autocomplete(self: discord.AutocompleteContext):
+        return [
+            lora for lora in settings.global_var.lora_names
+        ]
+
     def upscaler_autocomplete(self: discord.AutocompleteContext):
         return [
             upscaler for upscaler in settings.global_var.upscaler_names
         ]
+
     def hires_autocomplete(self: discord.AutocompleteContext):
         return [
             hires for hires in settings.global_var.hires_upscaler_names
@@ -137,6 +141,13 @@ class SettingsCog(commands.Cog):
         autocomplete=discord.utils.basic_autocomplete(hyper_autocomplete),
     )
     @option(
+        'lora',
+        str,
+        description='Set default LoRA for the channel',
+        required=False,
+        autocomplete=discord.utils.basic_autocomplete(lora_autocomplete),
+    )
+    @option(
         'strength',
         str,
         description='Set default strength (for init_img) for the channel (0.0 to 1.0).'
@@ -182,6 +193,7 @@ class SettingsCog(commands.Cog):
                                highres_fix: Optional[str] = None,
                                clip_skip: Optional[int] = None,
                                hypernet: Optional[str] = None,
+                               lora: Optional[str] = None,
                                strength: Optional[str] = None,
                                count: Optional[int] = None,
                                max_count: Optional[int] = None,
@@ -215,6 +227,7 @@ class SettingsCog(commands.Cog):
             settings.global_var.embeddings_1.clear()
             settings.global_var.embeddings_2.clear()
             settings.global_var.hyper_names.clear()
+            settings.global_var.lora_names.clear()
             settings.global_var.upscaler_names.clear()
             settings.populate_global_vars()
             embed.add_field(name=f'Refreshed!', value=f'Updated global lists', inline=False)
@@ -287,6 +300,11 @@ class SettingsCog(commands.Cog):
         if hypernet is not None:
             settings.update(channel, 'hypernet', hypernet)
             new += f'\nHypernet: ``"{hypernet}"``'
+            set_new = True
+
+        if lora is not None:
+            settings.update(channel, 'lora', lora)
+            new += f'\nLoRA: ``"{lora}"``'
             set_new = True
 
         if strength is not None:
