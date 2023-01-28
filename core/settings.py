@@ -238,6 +238,7 @@ def populate_global_vars():
     r3 = s.get(global_var.url + "/sdapi/v1/face-restorers")
     r4 = s.get(global_var.url + "/sdapi/v1/embeddings")
     r5 = s.get(global_var.url + "/sdapi/v1/hypernetworks")
+    r6 = s.get(global_var.url + "/sdapi/v1/upscalers")
     r = s.get(global_var.url + "/sdapi/v1/sd-models")
     for s1 in r1.json():
         try:
@@ -268,6 +269,11 @@ def populate_global_vars():
             global_var.embeddings_2.append(s4)
     for s5 in r5.json():
         global_var.hyper_names.append(s5['name'])
+    for s6 in r6.json():
+        global_var.upscaler_names.append(s6['name'])
+    if 'SwinIR_4x' in global_var.upscaler_names:
+        template['upscaler_1'] = 'SwinIR_4x'
+
 
     # create nested dict for models based on display_name in models.csv
     # model_info[0] = display name (top level)
@@ -287,15 +293,13 @@ def populate_global_vars():
     if not global_var.model_info:
         global_var.model_info[row[0]] = '', '', '', ''
 
-    # upscaler API does not pull info properly, so use the old way
+    # iterate through config for anything unobtainable from API
     config_url = s.get(global_var.url + "/config")
     old_config = config_url.json()
     try:
         for c in old_config['components']:
             try:
                 if c['props']:
-                    if c['props']['elem_id'] == 'extras_upscaler_1':
-                        global_var.upscaler_names = c['props']['choices']
                     if c['props']['elem_id'] == 'txt2img_hr_upscaler':
                         global_var.hires_upscaler_names = c['props']['choices']
             except(Exception,):
@@ -303,5 +307,3 @@ def populate_global_vars():
     except(Exception,):
         print("Trouble accessing Web UI config! I can't pull the upscaler list")
     global_var.hires_upscaler_names.append('Disabled')
-    if 'SwinIR_4x' in global_var.upscaler_names:
-        template['upscaler_1'] = 'SwinIR_4x'
