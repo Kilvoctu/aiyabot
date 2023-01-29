@@ -212,7 +212,7 @@ class DrawModal(Modal):
                     pen[19] = line.split(':', 1)[1]
                 else:
                     invalid_input = True
-                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` can't be found! Try on of these LoRA.",
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` can't be found! Try one of these LoRA.",
                                         value=', '.join(['`%s`' % x for x in settings.global_var.lora_names]),
                                         inline=False)
 
@@ -223,9 +223,11 @@ class DrawModal(Modal):
             # update the prompt again if a valid model change is requested
             if model_found:
                 pen[2] = new_token + pen[1]
-            # if a hypernetwork is added, append it to prompt
+            # if a hypernetwork or lora is added, append it to prompt
             if pen[18] != 'None':
                 pen[2] += f' <hypernet:{pen[18]}:1>'
+            if pen[19] != 'None':
+                pen[2] += f' <lora:{pen[19]}:1>'
 
             # the updated tuple to send to queue
             prompt_tuple = tuple(pen)
