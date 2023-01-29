@@ -285,8 +285,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
         # set up tuple of parameters to pass into the Discord view
         input_tuple = (
-            ctx, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength,
-            init_image, count, style, facefix, highres_fix, clip_skip, simple_prompt, hypernet, lora)
+            ctx, simple_prompt, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength,
+            init_image, count, style, facefix, highres_fix, clip_skip, hypernet, lora)
         view = viewhandler.DrawView(input_tuple)
         # setup the queue
         if queuehandler.GlobalQueue.dream_thread.is_alive():
