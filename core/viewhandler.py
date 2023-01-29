@@ -207,6 +207,15 @@ class DrawModal(Modal):
                                         value=', '.join(['`%s`' % x for x in settings.global_var.hyper_names]),
                                         inline=False)
 
+            if 'lora:' in line:
+                if line.split(':', 1)[1] in settings.global_var.lora_names:
+                    pen[19] = line.split(':', 1)[1]
+                else:
+                    invalid_input = True
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` can't be found! Try on of these LoRA.",
+                                        value=', '.join(['`%s`' % x for x in settings.global_var.lora_names]),
+                                        inline=False)
+
         # stop and give a useful message if any extended edit values aren't recognized
         if invalid_input:
             await interaction.response.send_message(embed=embed_err, ephemeral=True)
@@ -396,6 +405,9 @@ class DrawView(View):
             if rev[18] != 'None':
                 copy_command += f' hypernet:{rev[18]}'
                 extra_params += f'\nHypernetwork model: ``{rev[18]}``'
+            if rev[19] != 'None':
+                copy_command += f' lora:{rev[19]}'
+                extra_params += f'\nLoRA model: ``{rev[19]}``'
             embed.add_field(name=f'Other parameters', value=extra_params, inline=False)
             embed.add_field(name=f'Command for copying', value=f'{copy_command}', inline=False)
 
