@@ -9,28 +9,29 @@ from core import stablecog
 '''
 The input_tuple index reference
 input_tuple[0] = ctx
-[1] = prompt
-[2] = negative_prompt
-[3] = data_model
-[4] = steps
-[5] = width
-[6] = height
-[7] = guidance_scale
-[8] = sampler
-[9] = seed
-[10] = strength
-[11] = init_image
-[12] = count
-[13] = style
-[14] = facefix
-[15] = highres_fix
-[16] = clip_skip
-[17] = simple_prompt
+[1] = simple_prompt
+[2] = prompt
+[3] = negative_prompt
+[4] = data_model
+[5] = steps
+[6] = width
+[7] = height
+[8] = guidance_scale
+[9] = sampler
+[10] = seed
+[11] = strength
+[12] = init_image
+[13] = count
+[14] = style
+[15] = facefix
+[16] = highres_fix
+[17] = clip_skip
 [18] = hypernet
+[19] = lora
 '''
-tuple_names = ['ctx', 'prompt', 'negative_prompt', 'data_model', 'steps', 'width', 'height', 'guidance_scale',
-               'sampler', 'seed', 'strength', 'init_image', 'batch_count', 'style', 'facefix', 'highres_fix',
-               'clip_skip', 'simple_prompt', 'hypernet']
+tuple_names = ['ctx', 'simple_prompt', 'prompt', 'negative_prompt', 'data_model', 'steps', 'width', 'height',
+               'guidance_scale', 'sampler', 'seed', 'strength', 'init_image', 'batch_count', 'style', 'facefix',
+               'highres_fix', 'clip_skip', 'hypernet', 'lora']
 
 
 # the modal that is used for the 🖋 button
@@ -41,7 +42,7 @@ class DrawModal(Modal):
         self.add_item(
             InputText(
                 label='Input your new prompt',
-                value=input_tuple[17],
+                value=input_tuple[1],
                 style=discord.InputTextStyle.long
             )
         )
@@ -49,7 +50,7 @@ class DrawModal(Modal):
             InputText(
                 label='Input your new negative prompt (optional)',
                 style=discord.InputTextStyle.long,
-                value=input_tuple[2],
+                value=input_tuple[3],
                 required=False
             )
         )
@@ -57,22 +58,22 @@ class DrawModal(Modal):
             InputText(
                 label='Keep seed? Delete to randomize',
                 style=discord.InputTextStyle.short,
-                value=input_tuple[9],
+                value=input_tuple[10],
                 required=False
             )
         )
 
         # set up parameters for full edit mode. first get model display name
         display_name = 'Default'
-        index_start = 4
+        index_start = 5
         for model in settings.global_var.model_info.items():
-            if model[1][0] == input_tuple[3]:
+            if model[1][0] == input_tuple[4]:
                 display_name = model[0]
                 break
         # expose each available (supported) option, even if output didn't use them
         ex_params = f'data_model:{display_name}'
         for index, value in enumerate(tuple_names[index_start:], index_start):
-            if index == 9 or 11 <= index <= 12 or index == 15 or index == 17:
+            if index == 10 or 12 <= index <= 13 or index == 16:
                 continue
             ex_params += f'\n{value}:{input_tuple[index]}'
 
@@ -88,17 +89,17 @@ class DrawModal(Modal):
     async def callback(self, interaction: discord.Interaction):
         # update the tuple with new prompts
         pen = list(self.input_tuple)
-        pen[1] = pen[1].replace(pen[17], self.children[0].value)
-        pen[17] = self.children[0].value
-        pen[2] = self.children[1].value
+        pen[2] = pen[2].replace(pen[1], self.children[0].value)
+        pen[1] = self.children[0].value
+        pen[3] = self.children[1].value
 
         # update the tuple new seed (random if invalid value set)
         try:
-            pen[9] = int(self.children[2].value)
+            pen[10] = int(self.children[2].value)
         except ValueError:
-            pen[9] = random.randint(0, 0xFFFFFFFF)
+            pen[10] = random.randint(0, 0xFFFFFFFF)
         if (self.children[2].value == "-1") or (self.children[2].value == ""):
-            pen[9] = random.randint(0, 0xFFFFFFFF)
+            pen[10] = random.randint(0, 0xFFFFFFFF)
 
         # prepare a validity checker
         new_model, new_token, bad_input = '', '', ''
@@ -116,7 +117,7 @@ class DrawModal(Modal):
                 else:
                     for model in settings.global_var.model_info.items():
                         if model[0] == new_model:
-                            pen[3] = model[1][0]
+                            pen[4] = model[1][0]
                             model_found = True
                             # grab the new activator token
                             new_token = f'{model[1][3]} '.lstrip(' ')
@@ -130,14 +131,14 @@ class DrawModal(Modal):
             if 'steps:' in line:
                 max_steps = settings.read('% s' % pen[0].channel.id)['max_steps']
                 if 0 < int(line.split(':', 1)[1]) <= max_steps:
-                    pen[4] = line.split(':', 1)[1]
+                    pen[5] = line.split(':', 1)[1]
                 else:
                     invalid_input = True
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` steps is beyond the boundary!",
                                         value=f"Keep steps between `0` and `{max_steps}`.", inline=False)
             if 'width:' in line:
                 try:
-                    pen[5] = [x for x in settings.global_var.size_range if x == int(line.split(':', 1)[1])][0]
+                    pen[6] = [x for x in settings.global_var.size_range if x == int(line.split(':', 1)[1])][0]
                 except(Exception,):
                     invalid_input = True
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` width is no good! These widths I can do.",
@@ -145,7 +146,7 @@ class DrawModal(Modal):
                                         inline=False)
             if 'height:' in line:
                 try:
-                    pen[6] = [x for x in settings.global_var.size_range if x == int(line.split(':', 1)[1])][0]
+                    pen[7] = [x for x in settings.global_var.size_range if x == int(line.split(':', 1)[1])][0]
                 except(Exception,):
                     invalid_input = True
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` height is no good! These heights I can do.",
@@ -153,14 +154,14 @@ class DrawModal(Modal):
                                         inline=False)
             if 'guidance_scale:' in line:
                 try:
-                    pen[7] = float(line.split(':', 1)[1])
+                    pen[8] = float(line.split(':', 1)[1])
                 except(Exception,):
                     invalid_input = True
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is not valid for the guidance scale!",
                                         value='Make sure you enter a number.', inline=False)
             if 'sampler:' in line:
                 if line.split(':', 1)[1] in settings.global_var.sampler_names:
-                    pen[8] = line.split(':', 1)[1]
+                    pen[9] = line.split(':', 1)[1]
                 else:
                     invalid_input = True
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is unrecognized. I know of these samplers!",
@@ -168,7 +169,7 @@ class DrawModal(Modal):
                                         inline=False)
             if 'strength:' in line:
                 try:
-                    pen[10] = float(line.split(':', 1)[1])
+                    pen[11] = float(line.split(':', 1)[1])
                 except(Exception,):
                     invalid_input = True
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is not valid for strength!.",
@@ -176,7 +177,7 @@ class DrawModal(Modal):
                                         inline=False)
             if 'style:' in line:
                 if line.split(':', 1)[1] in settings.global_var.style_names.keys():
-                    pen[13] = line.split(':', 1)[1]
+                    pen[14] = line.split(':', 1)[1]
                 else:
                     invalid_input = True
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` isn't my style. Here's the style list!",
@@ -184,7 +185,7 @@ class DrawModal(Modal):
                                         inline=False)
             if 'facefix:' in line:
                 if line.split(':', 1)[1] in settings.global_var.facefix_models:
-                    pen[14] = line.split(':', 1)[1]
+                    pen[15] = line.split(':', 1)[1]
                 else:
                     invalid_input = True
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` can't fix faces! I have suggestions.",
@@ -192,7 +193,7 @@ class DrawModal(Modal):
                                         inline=False)
             if 'clip_skip:' in line:
                 try:
-                    pen[16] = [x for x in range(1, 13, 1) if x == int(line.split(':', 1)[1])][0]
+                    pen[17] = [x for x in range(1, 14, 1) if x == int(line.split(':', 1)[1])][0]
                 except(Exception,):
                     invalid_input = True
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is too much CLIP to skip!",
@@ -206,26 +207,37 @@ class DrawModal(Modal):
                                         value=', '.join(['`%s`' % x for x in settings.global_var.hyper_names]),
                                         inline=False)
 
+            if 'lora:' in line:
+                if line.split(':', 1)[1] in settings.global_var.lora_names:
+                    pen[19] = line.split(':', 1)[1]
+                else:
+                    invalid_input = True
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` can't be found! Try one of these LoRA.",
+                                        value=', '.join(['`%s`' % x for x in settings.global_var.lora_names]),
+                                        inline=False)
+
         # stop and give a useful message if any extended edit values aren't recognized
         if invalid_input:
             await interaction.response.send_message(embed=embed_err, ephemeral=True)
         else:
             # update the prompt again if a valid model change is requested
             if model_found:
-                pen[1] = new_token + pen[17]
-            # if a hypernetwork is added, append it to prompt
+                pen[2] = new_token + pen[1]
+            # if a hypernetwork or lora is added, append it to prompt
             if pen[18] != 'None':
-                pen[1] += f' <hypernet:{pen[18]}:1>'
+                pen[2] += f' <hypernet:{pen[18]}:1>'
+            if pen[19] != 'None':
+                pen[2] += f' <lora:{pen[19]}:1>'
 
             # the updated tuple to send to queue
             prompt_tuple = tuple(pen)
             draw_dream = stablecog.StableCog(self)
 
             # message additions if anything was changed
-            prompt_output = f'\nNew prompt: ``{pen[17]}``'
-            if pen[2] != '' and pen[2] != self.input_tuple[2]:
-                prompt_output += f'\nNew negative prompt: ``{pen[2]}``'
-            if str(pen[3]) != str(self.input_tuple[3]):
+            prompt_output = f'\nNew prompt: ``{pen[1]}``'
+            if pen[3] != '' and pen[3] != self.input_tuple[3]:
+                prompt_output += f'\nNew negative prompt: ``{pen[3]}``'
+            if str(pen[4]) != str(self.input_tuple[4]):
                 prompt_output += f'\nNew model: ``{new_model}``'
             index_start = 4
             for index, value in enumerate(tuple_names[index_start:], index_start):
@@ -294,7 +306,7 @@ class DrawView(View):
             if end_user in self.message.content:
                 # update the tuple with a new seed
                 new_seed = list(self.input_tuple)
-                new_seed[9] = random.randint(0, 0xFFFFFFFF)
+                new_seed[10] = random.randint(0, 0xFFFFFFFF)
                 seed_tuple = tuple(new_seed)
 
                 # set up the draw dream and do queue code again for lack of a more elegant solution
@@ -315,8 +327,8 @@ class DrawView(View):
                         queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(stablecog.StableCog(self), *seed_tuple, DrawView(seed_tuple)))
                         await interaction.followup.send(
                             f'<@{interaction.user.id}>, {settings.messages()}\nQueue: '
-                            f'``{len(queuehandler.GlobalQueue.queue)}`` - ``{seed_tuple[17]}``'
-                            f'\nNew seed:``{seed_tuple[9]}``')
+                            f'``{len(queuehandler.GlobalQueue.queue)}`` - ``{seed_tuple[1]}``'
+                            f'\nNew seed:``{seed_tuple[10]}``')
                 else:
                     button.disabled = True
                     await interaction.response.edit_message(view=self)
@@ -324,8 +336,8 @@ class DrawView(View):
                     await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(stablecog.StableCog(self), *seed_tuple, DrawView(seed_tuple)))
                     await interaction.followup.send(
                         f'<@{interaction.user.id}>, {settings.messages()}\nQueue: '
-                        f'``{len(queuehandler.GlobalQueue.queue)}`` - ``{seed_tuple[17]}``'
-                        f'\nNew Seed:``{seed_tuple[9]}``')
+                        f'``{len(queuehandler.GlobalQueue.queue)}`` - ``{seed_tuple[1]}``'
+                        f'\nNew Seed:``{seed_tuple[10]}``')
             else:
                 await interaction.response.send_message("You can't use other people's 🎲!", ephemeral=True)
         except Exception as e:
@@ -349,7 +361,7 @@ class DrawView(View):
         try:
             # get the remaining model information we want from the data_model ("title") in the tuple
             for model in settings.global_var.model_info.items():
-                if model[1][0] == rev[3]:
+                if model[1][0] == rev[4]:
                     display_name = model[0]
                     model_name = model[1][1]
                     model_hash = model[1][2]
@@ -363,38 +375,41 @@ class DrawView(View):
             # generate the command for copy-pasting, and also add embed fields
             embed = discord.Embed(title="About the image!", description="")
             embed.colour = settings.global_var.embed_color
-            embed.add_field(name=f'Prompt', value=f'``{rev[17]}``', inline=False)
+            embed.add_field(name=f'Prompt', value=f'``{rev[1]}``', inline=False)
             embed.add_field(name='Data model', value=f'Display name - ``{display_name}``\nModel name - ``{model_name}``'
                                                      f'\nShorthash - ``{model_hash}``{activator_token}', inline=False)
 
-            copy_command = f'/draw prompt:{rev[17]} data_model:{display_name} steps:{rev[4]} width:{rev[5]} ' \
-                           f'height:{rev[6]} guidance_scale:{rev[7]} sampler:{rev[8]} seed:{rev[9]}'
-            if rev[2] != '':
-                copy_command += f' negative_prompt:{rev[2]}'
-                embed.add_field(name=f'Negative prompt', value=f'``{rev[2]}``', inline=False)
+            copy_command = f'/draw prompt:{rev[1]} data_model:{display_name} steps:{rev[5]} width:{rev[6]} ' \
+                           f'height:{rev[7]} guidance_scale:{rev[8]} sampler:{rev[9]} seed:{rev[10]}'
+            if rev[3] != '':
+                copy_command += f' negative_prompt:{rev[3]}'
+                embed.add_field(name=f'Negative prompt', value=f'``{rev[3]}``', inline=False)
 
-            extra_params = f'Sampling steps: ``{rev[4]}``\nSize: ``{rev[5]}x{rev[6]}``\nClassifier-free guidance ' \
-                           f'scale: ``{rev[7]}``\nSampling method: ``{rev[8]}``\nSeed: ``{rev[9]}``'
-            if rev[11]:
+            extra_params = f'Sampling steps: ``{rev[5]}``\nSize: ``{rev[6]}x{rev[7]}``\nClassifier-free guidance ' \
+                           f'scale: ``{rev[8]}``\nSampling method: ``{rev[9]}``\nSeed: ``{rev[10]}``'
+            if rev[12]:
                 # not interested in adding embed fields for strength and init_image
-                copy_command += f' strength:{rev[10]} init_url:{rev[11].url}'
-            if rev[12] != 1:
-                copy_command += f' count:{rev[12]}'
-            if rev[13] != 'None':
-                copy_command += f' style:{rev[13]}'
-                extra_params += f'\nStyle preset: ``{rev[13]}``'
+                copy_command += f' strength:{rev[11]} init_url:{rev[12].url}'
+            if rev[13] != 1:
+                copy_command += f' count:{rev[13]}'
             if rev[14] != 'None':
-                copy_command += f' facefix:{rev[14]}'
-                extra_params += f'\nFace restoration model: ``{rev[14]}``'
-            if rev[15] != 'Disabled':
-                copy_command += f' highres_fix:{rev[15]}'
-                extra_params += f'\nHigh-res fix: ``{rev[15]}``'
-            if rev[16] != 1:
-                copy_command += f' clip_skip:{rev[16]}'
-                extra_params += f'\nCLIP skip: ``{rev[16]}``'
+                copy_command += f' style:{rev[14]}'
+                extra_params += f'\nStyle preset: ``{rev[14]}``'
+            if rev[15] != 'None':
+                copy_command += f' facefix:{rev[15]}'
+                extra_params += f'\nFace restoration model: ``{rev[15]}``'
+            if rev[16] != 'Disabled':
+                copy_command += f' highres_fix:{rev[16]}'
+                extra_params += f'\nHigh-res fix: ``{rev[16]}``'
+            if rev[17] != 1:
+                copy_command += f' clip_skip:{rev[17]}'
+                extra_params += f'\nCLIP skip: ``{rev[17]}``'
             if rev[18] != 'None':
                 copy_command += f' hypernet:{rev[18]}'
                 extra_params += f'\nHypernetwork model: ``{rev[18]}``'
+            if rev[19] != 'None':
+                copy_command += f' lora:{rev[19]}'
+                extra_params += f'\nLoRA model: ``{rev[19]}``'
             embed.add_field(name=f'Other parameters', value=extra_params, inline=False)
             embed.add_field(name=f'Command for copying', value=f'{copy_command}', inline=False)
 
