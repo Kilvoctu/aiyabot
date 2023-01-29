@@ -4,6 +4,7 @@ import os
 import sys
 from core import settings
 from core.logging import get_logger
+from discord.ext import commands
 from dotenv import load_dotenv
 
 # start up initialization stuff
@@ -41,6 +42,14 @@ async def on_ready():
     await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='drawing tutorials.'))
     for guild in self.guilds:
         print(f"I'm active in {guild.id} a.k.a {guild}!")
+
+
+@self.event
+async def on_application_command_error(ctx, error):
+    if isinstance(error, commands.CommandOnCooldown):
+        await ctx.respond(error, ephemeral=True)
+    else:
+        raise error
 
 
 # fallback feature to delete generations if aiya has been restarted

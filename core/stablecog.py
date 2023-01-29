@@ -30,6 +30,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         self.bot.add_view(viewhandler.DrawView(self))
 
     @commands.slash_command(name='draw', description='Create an image', guild_only=True)
+    @commands.cooldown(1, 60.0, commands.BucketType.role)
     @option(
         'prompt',
         str,
