@@ -4,19 +4,6 @@ A Discord bot interface for Stable Diffusion
 
 <img src=https://raw.githubusercontent.com/Kilvoctu/kilvoctu.github.io/master/pics/preview.png  width=50% height=50%>
 
-## Setup requirements
-
-- Set up [AUTOMATIC1111's Stable Diffusion AI Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui).
-  - AIYA is currently tested on commit `b7d2af8c7fa48d6eef7517a6fbc63a3507c638d4` of the Web UI.
-- Run the Web UI as local host with api (`COMMANDLINE_ARGS= --listen --api`).
-- Clone this repo.
-- Create a text file in your cloned repo called ".env", formatted like so:
-```dotenv
-# .env
-TOKEN = put your bot token here
-```
-- Run AIYA by running launch.bat (or launch.sh for Linux)
-
 ## Usage
 
 To generate an image from text, use the /draw command and include your prompt as the query.
@@ -57,12 +44,26 @@ To generate an image from text, use the /draw command and include your prompt as
   - 📋 - view the generated image's information.
   - ❌ - deletes the generated image.
 
+
+## Setup requirements
+
+- Set up [AUTOMATIC1111's Stable Diffusion AI Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui).
+  - AIYA is currently tested on commit `b7d2af8c7fa48d6eef7517a6fbc63a3507c638d4` of the Web UI.
+- Run the Web UI as local host with api (`COMMANDLINE_ARGS= --listen --api`).
+- Clone this repo.
+- Create a text file in your cloned repo called ".env", formatted like so:
+```dotenv
+# .env
+TOKEN = put your bot token here
+```
+- Run AIYA by running launch.bat (or launch.sh for Linux)
+
 ## Notes
 
-- Ensure AIYA has `bot` and `application.commands` scopes when inviting to your Discord server, and intents are enabled.
-- As /settings can be abused, consider reviewing who can access the command. This can be done through Apps -> Integrations in your Server Settings. Read more about /settings [here.](https://github.com/Kilvoctu/aiyabot/wiki/settings-command)
 - [See wiki for optional .env variables you can set.](https://github.com/Kilvoctu/aiyabot/wiki/.env-Settings)
 - [See wiki for notes on swapping models.](https://github.com/Kilvoctu/aiyabot/wiki/Model-swapping)
+- Ensure AIYA has `bot` and `application.commands` scopes when inviting to your Discord server, and intents are enabled.
+- As /settings can be abused, consider reviewing who can access the command. This can be done through Apps -> Integrations in your Server Settings. Read more about /settings [here.](https://github.com/Kilvoctu/aiyabot/wiki/settings-command)
 - AIYA uses Web UI's legacy high-res fix method. To ensure this works correctly, in your Web UI settings, enable this option: `For hires fix, use width/height sliders to set final resolution rather than first pass`
 
 
