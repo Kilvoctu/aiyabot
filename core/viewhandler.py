@@ -239,7 +239,7 @@ class DrawModal(Modal):
                 prompt_output += f'\nNew negative prompt: ``{pen[3]}``'
             if str(pen[4]) != str(self.input_tuple[4]):
                 prompt_output += f'\nNew model: ``{new_model}``'
-            index_start = 4
+            index_start = 5
             for index, value in enumerate(tuple_names[index_start:], index_start):
                 if index == 17:
                     continue
