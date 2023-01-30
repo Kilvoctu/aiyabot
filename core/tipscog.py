@@ -1,4 +1,5 @@
 import discord
+import os
 from discord.ext import commands
 from discord.ui import View
 
@@ -59,7 +60,7 @@ class TipsView(View):
         model_list = ''
         for model in settings.global_var.model_info.items():
             # strip any folders from model full name
-            filename = model[1][0].split('/', 1)[-1].split('\\', 1)[-1]
+            filename = model[1][0].split(os.sep)[-1]
             model_list += f'\n{model[0]} - ``{filename}``'
         embed_model = discord.Embed(title="Models list", description=model_list)
         embed_model.colour = settings.global_var.embed_color

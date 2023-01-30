@@ -276,7 +276,6 @@ def populate_global_vars():
     if 'SwinIR_4x' in global_var.upscaler_names:
         template['upscaler_1'] = 'SwinIR_4x'
 
-
     # create nested dict for models based on display_name in models.csv
     # model_info[0] = display name (top level)
     # model_info[1][0] = "title". this is sent to the API
@@ -287,8 +286,8 @@ def populate_global_vars():
         model_data = list(csv.reader(csv_file, delimiter='|'))
         for row in model_data[1:]:
             for model in r.json():
-                if row[1].split('\\')[-1] == model['filename'].split('\\')[-1] \
-                        or row[1].replace('\\', '_').replace('/', '_') == model['model_name']:
+                if row[1].split(os.sep)[-1] == model['filename'].split(os.sep)[-1] \
+                        or row[1].replace(os.sep, '_') == model['model_name']:
                     global_var.model_info[row[0]] = model['title'], model['model_name'], model['hash'], row[2]
                     break
     # add "Default" if models.csv is on default, or if no model matches are found
