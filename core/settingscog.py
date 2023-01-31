@@ -54,7 +54,7 @@ class SettingsCog(commands.Cog):
     @option(
         'n_prompt',
         str,
-        description='Set default negative prompt for the channel',
+        description='Set default negative prompt for the channel (put "reset" to return to empty prompt)',
         required=False,
     )
     @option(
@@ -204,19 +204,29 @@ class SettingsCog(commands.Cog):
         settings.check(channel)
         reviewer = settings.read(channel)
         # create the embed for the reply
-        embed = discord.Embed(title="Summary", description="")
+        embed = discord.Embed(title="Channel Defaults Summary", description="")
         embed.set_footer(text=f'Channel id: {channel}')
         embed.colour = settings.global_var.embed_color
-        current, new = '', ''
+        current, new, new_n_prompt = '', '', ''
         set_new = False
 
         if current_settings:
             cur_set = settings.read(channel)
             for key, value in cur_set.items():
-                if value == '':
-                    value = ' '
-                current += f'\n{key} - ``{value}``'
-            embed.add_field(name=f'Current channel defaults', value=current, inline=False)
+                if key == 'negative_prompt':
+                    pass
+                else:
+                    if value == '':
+                        value = ' '
+                    current += f'\n{key} - ``{value}``'
+            embed.add_field(name=f'Current parameters', value=current, inline=True)
+            # put negative prompt on new field for hosts who like massive negative prompts
+            cur_n_prompt = f'{cur_set["negative_prompt"]}'
+            if cur_n_prompt == '':
+                cur_n_prompt = ' '
+            elif len(cur_n_prompt) > 1024:
+                cur_n_prompt = f'{cur_n_prompt[:1010]}....'
+            embed.add_field(name=f'Current negative prompt', value=f'``{cur_n_prompt}``', inline=True)
 
         # run function to update global variables
         if refresh:
@@ -234,9 +244,13 @@ class SettingsCog(commands.Cog):
 
         # run through each command and update the defaults user selects
         if n_prompt is not None:
+            new_n_prompt = f'{n_prompt}'
+            if n_prompt == 'reset':
+                n_prompt = ''
+                new_n_prompt = ' '
+            elif len(new_n_prompt) > 1024:
+                new_n_prompt = f'{new_n_prompt[:1010]}....'
             settings.update(channel, 'negative_prompt', n_prompt)
-            new += f'\nNegative prompts: ``"{n_prompt}"``'
-            set_new = True
 
         if data_model is not None:
             settings.update(channel, 'data_model', data_model)
@@ -346,6 +360,8 @@ class SettingsCog(commands.Cog):
 
         if set_new:
             embed.add_field(name=f'New defaults', value=new, inline=False)
+        if new_n_prompt:
+            embed.add_field(name=f'New default negative prompt', value=f'``{new_n_prompt}``', inline=False)
 
         await ctx.send_response(embed=embed, ephemeral=True)
 
