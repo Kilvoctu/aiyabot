@@ -125,10 +125,13 @@ class IdentifyCog(commands.Cog):
 
             # post to discord
             def post_dream():
-                embed = discord.Embed()
+                caption = response_data.get('caption')
+                if len(caption) > 4096:
+                    caption = caption[:4096]
+
+                embed = discord.Embed(title=f'I think this is', description=f'``{caption}``')
                 embed.set_image(url=queue_object.init_image.url)
                 embed.colour = settings.global_var.embed_color
-                embed.add_field(name=f'I think this is', value=f'``{response_data.get("caption")}``', inline=False)
 
                 footer_args = dict(text=f'{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}')
                 if queue_object.ctx.author.avatar is not None:
