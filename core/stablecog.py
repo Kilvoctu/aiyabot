@@ -223,9 +223,9 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
         # if a hypernet or lora is used, append it to the prompt
         if hypernet != 'None':
-            prompt += f' <hypernet:{hypernet}:1>'
+            prompt += f' <hypernet:{hypernet}:0.85>'
         if lora != 'None':
-            prompt += f' <lora:{lora}:1>'
+            prompt += f' <lora:{lora}:0.85>'
 
         if data_model != '':
             print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
