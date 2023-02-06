@@ -256,7 +256,7 @@ def populate_global_vars():
     global_var.hyper_names.append('None')
     # populate remaining options
     for s2 in r2.json():
-        global_var.style_names[s2['name']] = s2['prompt']
+        global_var.style_names[s2['name']] = s2['prompt'], s2['negative_prompt']
     for s3 in r3.json():
         global_var.facefix_models.append(s3['name'])
     for s4, shape in r4.json()['loaded'].items():
