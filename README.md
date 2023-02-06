@@ -36,7 +36,7 @@ To generate an image from text, use the /draw command and include your prompt as
   - refresh (update AIYA's options with any changes from Web UI)
 - /identify command - create a caption for your image.
 - /stats command - shows how many /draw commands have been used.
-- /tips command - basic tips for writing prompts and other info.
+- /info command - basic usage guide and other info.
 - /upscale command - resize your image.
 - buttons - certain outputs will contain buttons.
   - 🖋 - edit prompt, then generate a new image with same parameters.
@@ -48,7 +48,7 @@ To generate an image from text, use the /draw command and include your prompt as
 ## Setup requirements
 
 - Set up [AUTOMATIC1111's Stable Diffusion AI Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui).
-  - AIYA is currently tested on commit `b7d2af8c7fa48d6eef7517a6fbc63a3507c638d4` of the Web UI.
+  - AIYA is currently tested on commit `ea9bd9fc7409109adcd61b897abc2c8881161256` of the Web UI.
 - Run the Web UI as local host with API (`COMMANDLINE_ARGS= --api`).
 - Clone this repo.
 - Create a text file in your cloned repo called ".env", formatted like so:
