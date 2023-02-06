@@ -36,7 +36,7 @@ To generate an image from text, use the /draw command and include your prompt as
   - refresh (update AIYA's options with any changes from Web UI)
 - /identify command - create a caption for your image.
 - /stats command - shows how many /draw commands have been used.
-- /tips command - basic tips for writing prompts and other info.
+- /info command - basic usage guide and other info.
 - /upscale command - resize your image.
 - buttons - certain outputs will contain buttons.
   - 🖋 - edit prompt, then generate a new image with same parameters.

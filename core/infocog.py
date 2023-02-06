@@ -7,7 +7,7 @@ from discord.ui import View
 from core import settings
 
 
-class TipsView(View):
+class InfoView(View):
     def __init__(self):
         super().__init__(timeout=None)
         self.page = 0
@@ -331,24 +331,24 @@ class TipsView(View):
             await interaction.response.edit_message(view=self, embed=self.contents[self.page])
 
 
-class TipsCog(commands.Cog):
+class InfoCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @commands.Cog.listener()
     async def on_ready(self):
-        self.bot.add_view(TipsView())
+        self.bot.add_view(InfoView())
 
-    @commands.slash_command(name="tips", description="Lots of useful information!")
-    async def tips(self, ctx):
+    @commands.slash_command(name="info", description="Lots of useful information!")
+    async def info(self, ctx):
         first_embed = discord.Embed(title='Select a button!',
                                     description='You can check lists of any extra content I have loaded!'
                                                 '\nAlso check documentation for usage information!',
                                     colour=settings.global_var.embed_color)
         first_embed.set_footer(text='Use ◀️ and ▶️ to change pages when available')
 
-        await ctx.respond(embed=first_embed, view=TipsView(), ephemeral=True)
+        await ctx.respond(embed=first_embed, view=InfoView(), ephemeral=True)
 
 
 def setup(bot):
-    bot.add_cog(TipsCog(bot))
+    bot.add_cog(InfoCog(bot))
