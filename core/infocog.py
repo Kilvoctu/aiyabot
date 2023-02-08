@@ -181,6 +181,7 @@ class InfoView(View):
         self.page = 0
         self.contents = []
         total_pages = math.ceil(sd1_length / (batch * 2)) + math.ceil(sd2_length / (batch * 2))
+        desc = 'To use, simply add the name to your prompt.'
 
         if total_length > batch * 2:
             self.enable_nav_buttons()
@@ -190,7 +191,7 @@ class InfoView(View):
         for i in range(0, sd1_length, batch * 2):
             embed_column_a, embed_column_b = '', ''
             embed_page = discord.Embed(title="Textual Inversion embeddings list",
-                                       description="These embeddings are for **SD 1.X** models.",
+                                       description=f"{desc}\nThese embeddings are for **SD 1.X** models.",
                                        colour=settings.global_var.embed_color)
             for value in settings.global_var.embeddings_1[i:i + batch]:
                 embed_column_a += f'\n``{value}``'
@@ -207,7 +208,7 @@ class InfoView(View):
         for i in range(0, sd2_length, batch * 2):
             embed_column_a, embed_column_b = '', ''
             embed_page = discord.Embed(title="Textual Inversion embeddings list",
-                                       description="These embeddings are for **SD 2.X** models.",
+                                       description="{desc}\nThese embeddings are for **SD 2.X** models.",
                                        colour=settings.global_var.embed_color)
             for value in settings.global_var.embeddings_2[i:i + batch]:
                 embed_column_a += f'\n``{value}``'
