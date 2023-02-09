@@ -109,7 +109,7 @@ def update(channel_id: str, sett: str, value):
         settings = json.load(configfile)
     settings[sett] = value
     with open(path + channel_id + '.json', 'w') as configfile:
-        json.dump(settings, configfile)
+        json.dump(settings, configfile, indent=1)
 
 
 def get_env_var_with_default(var: str, default: str) -> str:
