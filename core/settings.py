@@ -92,7 +92,7 @@ def check(channel_id):
 
 
 def build(channel_id):
-    settings = json.dumps(template)
+    settings = json.dumps(template, indent=1)
     with open(path + channel_id + '.json', 'w') as configfile:
         configfile.write(settings)
 
