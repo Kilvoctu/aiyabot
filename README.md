@@ -15,7 +15,7 @@ To generate an image from text, use the /draw command and include your prompt as
 - negative prompts
 - swap model/checkpoint (_[see wiki](https://github.com/Kilvoctu/aiyabot/wiki/Model-swapping)_)
 - sampling steps
-- width/height (up to 1024)
+- width/height
 - CFG scale
 - sampling method
 - seed
@@ -60,7 +60,7 @@ TOKEN = put your bot token here
 
 ## Notes
 
-- [See wiki for optional .env variables you can set.](https://github.com/Kilvoctu/aiyabot/wiki/.env-Settings)
+- [See wiki for notes on additional configuration.](https://github.com/Kilvoctu/aiyabot/wiki/Configuration)
 - [See wiki for notes on swapping models.](https://github.com/Kilvoctu/aiyabot/wiki/Model-swapping)
 - Ensure AIYA has `bot` and `application.commands` scopes when inviting to your Discord server, and intents are enabled.
 - As /settings can be abused, consider reviewing who can access the command. This can be done through Apps -> Integrations in your Server Settings. Read more about /settings [here.](https://github.com/Kilvoctu/aiyabot/wiki/settings-command)
