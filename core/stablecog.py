@@ -289,14 +289,17 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             init_image, count, style, facefix, highres_fix, clip_skip, hypernet, lora)
         view = viewhandler.DrawView(input_tuple)
         # setup the queue
-        if queuehandler.GlobalQueue.dream_thread.is_alive():
-            user_already_in_queue = False
-            for queue_object in queuehandler.GlobalQueue.queue:
-                if queue_object.ctx.author.id == ctx.author.id:
-                    user_already_in_queue = True
+        user_queue = 0
+        user_queue_limit = False
+        for queue_object in queuehandler.GlobalQueue.queue:
+            if queue_object.ctx.author.id == ctx.author.id:
+                user_queue += 1
+                if user_queue >= settings.global_var.queue_limit:
+                    user_queue_limit = True
                     break
-            if user_already_in_queue:
-                await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
+        if queuehandler.GlobalQueue.dream_thread.is_alive():
+            if user_queue_limit:
+                await ctx.send_response(content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.", ephemeral=True)
             else:
                 queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(self, *input_tuple, view))
                 await ctx.send_response(
@@ -427,9 +430,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 metadata = PngImagePlugin.PngInfo()
                 epoch_time = int(time.time())
                 metadata.add_text("parameters", png_response.json().get("info"))
-                file_path = f'{settings.global_var.dir}/{epoch_time}-{queue_object.seed}-{file_name[0:120]}-{i}.png'
-                image.save(file_path, pnginfo=metadata)
-                print(f'Saved image: {file_path}')
+                if settings.global_var.save_outputs == 'True':
+                    file_path = f'{settings.global_var.dir}/{epoch_time}-{queue_object.seed}-{file_name[0:120]}-{i}.png'
+                    image.save(file_path, pnginfo=metadata)
+                    print(f'Saved image: {file_path}')
 
             # increment number of images generated
             settings.stats_count(queue_object.batch_count)

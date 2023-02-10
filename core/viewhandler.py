@@ -273,15 +273,17 @@ class DrawView(View):
             end_user = f'{interaction.user.name}#{interaction.user.discriminator}'
             if end_user in self.message.content:
                 # if there's room in the queue, open up the modal
-                if queuehandler.GlobalQueue.dream_thread.is_alive():
-                    user_already_in_queue = False
-                    for queue_object in queuehandler.GlobalQueue.queue:
-                        if queue_object.ctx.author.id == interaction.user.id:
-                            user_already_in_queue = True
+                user_queue = 0
+                user_queue_limit = False
+                for queue_object in queuehandler.GlobalQueue.queue:
+                    if queue_object.ctx.author.id == interaction.user.id:
+                        user_queue += 1
+                        if user_queue >= settings.global_var.queue_limit:
+                            user_queue_limit = True
                             break
-                    if user_already_in_queue:
-                        await interaction.response.send_message(content=f"Please wait! You're queued up.",
-                                                                ephemeral=True)
+                if queuehandler.GlobalQueue.dream_thread.is_alive():
+                    if user_queue_limit:
+                        await interaction.response.send_message(content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.", ephemeral=True)
                     else:
                         await interaction.response.send_modal(DrawModal(self.input_tuple))
                 else:
@@ -311,15 +313,17 @@ class DrawView(View):
 
                 # set up the draw dream and do queue code again for lack of a more elegant solution
                 draw_dream = stablecog.StableCog(self)
-                if queuehandler.GlobalQueue.dream_thread.is_alive():
-                    user_already_in_queue = False
-                    for queue_object in queuehandler.GlobalQueue.queue:
-                        if queue_object.ctx.author.id == interaction.user.id:
-                            user_already_in_queue = True
+                user_queue = 0
+                user_queue_limit = False
+                for queue_object in queuehandler.GlobalQueue.queue:
+                    if queue_object.ctx.author.id == interaction.user.id:
+                        user_queue += 1
+                        if user_queue >= settings.global_var.queue_limit:
+                            user_queue_limit = True
                             break
-                    if user_already_in_queue:
-                        await interaction.response.send_message(content=f"Please wait! You're queued up.",
-                                                                ephemeral=True)
+                if queuehandler.GlobalQueue.dream_thread.is_alive():
+                    if user_queue_limit:
+                        await interaction.response.send_message(content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.", ephemeral=True)
                     else:
                         button.disabled = True
                         await interaction.response.edit_message(view=self)

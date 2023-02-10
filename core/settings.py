@@ -36,7 +36,7 @@ template = {
 }
 
 # default config data
-default_config = """# This is the config file
+default_config = """# This is the config file. It's advisable to restart if any changes are made.
 
 # The URL address to the AUTOMATIC1111 Web UI
 url = "http://127.0.0.1:7860"
@@ -55,12 +55,11 @@ save_outputs = "True"
 # The directory to save outputs (default = "outputs")
 dir = "outputs"
 
-# The limit how many tasks a user can have in queue 
+# The limit of tasks a user can have waiting in queue (at least 1)
 queue_limit = 1
 
-# The maximum value allowed for width/height
+# The maximum value allowed for width/height (keep as multiple of 64)
 max_size = 1024
-
 """
 
 
@@ -88,6 +87,8 @@ class GlobalVar:
     lora_names = []
     upscaler_names = []
     hires_upscaler_names = []
+    save_outputs = "True"
+    queue_limit = 1
 
 
 global_var = GlobalVar()
@@ -286,6 +287,24 @@ def files_check():
 
 
 def populate_global_vars():
+    # update global vars with stuff from config
+    with open(f'{path}config.toml', 'r') as fileObj:
+        content = fileObj.read()
+        config = tomlkit.loads(content)
+
+    # update these again in case changes were made
+    global_var.url = config['url']
+    global_var.dir = config['dir']
+    global_var.username = config['user']
+    global_var.password = config['pass']
+    global_var.api_user = config['apiuser']
+    global_var.api_pass = config['apipass']
+
+    global_var.save_outputs = config['save_outputs']
+    global_var.queue_limit = config['queue_limit']
+    # slash command doesn't update this dynamically. Changes to size need a restart.
+    global_var.size_range = range(192, config['max_size']+64, 64)
+
     # pull list of samplers, styles and face restorers from api
     # create persistent session since we'll need to do a few API calls
     s = requests.Session()
