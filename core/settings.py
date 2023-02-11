@@ -5,11 +5,13 @@ import os
 import random
 import requests
 import time
+import tomlkit
 from typing import Optional
 
 self = discord.Bot()
 dir_path = os.path.dirname(os.path.realpath(__file__))
 path = 'resources/'.format(dir_path)
+
 
 # the fallback defaults for AIYA if bot host doesn't set anything
 template = {
@@ -32,6 +34,33 @@ template = {
     "max_count": 1,
     "upscaler_1": "ESRGAN_4x"
 }
+
+# default config data
+default_config = """# This is the config file. It's advisable to restart if any changes are made.
+
+# The URL address to the AUTOMATIC1111 Web UI
+url = "http://127.0.0.1:7860"
+
+# Credentials when using --share and --gradio-auth
+user = ""
+pass = ""
+
+# Credentials when using --api-auth
+apiuser = ""
+apipass = ""
+
+# Whether or not to save outputs to disk ("True"/"False")
+save_outputs = "True"
+
+# The directory to save outputs (default = "outputs")
+dir = "outputs"
+
+# The limit of tasks a user can have waiting in queue (at least 1)
+queue_limit = 1
+
+# The maximum value allowed for width/height (keep as multiple of 64)
+max_size = 1024
+"""
 
 
 # initialize global variables here
@@ -58,16 +87,18 @@ class GlobalVar:
     lora_names = []
     upscaler_names = []
     hires_upscaler_names = []
+    save_outputs = "True"
+    queue_limit = 1
 
 
 global_var = GlobalVar()
 
 
 def stats_count(number):
-    with open('resources/stats.txt', 'r') as f:
+    with open(f'{path}stats.txt', 'r') as f:
         data = list(map(int, f.readlines()))
     data[0] += number
-    with open('resources/stats.txt', 'w') as f:
+    with open(f'{path}stats.txt', 'w') as f:
         f.write('\n'.join(str(x) for x in data))
 
 
@@ -83,7 +114,7 @@ def check(channel_id):
         build(str(channel_id))
         print(f'This is a new channel!? Creating default settings file for this channel ({channel_id}).')
         # if models.csv has the blank "Default" data, update default settings
-        with open('resources/models.csv', 'r', encoding='utf-8') as f:
+        with open(f'{path}models.csv', 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter='|')
             for row in reader:
                 if row['display_name'] == 'Default' and row['model_full_name'] == '':
@@ -118,17 +149,60 @@ def get_env_var_with_default(var: str, default: str) -> str:
 
 
 def startup_check():
-    # check .env for parameters. if they don't exist, ignore it and go with defaults.
-    global_var.url = get_env_var_with_default('URL', 'http://127.0.0.1:7860').rstrip("/")
-    print(f'Using URL: {global_var.url}')
+    config_exists = True
+    if os.path.isfile(f'{path}config.toml'):
+        pass
+    else:
+        print(f"Configuration file missing! I'm creating config.toml in {path}.")
+        config_exists = False
+        with open(f'{path}config.toml', "w") as toml_file:
+            toml_file.write(tomlkit.dumps(tomlkit.loads(default_config)))
 
-    global_var.dir = get_env_var_with_default('DIR', 'outputs')
+    with open(f'{path}config.toml', 'r') as fileObj:
+        content = fileObj.read()
+        config = tomlkit.loads(content)
+
+    # update the config if any new keys were added
+    if not tomlkit.loads(default_config).keys() == config.keys():
+        print('Configuration file is missing keys! Updating the file.')
+        temp_config = {}
+        for k, v in config.items():
+            temp_config[k] = v
+
+        with open(f'{path}config.toml', "w") as toml_file:
+            toml_file.write(tomlkit.dumps(tomlkit.loads(default_config)))
+        with open(f'{path}config.toml', 'r') as fileObj:
+            content = fileObj.read()
+            config = tomlkit.loads(content)
+        for key, value in config.items():
+            for k, v in temp_config.items():
+                if k == key and value != v:
+                    config[key] = v
+                    f = open(f'{path}config.toml', 'w')
+                    tomlkit.dump(config, f)
+                    f.close()
+
+    # port any settings that were set in .env file to the config
+    if not config_exists:
+        config['url'] = get_env_var_with_default('URL', 'http://127.0.0.1:7860').rstrip("/")
+        config['dir'] = get_env_var_with_default('DIR', 'outputs')
+        config['user'] = os.getenv("USER")
+        config['pass'] = os.getenv("PASS")
+        config['apiuser'] = os.getenv("APIUSER")
+        config['apipass'] = os.getenv("APIPASS")
+        f = open(f'{path}config.toml', 'w')
+        tomlkit.dump(config, f)
+        f.close()
+
+    global_var.url = config['url']
+    print(f'Using URL: {global_var.url}')
+    global_var.dir = config['dir']
     print(f'Using outputs directory: {global_var.dir}')
 
-    global_var.username = os.getenv("USER")
-    global_var.password = os.getenv("PASS")
-    global_var.api_user = os.getenv("APIUSER")
-    global_var.api_pass = os.getenv("APIPASS")
+    global_var.username = config['user']
+    global_var.password = config['pass']
+    global_var.api_user = config['apiuser']
+    global_var.api_pass = config['apipass']
 
     # check if Web UI is running
     connected = False
@@ -155,18 +229,18 @@ def startup_check():
 
 def files_check():
     # load random messages for aiya to say
-    with open('resources/messages.csv') as csv_file:
+    with open(f'{path}messages.csv') as csv_file:
         message_data = list(csv.reader(csv_file, delimiter='|'))
         for row in message_data:
             global_var.wait_message.append(row[0])
     global_var.wait_message_count = len(global_var.wait_message) - 1
 
     # creating files if they don't exist
-    if os.path.isfile('resources/stats.txt'):
+    if os.path.isfile(f'{path}stats.txt'):
         pass
     else:
         print(f'Uh oh, stats.txt missing. Creating a new one.')
-        with open('resources/stats.txt', 'w') as f:
+        with open(f'{path}stats.txt', 'w') as f:
             f.write('0')
 
     header = ['display_name', 'model_full_name', 'activator_token']
@@ -174,16 +248,16 @@ def files_check():
     make_model_file = True
     replace_model_file = False
     # if models.csv exists and has data
-    if os.path.isfile('resources/models.csv'):
-        with open('resources/models.csv', encoding='utf-8') as f:
+    if os.path.isfile(f'{path}models.csv'):
+        with open(f'{path}models.csv', encoding='utf-8') as f:
             reader = csv.reader(f, delimiter="|")
             for i, row in enumerate(reader):
                 # if header is missing columns, reformat the file
                 if i == 0:
                     if len(row) < 3:
-                        with open('resources/models.csv', 'r') as fp:
+                        with open(f'{path}models.csv', 'r') as fp:
                             reader = csv.DictReader(fp, fieldnames=header, delimiter="|")
-                            with open('resources/models2.csv', 'w', newline='') as fh:
+                            with open(f'{path}models2.csv', 'w', newline='') as fh:
                                 writer = csv.DictWriter(fh, fieldnames=reader.fieldnames, delimiter="|")
                                 writer.writeheader()
                                 header = next(reader)
@@ -193,12 +267,12 @@ def files_check():
                 if i == 1:
                     make_model_file = False
         if replace_model_file:
-            os.remove('resources/models.csv')
-            os.rename('resources/models2.csv', 'resources/models.csv')
+            os.remove(f'{path}models.csv')
+            os.rename(f'{path}models2.csv', f'{path}models.csv')
     # create/reformat model.csv if something is wrong
     if make_model_file:
         print(f'Uh oh, missing models.csv data. Creating a new one.')
-        with open('resources/models.csv', 'w', newline='', encoding='utf-8') as f:
+        with open(f'{path}models.csv', 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f, delimiter="|")
             writer.writerow(header)
             writer.writerow(unset_model)
@@ -213,6 +287,24 @@ def files_check():
 
 
 def populate_global_vars():
+    # update global vars with stuff from config
+    with open(f'{path}config.toml', 'r') as fileObj:
+        content = fileObj.read()
+        config = tomlkit.loads(content)
+
+    # update these again in case changes were made
+    global_var.url = config['url']
+    global_var.dir = config['dir']
+    global_var.username = config['user']
+    global_var.password = config['pass']
+    global_var.api_user = config['apiuser']
+    global_var.api_pass = config['apipass']
+
+    global_var.save_outputs = config['save_outputs']
+    global_var.queue_limit = config['queue_limit']
+    # slash command doesn't update this dynamically. Changes to size need a restart.
+    global_var.size_range = range(192, config['max_size']+64, 64)
+
     # pull list of samplers, styles and face restorers from api
     # create persistent session since we'll need to do a few API calls
     s = requests.Session()
@@ -282,7 +374,7 @@ def populate_global_vars():
     # model_info[1][1] = name of the model
     # model_info[1][2] = shorthash
     # model_info[1][3] = activator token
-    with open('resources/models.csv', encoding='utf-8') as csv_file:
+    with open(f'{path}models.csv', encoding='utf-8') as csv_file:
         model_data = list(csv.reader(csv_file, delimiter='|'))
         for row in model_data[1:]:
             for model in r.json():

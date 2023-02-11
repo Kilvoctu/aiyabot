@@ -25,7 +25,6 @@ class UpscaleCog(commands.Cog):
         self.bot = bot
         self.file_name = ''
 
-
     @commands.slash_command(name='upscale', description='Upscale an image', guild_only=True)
     @option(
         'init_image',
@@ -138,15 +137,18 @@ class UpscaleCog(commands.Cog):
         input_tuple = (ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength, gfpgan, codeformer, upscale_first)
         view = viewhandler.DeleteView(ctx.author.id)
         # set up the queue if an image was found
+        user_queue = 0
+        user_queue_limit = False
+        for queue_object in queuehandler.GlobalQueue.queue:
+            if queue_object.ctx.author.id == ctx.author.id:
+                user_queue += 1
+                if user_queue >= settings.global_var.queue_limit:
+                    user_queue_limit = True
+                    break
         if has_image:
             if queuehandler.GlobalQueue.dream_thread.is_alive():
-                user_already_in_queue = False
-                for queue_object in queuehandler.GlobalQueue.queue:
-                    if queue_object.ctx.author.id == ctx.author.id:
-                        user_already_in_queue = True
-                        break
-                if user_already_in_queue:
-                    await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
+                if user_queue_limit:
+                    await ctx.send_response(content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.", ephemeral=True)
                 else:
                     queuehandler.GlobalQueue.queue.append(queuehandler.UpscaleObject(self, *input_tuple, view))
                     await ctx.send_response(
@@ -213,10 +215,11 @@ class UpscaleCog(commands.Cog):
             file_path = f'{settings.global_var.dir}/{epoch_time}-x{queue_object.resize}-{self.file_name[0:120]}.png'
 
             # save local copy of image
-            image_data = response_data['image']
-            with open(file_path, "wb") as fh:
-                fh.write(base64.b64decode(image_data))
-            print(f'Saved image: {file_path}')
+            if settings.global_var.save_outputs == 'True':
+                image_data = response_data['image']
+                with open(file_path, "wb") as fh:
+                    fh.write(base64.b64decode(image_data))
+                print(f'Saved image: {file_path}')
 
             # post to discord
             def post_dream():

@@ -65,15 +65,18 @@ class IdentifyCog(commands.Cog):
 
         view = viewhandler.DeleteView(ctx.author.id)
         # set up the queue if an image was found
+        user_queue = 0
+        user_queue_limit = False
+        for queue_object in queuehandler.GlobalQueue.queue:
+            if queue_object.ctx.author.id == ctx.author.id:
+                user_queue += 1
+                if user_queue >= settings.global_var.queue_limit:
+                    user_queue_limit = True
+                    break
         if has_image:
             if queuehandler.GlobalQueue.dream_thread.is_alive():
-                user_already_in_queue = False
-                for queue_object in queuehandler.GlobalQueue.queue:
-                    if queue_object.ctx.author.id == ctx.author.id:
-                        user_already_in_queue = True
-                        break
-                if user_already_in_queue:
-                    await ctx.send_response(content=f'Please wait! You\'re queued up.', ephemeral=True)
+                if user_queue_limit:
+                    await ctx.send_response(content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.", ephemeral=True)
                 else:
                     queuehandler.GlobalQueue.queue.append(queuehandler.IdentifyObject(self, ctx, init_image, phrasing, view))
                     await ctx.send_response(
