@@ -51,7 +51,7 @@ To generate an image from text, use the /draw command and include your prompt as
   - AIYA is currently tested on commit `ea9bd9fc7409109adcd61b897abc2c8881161256` of the Web UI.
 - Run the Web UI as local host with API (`COMMANDLINE_ARGS= --api`).
 - Clone this repo.
-- Create a text file in your cloned repo called ".env", formatted like so:
+- Create a file in your cloned repo called ".env", formatted like so:
 ```dotenv
 # .env
 TOKEN = put your bot token here
