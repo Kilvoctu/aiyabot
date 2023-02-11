@@ -325,20 +325,14 @@ class DrawView(View):
                     if user_queue_limit:
                         await interaction.response.send_message(content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.", ephemeral=True)
                     else:
-                        button.disabled = True
-                        await interaction.response.edit_message(view=self)
-
                         queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(stablecog.StableCog(self), *seed_tuple, DrawView(seed_tuple)))
-                        await interaction.followup.send(
+                        await interaction.response.send_message(
                             f'<@{interaction.user.id}>, {settings.messages()}\nQueue: '
                             f'``{len(queuehandler.GlobalQueue.queue)}`` - ``{seed_tuple[1]}``'
                             f'\nNew seed:``{seed_tuple[10]}``')
                 else:
-                    button.disabled = True
-                    await interaction.response.edit_message(view=self)
-
                     await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(stablecog.StableCog(self), *seed_tuple, DrawView(seed_tuple)))
-                    await interaction.followup.send(
+                    await interaction.response.send_message(
                         f'<@{interaction.user.id}>, {settings.messages()}\nQueue: '
                         f'``{len(queuehandler.GlobalQueue.queue)}`` - ``{seed_tuple[1]}``'
                         f'\nNew Seed:``{seed_tuple[10]}``')
