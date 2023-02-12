@@ -43,6 +43,7 @@ To generate an image from text, use the /draw command and include your prompt as
   - 🎲 - randomize seed, then generate a new image with same parameters.
   - 📋 - view the generated image's information.
   - ❌ - deletes the generated image.
+- [Configuration file](https://github.com/Kilvoctu/aiyabot/wiki/Configuration) - can change some of AIYA's operational aspects. 
 
 
 ## Setup requirements
