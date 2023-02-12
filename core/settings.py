@@ -60,6 +60,10 @@ queue_limit = 1
 
 # The maximum value allowed for width/height (keep as multiple of 64)
 max_size = 1024
+
+# AIYA won't generate if prompt has any words in the ban list.
+# Separate with commas; example, ["a", "b", "c"]
+prompt_ban_list = []
 """
 
 
@@ -89,6 +93,7 @@ class GlobalVar:
     hires_upscaler_names = []
     save_outputs = "True"
     queue_limit = 1
+    prompt_ban_list = []
 
 
 global_var = GlobalVar()
@@ -302,6 +307,7 @@ def populate_global_vars():
 
     global_var.save_outputs = config['save_outputs']
     global_var.queue_limit = config['queue_limit']
+    global_var.prompt_ban_list = [x for x in config['prompt_ban_list']]
     # slash command doesn't update this dynamically. Changes to size need a restart.
     global_var.size_range = range(192, config['max_size']+64, 64)
 

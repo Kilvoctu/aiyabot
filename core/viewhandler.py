@@ -87,6 +87,13 @@ class DrawModal(Modal):
         )
 
     async def callback(self, interaction: discord.Interaction):
+        # if using a banned word in prompt, do not generate
+        for x in settings.global_var.prompt_ban_list:
+            x = str(x.lower())
+            if x in self.children[0].value.lower():
+                await interaction.response.send_message(f"I'm not allowed to draw the word {x}!", ephemeral=True)
+                return
+
         # update the tuple with new prompts
         pen = list(self.input_tuple)
         pen[2] = pen[2].replace(pen[1], self.children[0].value)
