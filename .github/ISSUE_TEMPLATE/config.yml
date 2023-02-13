@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: AIYA Discussion
+    url: https://github.com/Kilvoctu/aiyabot/discussions
+    about: Please send requests and thoughts here.
