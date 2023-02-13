@@ -7,8 +7,10 @@ assignees: Kilvoctu
 
 ---
 
-**Describe the bug**
+**Describe the bug**  
 A clear and concise description of what the bug is.
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
+---
+
+**Environment**
+ - OS: [e.g. Windows / Linux]
