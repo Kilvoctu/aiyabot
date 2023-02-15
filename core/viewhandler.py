@@ -379,8 +379,11 @@ class DrawView(View):
 
             # generate the command for copy-pasting, and also add embed fields
             embed = discord.Embed(title="About the image!", description="")
+            prompt_field = rev[1]
+            if len(prompt_field) > 1024:
+                prompt_field = f'{prompt_field[:1010]}....'
             embed.colour = settings.global_var.embed_color
-            embed.add_field(name=f'Prompt', value=f'``{rev[1]}``', inline=False)
+            embed.add_field(name=f'Prompt', value=f'``{prompt_field}``', inline=False)
             embed.add_field(name='Data model', value=f'Display name - ``{display_name}``\nModel name - ``{model_name}``'
                                                      f'\nShorthash - ``{model_hash}``{activator_token}', inline=False)
 
@@ -388,7 +391,10 @@ class DrawView(View):
                            f'height:{rev[7]} guidance_scale:{rev[8]} sampler:{rev[9]} seed:{rev[10]}'
             if rev[3] != '':
                 copy_command += f' negative_prompt:{rev[3]}'
-                embed.add_field(name=f'Negative prompt', value=f'``{rev[3]}``', inline=False)
+                n_prompt_field = rev[3]
+                if len(n_prompt_field) > 1024:
+                    n_prompt_field = f'{n_prompt_field[:1010]}....'
+                embed.add_field(name=f'Negative prompt', value=f'``{n_prompt_field}``', inline=False)
 
             extra_params = f'Sampling steps: ``{rev[5]}``\nSize: ``{rev[6]}x{rev[7]}``\nClassifier-free guidance ' \
                            f'scale: ``{rev[8]}``\nSampling method: ``{rev[9]}``\nSeed: ``{rev[10]}``'
@@ -416,7 +422,12 @@ class DrawView(View):
                 copy_command += f' lora:{rev[19]}'
                 extra_params += f'\nLoRA model: ``{rev[19]}``'
             embed.add_field(name=f'Other parameters', value=extra_params, inline=False)
-            embed.add_field(name=f'Command for copying', value=f'{copy_command}', inline=False)
+            embed.add_field(name=f'Command for copying', value=f'', inline=False)
+            embed.set_footer(text=copy_command)
+            if len(copy_command) > 2048:
+                button.disabled = True
+                await interaction.response.edit_message(view=self)
+                await interaction.followup.send("The contents of 📋 exceeded Discord's character limit! Sorry, I can't display it...", ephemeral=True)
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
         except Exception as e:
