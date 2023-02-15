@@ -81,6 +81,7 @@ class GlobalVar:
     api_user: Optional[str] = None
     api_pass: Optional[str] = None
     model_info = {}
+    vae_names = []
     size_range = range(192, 1088, 64)
     sampler_names = []
     style_names = {}
@@ -399,6 +400,8 @@ def populate_global_vars():
         for c in old_config['components']:
             try:
                 if c['props']:
+                    if c['props']['elem_id'] == 'setting_sd_vae':
+                        global_var.vae_names = c['props']['choices']
                     if c['props']['elem_id'] == 'setting_sd_lora':
                         global_var.lora_names = c['props']['choices']
                     if c['props']['elem_id'] == 'txt2img_hr_upscaler':

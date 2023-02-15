@@ -28,10 +28,11 @@ input_tuple[0] = ctx
 [17] = clip_skip
 [18] = hypernet
 [19] = lora
+[20] = vae
 '''
 tuple_names = ['ctx', 'simple_prompt', 'prompt', 'negative_prompt', 'data_model', 'steps', 'width', 'height',
                'guidance_scale', 'sampler', 'seed', 'strength', 'init_image', 'batch_count', 'style', 'facefix',
-               'highres_fix', 'clip_skip', 'hypernet', 'lora']
+               'highres_fix', 'clip_skip', 'hypernet', 'lora', 'vae']
 
 
 # the modal that is used for the 🖋 button
@@ -398,29 +399,17 @@ class DrawView(View):
 
             extra_params = f'Sampling steps: ``{rev[5]}``\nSize: ``{rev[6]}x{rev[7]}``\nClassifier-free guidance ' \
                            f'scale: ``{rev[8]}``\nSampling method: ``{rev[9]}``\nSeed: ``{rev[10]}``'
-            if rev[12]:
-                # not interested in adding embed fields for strength and init_image
-                copy_command += f' strength:{rev[11]} init_url:{rev[12].url}'
             if rev[13] != 1:
                 copy_command += f' count:{rev[13]}'
-            if rev[14] != 'None':
-                copy_command += f' style:{rev[14]}'
-                extra_params += f'\nStyle preset: ``{rev[14]}``'
-            if rev[15] != 'None':
-                copy_command += f' facefix:{rev[15]}'
-                extra_params += f'\nFace restoration model: ``{rev[15]}``'
-            if rev[16] != 'Disabled':
-                copy_command += f' highres_fix:{rev[16]}'
-                extra_params += f'\nHigh-res fix: ``{rev[16]}``'
-            if rev[17] != 1:
-                copy_command += f' clip_skip:{rev[17]}'
-                extra_params += f'\nCLIP skip: ``{rev[17]}``'
             if rev[18] != 'None':
                 copy_command += f' hypernet:{rev[18]}'
                 extra_params += f'\nHypernetwork model: ``{rev[18]}``'
             if rev[19] != 'None':
                 copy_command += f' lora:{rev[19]}'
                 extra_params += f'\nLoRA model: ``{rev[19]}``'
+            if rev[20] != 'Automatic':
+                copy_command += f' vae:{rev[20]}'
+                extra_params += f'\nVAE model: ``{rev[20]}``'
             embed.add_field(name=f'Other parameters', value=extra_params, inline=False)
             embed.add_field(name=f'Command for copying', value=f'', inline=False)
             embed.set_footer(text=copy_command)

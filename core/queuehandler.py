@@ -6,7 +6,7 @@ from threading import Thread
 class DrawObject:
     def __init__(self, cog, ctx, simple_prompt, prompt, negative_prompt, data_model, steps, width, height,
                  guidance_scale, sampler, seed, strength, init_image, batch_count, style, facefix, highres_fix,
-                 clip_skip, hypernet, lora, view):
+                 clip_skip, hypernet, lora, vae, view):
         self.cog = cog
         self.ctx = ctx
         self.simple_prompt = simple_prompt
@@ -28,6 +28,7 @@ class DrawObject:
         self.clip_skip = clip_skip
         self.hypernet = hypernet
         self.lora = lora
+        self.vae = vae
         self.view = view
 
 

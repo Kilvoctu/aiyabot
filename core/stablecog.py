@@ -50,6 +50,13 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.model_autocomplete),
     )
     @option(
+        'vae',
+        str,
+        description='Select the VAE for image generation.',
+        required=False,
+        choices=[x for x in settings.global_var.vae_names]
+    )
+    @option(
         'steps',
         int,
         description='The amount of steps to sample the model.',
@@ -77,45 +84,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         required=False,
     )
     @option(
-        'sampler',
-        str,
-        description='The sampler to use for generation.',
-        required=False,
-        choices=settings.global_var.sampler_names,
-    )
-    @option(
         'seed',
         int,
         description='The seed to use for reproducibility.',
         required=False,
-    )
-    @option(
-        'style',
-        str,
-        description='Apply a predefined style to the generation.',
-        required=False,
-        autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.style_autocomplete),
-    )
-    @option(
-        'facefix',
-        str,
-        description='Tries to improve faces in images.',
-        required=False,
-        choices=settings.global_var.facefix_models,
-    )
-    @option(
-        'highres_fix',
-        str,
-        description='Tries to fix issues from generating high-res images. Recommended: Latent (nearest).',
-        required=False,
-        autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.hires_autocomplete),
-    )
-    @option(
-        'clip_skip',
-        int,
-        description='Number of last layers of CLIP model to skip.',
-        required=False,
-        choices=[x for x in range(1, 13, 1)]
     )
     @option(
         'hypernet',
@@ -132,23 +104,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.lora_autocomplete),
     )
     @option(
-        'strength',
-        str,
-        description='The amount in which init_image will be altered (0.0 to 1.0).'
-    )
-    @option(
-        'init_image',
-        discord.Attachment,
-        description='The starter image for generation. Remember to set strength value!',
-        required=False,
-    )
-    @option(
-        'init_url',
-        str,
-        description='The starter URL image for generation. This overrides init_image!',
-        required=False,
-    )
-    @option(
         'count',
         int,
         description='The number of images to generate. This is "Batch count", not "Batch size".',
@@ -157,20 +112,13 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
                             prompt: str, negative_prompt: str = None,
                             data_model: Optional[str] = None,
+                            vae: Optional[str] = "Automatic",
+                            lora: Optional[str] = None,
+                            hypernet: Optional[str] = None,
                             steps: Optional[int] = None,
                             width: Optional[int] = None, height: Optional[int] = None,
                             guidance_scale: Optional[str] = None,
-                            sampler: Optional[str] = None,
                             seed: Optional[int] = -1,
-                            style: Optional[str] = None,
-                            facefix: Optional[str] = None,
-                            highres_fix: Optional[str] = None,
-                            clip_skip: Optional[int] = None,
-                            hypernet: Optional[str] = None,
-                            lora: Optional[str] = None,
-                            strength: Optional[str] = None,
-                            init_image: Optional[discord.Attachment] = None,
-                            init_url: Optional[str],
                             count: Optional[int] = None):
 
         # update defaults with any new defaults from settingscog
@@ -186,22 +134,16 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             height = settings.read(channel)['height']
         if guidance_scale is None:
             guidance_scale = settings.read(channel)['guidance_scale']
-        if sampler is None:
-            sampler = settings.read(channel)['sampler']
-        if style is None:
-            style = settings.read(channel)['style']
-        if facefix is None:
-            facefix = settings.read(channel)['facefix']
-        if highres_fix is None:
-            highres_fix = settings.read(channel)['highres_fix']
-        if clip_skip is None:
-            clip_skip = settings.read(channel)['clip_skip']
+        sampler = settings.read(channel)['sampler']
+        style = settings.read(channel)['style']
+        facefix = settings.read(channel)['facefix']
+        highres_fix = settings.read(channel)['highres_fix']
+        clip_skip = settings.read(channel)['clip_skip']
         if hypernet is None:
             hypernet = settings.read(channel)['hypernet']
         if lora is None:
             lora = settings.read(channel)['lora']
-        if strength is None:
-            strength = settings.read(channel)['strength']
+        strength = settings.read(channel)['strength']
         if count is None:
             count = settings.read(channel)['count']
 
@@ -242,12 +184,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if seed == -1:
             seed = random.randint(0, 0xFFFFFFFF)
 
-        # url *will* override init image for compatibility, can be changed here
-        if init_url:
-            try:
-                init_image = requests.get(init_url)
-            except(Exception,):
-                await ctx.send_response('URL image not found!\nI will do my best without it!')
+        # Send blank values for img2img
+        init_image = None
 
         # formatting aiya initial reply
         reply_adds = ''
@@ -272,7 +210,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             reply_adds += f'\nSampler: ``{sampler}``'
         if init_image:
             reply_adds += f'\nStrength: ``{strength}``'
-            reply_adds += f'\nURL Init Image: ``{init_image.url}``'
+            reply_adds += f'\nURL Init Image: ``{init_image}``'
         if count != 1:
             max_count = settings.read(channel)['max_count']
             if count > max_count:
@@ -293,7 +231,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         # set up tuple of parameters to pass into the Discord view
         input_tuple = (
             ctx, simple_prompt, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength,
-            init_image, count, style, facefix, highres_fix, clip_skip, hypernet, lora)
+            init_image, count, style, facefix, highres_fix, clip_skip, hypernet, lora, vae)
         view = viewhandler.DrawView(input_tuple)
         # setup the queue
         user_queue = 0
@@ -391,6 +329,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     "restore_faces": True,
                 }
                 payload.update(facefix_payload)
+            if queue_object.vae != 'Automatic':
+                override_settings["sd_vae"] = queue_object.vae
 
             # update payload with override_settings
             override_payload = {
