@@ -366,7 +366,7 @@ class DrawView(View):
         try:
             # get the remaining model information we want from the data_model ("title") in the tuple
             for model in settings.global_var.model_info.items():
-                if model[1][0] == rev[4]:
+                if model[1][0] == rev[4] and model[1][0] != "Default":
                     display_name = model[0]
                     model_name = model[1][1]
                     model_hash = model[1][2]
