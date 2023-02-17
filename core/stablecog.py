@@ -221,12 +221,15 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     prompt = model[1][3] + " " + prompt
                 break
 
-        # if using a banned word in prompt, do not generate
-        for x in settings.global_var.prompt_ban_list:
-            x = str(x.lower())
-            if x in simple_prompt.lower():
-                await ctx.respond(f"I'm not allowed to draw the word {x}!", ephemeral=True)
+        # run through mod function if any moderation values are set in config
+        if settings.global_var.prompt_ban_list or settings.global_var.prompt_ignore_list or settings.global_var.negative_prompt_prefix:
+            mod_results = settings.prompt_mod(simple_prompt, negative_prompt)
+            if mod_results[0] == "Stop":
+                await ctx.respond(f"I'm not allowed to draw the word {mod_results[1]}!", ephemeral=True)
                 return
+            if mod_results[0] == "Mod":
+                prompt = mod_results[1]
+                negative_prompt = mod_results[2]
 
         # if a hypernet or lora is used, append it to the prompt
         if hypernet != 'None':

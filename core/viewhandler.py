@@ -87,13 +87,6 @@ class DrawModal(Modal):
         )
 
     async def callback(self, interaction: discord.Interaction):
-        # if using a banned word in prompt, do not generate
-        for x in settings.global_var.prompt_ban_list:
-            x = str(x.lower())
-            if x in self.children[0].value.lower():
-                await interaction.response.send_message(f"I'm not allowed to draw the word {x}!", ephemeral=True)
-                return
-
         # update the tuple with new prompts
         pen = list(self.input_tuple)
         pen[2] = pen[2].replace(pen[1], self.children[0].value)
@@ -235,6 +228,16 @@ class DrawModal(Modal):
                 pen[2] += f' <hypernet:{pen[18]}:0.85>'
             if pen[19] != 'None':
                 pen[2] += f' <lora:{pen[19]}:0.85>'
+
+            # run through mod function if any moderation values are set in config
+            if settings.global_var.prompt_ban_list or settings.global_var.prompt_ignore_list or settings.global_var.negative_prompt_prefix:
+                mod_results = settings.prompt_mod(pen[2], self.children[1].value)
+                if settings.global_var.prompt_ban_list and mod_results[0] == "Stop":
+                    await interaction.response.send_message(f"I'm not allowed to draw the word {mod_results[1]}!", ephemeral=True)
+                    return
+                if settings.global_var.prompt_ignore_list or settings.global_var.negative_prompt_prefix and mod_results[0] == "Mod":
+                    pen[2] = mod_results[1]
+                    pen[3] = mod_results[2]
 
             # the updated tuple to send to queue
             prompt_tuple = tuple(pen)

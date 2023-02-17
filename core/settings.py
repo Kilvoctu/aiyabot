@@ -64,6 +64,10 @@ max_size = 1024
 # AIYA won't generate if prompt has any words in the ban list.
 # Separate with commas; example, ["a", "b", "c"]
 prompt_ban_list = []
+# These words will be automatically removed from the prompt.
+prompt_ignore_list = []
+# These words will be added to the beginning of the negative prompt.
+negative_prompt_prefix = []
 """
 
 
@@ -94,9 +98,34 @@ class GlobalVar:
     save_outputs = "True"
     queue_limit = 1
     prompt_ban_list = []
+    prompt_ignore_list = []
+    negative_prompt_prefix = []
 
 
 global_var = GlobalVar()
+
+
+def prompt_mod(prompt, negative_prompt):
+    # if any banned words are in prompt, return immediately
+    if global_var.prompt_ban_list:
+        for x in global_var.prompt_ban_list:
+            x = str(x.lower())
+            if x in prompt.lower():
+                return "Stop", x
+    # otherwise mod the prompt/negative prompt
+    if global_var.prompt_ignore_list or global_var.negative_prompt_prefix:
+        for y in global_var.prompt_ignore_list:
+            y = str(y.lower())
+            if y in prompt.lower():
+                prompt = prompt.replace(y, "")
+        for z in global_var.negative_prompt_prefix:
+            z = str(z.lower())
+            if z in negative_prompt.lower():
+                pass
+            else:
+                negative_prompt = f"{z} {negative_prompt}"
+        return "Mod", prompt, negative_prompt.strip()
+    return "None"
 
 
 def stats_count(number):
@@ -308,10 +337,11 @@ def populate_global_vars():
     global_var.save_outputs = config['save_outputs']
     global_var.queue_limit = config['queue_limit']
     global_var.prompt_ban_list = [x for x in config['prompt_ban_list']]
+    global_var.prompt_ignore_list = [x for x in config['prompt_ignore_list']]
+    global_var.negative_prompt_prefix = [x for x in config['negative_prompt_prefix']]
     # slash command doesn't update this dynamically. Changes to size need a restart.
     global_var.size_range = range(192, config['max_size']+64, 64)
 
-    # pull list of samplers, styles and face restorers from api
     # create persistent session since we'll need to do a few API calls
     s = requests.Session()
     if global_var.api_auth:
