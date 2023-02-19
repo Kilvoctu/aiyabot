@@ -222,6 +222,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 break
 
         # run through mod function if any moderation values are set in config
+        clean_negative = ''
         if settings.global_var.prompt_ban_list or settings.global_var.prompt_ignore_list or settings.global_var.negative_prompt_prefix:
             mod_results = settings.prompt_mod(simple_prompt, negative_prompt)
             if mod_results[0] == "Stop":
@@ -230,6 +231,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             if mod_results[0] == "Mod":
                 prompt = mod_results[1]
                 negative_prompt = mod_results[2]
+                clean_negative = mod_results[3]
 
         # if a hypernet or lora is used, append it to the prompt
         if hypernet != 'None':
@@ -260,8 +262,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             reply_adds += f'\nExceeded maximum of ``{steps}`` steps! This is the best I can do...'
         if model_name != 'Default':
             reply_adds += f'\nModel: ``{model_name}``'
-        if negative_prompt != settings.read(channel)['negative_prompt']:
-            reply_adds += f'\nNegative Prompt: ``{negative_prompt}``'
+        if clean_negative != settings.read(channel)['negative_prompt']:
+            reply_adds += f'\nNegative Prompt: ``{clean_negative}``'
         if (width != 512) or (height != 512):
             reply_adds += f'\nSize: ``{width}``x``{height}``'
         if guidance_scale != settings.read(channel)['guidance_scale']:

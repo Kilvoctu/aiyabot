@@ -106,6 +106,7 @@ global_var = GlobalVar()
 
 
 def prompt_mod(prompt, negative_prompt):
+    clean_negative_prompt = negative_prompt
     # if any banned words are in prompt, return immediately
     if global_var.prompt_ban_list:
         for x in global_var.prompt_ban_list:
@@ -124,7 +125,7 @@ def prompt_mod(prompt, negative_prompt):
                 pass
             else:
                 negative_prompt = f"{z} {negative_prompt}"
-        return "Mod", prompt, negative_prompt.strip()
+        return "Mod", prompt, negative_prompt.strip(), clean_negative_prompt
     return "None"
 
 
