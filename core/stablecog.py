@@ -258,6 +258,9 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
         # formatting aiya initial reply
         reply_adds = ''
+        if (width != 512) or (height != 512):
+            reply_adds += f' - Size: ``{width}``x``{height}``'
+        reply_adds += f' - Seed: ``{seed}``'
         # lower step value to the highest setting if user goes over max steps
         if steps > settings.read(channel)['max_steps']:
             steps = settings.read(channel)['max_steps']
@@ -266,8 +269,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             reply_adds += f'\nModel: ``{model_name}``'
         if clean_negative != settings.read(channel)['negative_prompt']:
             reply_adds += f'\nNegative Prompt: ``{clean_negative}``'
-        if (width != 512) or (height != 512):
-            reply_adds += f'\nSize: ``{width}``x``{height}``'
         if guidance_scale != settings.read(channel)['guidance_scale']:
             try:
                 float(guidance_scale)
@@ -317,11 +318,11 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             else:
                 queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(self, *input_tuple, view))
                 await ctx.send_response(
-                    f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{reply_adds}')
+                    f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{simple_prompt}``\nSteps: ``{steps}``{reply_adds}')
         else:
             await queuehandler.process_dream(self, queuehandler.DrawObject(self, *input_tuple, view))
             await ctx.send_response(
-                f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{reply_adds}')
+                f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{simple_prompt}``\nSteps: ``{steps}``{reply_adds}')
 
     # the function to queue Discord posts
     def post(self, event_loop: AbstractEventLoop, post_queue_object: queuehandler.PostObject):

@@ -205,7 +205,7 @@ def startup_check():
 
     # update the config if any new keys were added
     if not tomlkit.loads(default_config).keys() == config.keys():
-        print('Configuration file is missing keys! Updating the file.')
+        print('Configuration file keys mismatch! Updating the file.')
         temp_config = {}
         for k, v in config.items():
             temp_config[k] = v
