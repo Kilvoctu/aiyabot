@@ -260,18 +260,18 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             reply_adds += f'\nExceeded maximum of ``{steps}`` steps! This is the best I can do...'
         if model_name != 'Default':
             reply_adds += f'\nModel: ``{model_name}``'
-        if negative_prompt != '':
+        if negative_prompt != settings.read(channel)['negative_prompt']:
             reply_adds += f'\nNegative Prompt: ``{negative_prompt}``'
         if (width != 512) or (height != 512):
             reply_adds += f'\nSize: ``{width}``x``{height}``'
-        if guidance_scale != '7.0':
+        if guidance_scale != settings.read(channel)['guidance_scale']:
             try:
                 float(guidance_scale)
                 reply_adds += f'\nGuidance Scale: ``{guidance_scale}``'
             except(Exception,):
                 reply_adds += f"\nGuidance Scale can't be ``{guidance_scale}``! Setting to default of `7.0`."
                 guidance_scale = 7.0
-        if sampler != 'Euler a':
+        if sampler != settings.read(channel)['sampler']:
             reply_adds += f'\nSampler: ``{sampler}``'
         if init_image:
             reply_adds += f'\nStrength: ``{strength}``'
@@ -282,15 +282,15 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 count = max_count
                 reply_adds += f'\nExceeded maximum of ``{count}`` images! This is the best I can do...'
             reply_adds += f'\nCount: ``{count}``'
-        if style != 'None':
+        if style != settings.read(channel)['style']:
             reply_adds += f'\nStyle: ``{style}``'
-        if hypernet != 'None':
+        if hypernet != settings.read(channel)['hypernet']:
             reply_adds += f'\nHypernet: ``{hypernet}``'
-        if lora != 'None':
+        if lora != settings.read(channel)['lora']:
             reply_adds += f'\nLoRA: ``{lora}``'
-        if facefix != 'None':
+        if facefix != settings.read(channel)['facefix']:
             reply_adds += f'\nFace restoration: ``{facefix}``'
-        if clip_skip != 1:
+        if clip_skip != settings.read(channel)['clip_skip']:
             reply_adds += f'\nCLIP skip: ``{clip_skip}``'
 
         # set up tuple of parameters to pass into the Discord view
