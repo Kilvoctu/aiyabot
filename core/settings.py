@@ -66,6 +66,8 @@ max_size = 1024
 prompt_ban_list = []
 # These words will be automatically removed from the prompt.
 prompt_ignore_list = []
+# Choose whether or not ignored words are displayed to user.
+display_ignored_words = "False"
 # These words will be added to the beginning of the negative prompt.
 negative_prompt_prefix = []
 """
@@ -99,6 +101,7 @@ class GlobalVar:
     queue_limit = 1
     prompt_ban_list = []
     prompt_ignore_list = []
+    display_ignored_words = "False"
     negative_prompt_prefix = []
 
 
@@ -106,6 +109,7 @@ global_var = GlobalVar()
 
 
 def prompt_mod(prompt, negative_prompt):
+    clean_negative_prompt = negative_prompt
     # if any banned words are in prompt, return immediately
     if global_var.prompt_ban_list:
         for x in global_var.prompt_ban_list:
@@ -118,13 +122,16 @@ def prompt_mod(prompt, negative_prompt):
             y = str(y.lower())
             if y in prompt.lower():
                 prompt = prompt.replace(y, "")
+        prompt = ' '.join(prompt.split())
+        if prompt == '':
+            prompt = ' '
         for z in global_var.negative_prompt_prefix:
             z = str(z.lower())
             if z in negative_prompt.lower():
                 pass
             else:
                 negative_prompt = f"{z} {negative_prompt}"
-        return "Mod", prompt, negative_prompt.strip()
+        return "Mod", prompt, negative_prompt.strip(), clean_negative_prompt
     return "None"
 
 
@@ -198,7 +205,7 @@ def startup_check():
 
     # update the config if any new keys were added
     if not tomlkit.loads(default_config).keys() == config.keys():
-        print('Configuration file is missing keys! Updating the file.')
+        print('Configuration file keys mismatch! Updating the file.')
         temp_config = {}
         for k, v in config.items():
             temp_config[k] = v
@@ -338,6 +345,7 @@ def populate_global_vars():
     global_var.queue_limit = config['queue_limit']
     global_var.prompt_ban_list = [x for x in config['prompt_ban_list']]
     global_var.prompt_ignore_list = [x for x in config['prompt_ignore_list']]
+    global_var.display_ignored_words = config['display_ignored_words']
     global_var.negative_prompt_prefix = [x for x in config['negative_prompt_prefix']]
     # slash command doesn't update this dynamically. Changes to size need a restart.
     global_var.size_range = range(192, config['max_size']+64, 64)

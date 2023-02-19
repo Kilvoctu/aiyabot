@@ -222,14 +222,18 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 break
 
         # run through mod function if any moderation values are set in config
+        clean_negative = ''
         if settings.global_var.prompt_ban_list or settings.global_var.prompt_ignore_list or settings.global_var.negative_prompt_prefix:
             mod_results = settings.prompt_mod(simple_prompt, negative_prompt)
             if mod_results[0] == "Stop":
                 await ctx.respond(f"I'm not allowed to draw the word {mod_results[1]}!", ephemeral=True)
                 return
             if mod_results[0] == "Mod":
+                if settings.global_var.display_ignored_words == "False":
+                    simple_prompt = mod_results[1]
                 prompt = mod_results[1]
                 negative_prompt = mod_results[2]
+                clean_negative = mod_results[3]
 
         # if a hypernet or lora is used, append it to the prompt
         if hypernet != 'None':
@@ -254,24 +258,25 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
         # formatting aiya initial reply
         reply_adds = ''
+        if (width != 512) or (height != 512):
+            reply_adds += f' - Size: ``{width}``x``{height}``'
+        reply_adds += f' - Seed: ``{seed}``'
         # lower step value to the highest setting if user goes over max steps
         if steps > settings.read(channel)['max_steps']:
             steps = settings.read(channel)['max_steps']
             reply_adds += f'\nExceeded maximum of ``{steps}`` steps! This is the best I can do...'
         if model_name != 'Default':
             reply_adds += f'\nModel: ``{model_name}``'
-        if negative_prompt != '':
-            reply_adds += f'\nNegative Prompt: ``{negative_prompt}``'
-        if (width != 512) or (height != 512):
-            reply_adds += f'\nSize: ``{width}``x``{height}``'
-        if guidance_scale != '7.0':
+        if clean_negative != settings.read(channel)['negative_prompt']:
+            reply_adds += f'\nNegative Prompt: ``{clean_negative}``'
+        if guidance_scale != settings.read(channel)['guidance_scale']:
             try:
                 float(guidance_scale)
                 reply_adds += f'\nGuidance Scale: ``{guidance_scale}``'
             except(Exception,):
                 reply_adds += f"\nGuidance Scale can't be ``{guidance_scale}``! Setting to default of `7.0`."
                 guidance_scale = 7.0
-        if sampler != 'Euler a':
+        if sampler != settings.read(channel)['sampler']:
             reply_adds += f'\nSampler: ``{sampler}``'
         if init_image:
             reply_adds += f'\nStrength: ``{strength}``'
@@ -282,15 +287,15 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 count = max_count
                 reply_adds += f'\nExceeded maximum of ``{count}`` images! This is the best I can do...'
             reply_adds += f'\nCount: ``{count}``'
-        if style != 'None':
+        if style != settings.read(channel)['style']:
             reply_adds += f'\nStyle: ``{style}``'
-        if hypernet != 'None':
+        if hypernet != settings.read(channel)['hypernet']:
             reply_adds += f'\nHypernet: ``{hypernet}``'
-        if lora != 'None':
+        if lora != settings.read(channel)['lora']:
             reply_adds += f'\nLoRA: ``{lora}``'
-        if facefix != 'None':
+        if facefix != settings.read(channel)['facefix']:
             reply_adds += f'\nFace restoration: ``{facefix}``'
-        if clip_skip != 1:
+        if clip_skip != settings.read(channel)['clip_skip']:
             reply_adds += f'\nCLIP skip: ``{clip_skip}``'
 
         # set up tuple of parameters to pass into the Discord view
@@ -313,11 +318,11 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             else:
                 queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(self, *input_tuple, view))
                 await ctx.send_response(
-                    f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{reply_adds}')
+                    f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{simple_prompt}``\nSteps: ``{steps}``{reply_adds}')
         else:
             await queuehandler.process_dream(self, queuehandler.DrawObject(self, *input_tuple, view))
             await ctx.send_response(
-                f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{simple_prompt}``\nSteps: ``{steps}`` - Seed: ``{seed}``{reply_adds}')
+                f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{simple_prompt}``\nSteps: ``{steps}``{reply_adds}')
 
     # the function to queue Discord posts
     def post(self, event_loop: AbstractEventLoop, post_queue_object: queuehandler.PostObject):
