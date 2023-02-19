@@ -220,6 +220,18 @@ class DrawModal(Modal):
         if invalid_input:
             await interaction.response.send_message(embed=embed_err, ephemeral=True)
         else:
+            # run through mod function if any moderation values are set in config
+            if settings.global_var.prompt_ban_list or settings.global_var.prompt_ignore_list or settings.global_var.negative_prompt_prefix:
+                mod_results = settings.prompt_mod(self.children[0].value, self.children[1].value)
+                if settings.global_var.prompt_ban_list and mod_results[0] == "Stop":
+                    await interaction.response.send_message(f"I'm not allowed to draw the word {mod_results[1]}!", ephemeral=True)
+                    return
+                if settings.global_var.prompt_ignore_list or settings.global_var.negative_prompt_prefix and mod_results[0] == "Mod":
+                    if settings.global_var.display_ignored_words == "False":
+                        pen[1] = mod_results[1]
+                    pen[2] = mod_results[1]
+                    pen[3] = mod_results[2]
+
             # update the prompt again if a valid model change is requested
             if model_found:
                 pen[2] = new_token + pen[1]
@@ -228,16 +240,6 @@ class DrawModal(Modal):
                 pen[2] += f' <hypernet:{pen[18]}:0.85>'
             if pen[19] != 'None':
                 pen[2] += f' <lora:{pen[19]}:0.85>'
-
-            # run through mod function if any moderation values are set in config
-            if settings.global_var.prompt_ban_list or settings.global_var.prompt_ignore_list or settings.global_var.negative_prompt_prefix:
-                mod_results = settings.prompt_mod(pen[2], self.children[1].value)
-                if settings.global_var.prompt_ban_list and mod_results[0] == "Stop":
-                    await interaction.response.send_message(f"I'm not allowed to draw the word {mod_results[1]}!", ephemeral=True)
-                    return
-                if settings.global_var.prompt_ignore_list or settings.global_var.negative_prompt_prefix and mod_results[0] == "Mod":
-                    pen[2] = mod_results[1]
-                    pen[3] = mod_results[2]
 
             # the updated tuple to send to queue
             prompt_tuple = tuple(pen)

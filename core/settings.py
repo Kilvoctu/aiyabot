@@ -123,6 +123,8 @@ def prompt_mod(prompt, negative_prompt):
             if y in prompt.lower():
                 prompt = prompt.replace(y, "")
         prompt = ' '.join(prompt.split())
+        if prompt == '':
+            prompt = ' '
         for z in global_var.negative_prompt_prefix:
             z = str(z.lower())
             if z in negative_prompt.lower():
