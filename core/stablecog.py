@@ -357,7 +357,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 "seed_resize_from_h": 0,
                 "seed_resize_from_w": 0,
                 "denoising_strength": None,
-                "n_iter": queue_object.batch_count,
+                "batch_size": queue_object.batch_count,
                 "styles": [
                     queue_object.style
                 ]
