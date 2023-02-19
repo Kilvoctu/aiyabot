@@ -229,6 +229,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 await ctx.respond(f"I'm not allowed to draw the word {mod_results[1]}!", ephemeral=True)
                 return
             if mod_results[0] == "Mod":
+                if settings.global_var.display_ignored_words == "False":
+                    simple_prompt = mod_results[1].strip()
+                    if simple_prompt == '':
+                        simple_prompt = ' '
                 prompt = mod_results[1]
                 negative_prompt = mod_results[2]
                 clean_negative = mod_results[3]

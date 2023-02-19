@@ -66,6 +66,8 @@ max_size = 1024
 prompt_ban_list = []
 # These words will be automatically removed from the prompt.
 prompt_ignore_list = []
+# Choose whether or not ignored words are displayed to user.
+display_ignored_words = "False"
 # These words will be added to the beginning of the negative prompt.
 negative_prompt_prefix = []
 """
@@ -99,6 +101,7 @@ class GlobalVar:
     queue_limit = 1
     prompt_ban_list = []
     prompt_ignore_list = []
+    display_ignored_words = "False"
     negative_prompt_prefix = []
 
 
@@ -119,6 +122,7 @@ def prompt_mod(prompt, negative_prompt):
             y = str(y.lower())
             if y in prompt.lower():
                 prompt = prompt.replace(y, "")
+        prompt = ' '.join(prompt.split())
         for z in global_var.negative_prompt_prefix:
             z = str(z.lower())
             if z in negative_prompt.lower():
@@ -339,6 +343,7 @@ def populate_global_vars():
     global_var.queue_limit = config['queue_limit']
     global_var.prompt_ban_list = [x for x in config['prompt_ban_list']]
     global_var.prompt_ignore_list = [x for x in config['prompt_ignore_list']]
+    global_var.display_ignored_words = config['display_ignored_words']
     global_var.negative_prompt_prefix = [x for x in config['negative_prompt_prefix']]
     # slash command doesn't update this dynamically. Changes to size need a restart.
     global_var.size_range = range(192, config['max_size']+64, 64)
