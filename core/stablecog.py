@@ -271,6 +271,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             reply_adds += f'\nNegative Prompt: ``{clean_negative}``'
         if guidance_scale != settings.read(channel)['guidance_scale']:
             try:
+                guidance_scale = guidance_scale.replace(",", ".")
                 float(guidance_scale)
                 reply_adds += f'\nGuidance Scale: ``{guidance_scale}``'
             except(Exception,):
@@ -279,8 +280,14 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if sampler != settings.read(channel)['sampler']:
             reply_adds += f'\nSampler: ``{sampler}``'
         if init_image:
-            reply_adds += f'\nStrength: ``{strength}``'
-            reply_adds += f'\nURL Init Image: ``{init_image.url}``'
+            try:
+                strength = strength.replace(",", ".")
+                float(strength)
+                reply_adds += f'\nStrength: ``{strength}``'
+                reply_adds += f'\nURL Init Image: ``{init_image.url}``'
+            except Exception as e:
+                reply_adds += f"\nStrength can't be ``{strength}``! Setting to default of `0.75`."
+                strength = 0.75
         if count != 1:
             max_count = settings.read(channel)['max_count']
             if count > max_count:

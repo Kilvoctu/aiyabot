@@ -162,7 +162,7 @@ class DrawModal(Modal):
                                         inline=False)
             if 'guidance_scale:' in line:
                 try:
-                    pen[8] = float(line.split(':', 1)[1])
+                    pen[8] = float(line.split(':', 1)[1].replace(",", "."))
                 except(Exception,):
                     invalid_input = True
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is not valid for the guidance scale!",
@@ -177,7 +177,7 @@ class DrawModal(Modal):
                                         inline=False)
             if 'strength:' in line:
                 try:
-                    pen[11] = float(line.split(':', 1)[1])
+                    pen[11] = float(line.split(':', 1)[1].replace(",", "."))
                 except(Exception,):
                     invalid_input = True
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is not valid for strength!.",
