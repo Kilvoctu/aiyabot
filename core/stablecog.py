@@ -436,16 +436,20 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 image = Image.open(io.BytesIO(base64.b64decode(image_base64.split(",", 1)[0])))
                 pil_images.append(image)
 
-                # grab png info
-                png_payload = {
-                    "image": "data:image/png;base64," + image_base64
-                }
-                png_response = s.post(url=f'{settings.global_var.url}/sdapi/v1/png-info', json=png_payload)
+                if settings.global_var.save_metadata == 'True':
+                    # grab png info
+                    png_payload = {
+                        "image": "data:image/png;base64," + image_base64
+                    }
+                    png_response = s.post(url=f'{settings.global_var.url}/sdapi/v1/png-info', json=png_payload)
 
-                metadata = PngImagePlugin.PngInfo()
-                epoch_time = int(time.time())
-                metadata.add_text("parameters", png_response.json().get("info"))
+                    metadata = PngImagePlugin.PngInfo()
+                    metadata.add_text("parameters", png_response.json().get("info"))
+                else:
+                    metadata = ''
+
                 if settings.global_var.save_outputs == 'True':
+                    epoch_time = int(time.time())
                     file_path = f'{settings.global_var.dir}/{epoch_time}-{queue_object.seed}-{file_name[0:120]}-{i}.png'
                     image.save(file_path, pnginfo=metadata)
                     print(f'Saved image: {file_path}')
