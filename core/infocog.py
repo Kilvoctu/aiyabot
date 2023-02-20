@@ -93,9 +93,10 @@ class InfoView(View):
                     if key == keyB:
                         if value == '':
                             value = ' '
-                        style_list += f'\n**{key}**\n``{value}``'
+                        elif len(value) > 1024:
+                            value = f'{value[:1000]}....'
+                        embed_page.add_field(name=f"**{key}**", value=f"``{value}``", inline=False)
                         break
-            embed_page.add_field(name="", value=style_list, inline=True)
             if length > batch:
                 embed_page.set_footer(text=f'Page {self.page + 1} of {math.ceil(length / batch)}')
             self.contents.append(embed_page)
