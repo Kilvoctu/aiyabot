@@ -390,11 +390,7 @@ def populate_global_vars():
             print("Can't connect to API for some reason!"
                   "Please check your .env URL or credentials.")
             os.system("pause")
-
-    # add default "None" options
     global_var.style_names['None'] = ''
-    global_var.hyper_names.append('None')
-    # populate remaining options
     for s2 in r2.json():
         global_var.style_names[s2['name']] = s2['prompt'], s2['negative_prompt']
     for s3 in r3.json():
@@ -449,6 +445,12 @@ def populate_global_vars():
                 pass
     except(Exception,):
         print("Trouble accessing Web UI config! I can't pull the LoRAs or High-res upscaler lists!")
+    # format some global lists, ensure default "None" options exist
+    print(global_var.style_names)
+    if 'None' not in global_var.facefix_models:
+        global_var.facefix_models.insert(0, 'None')
+    if 'None' not in global_var.hyper_names:
+        global_var.hyper_names.insert(0, 'None')
     global_var.lora_names.remove('')
     global_var.lora_names.insert(0, 'None')
     global_var.hires_upscaler_names.insert(0, 'Disabled')
