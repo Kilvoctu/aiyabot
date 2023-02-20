@@ -446,7 +446,6 @@ def populate_global_vars():
     except(Exception,):
         print("Trouble accessing Web UI config! I can't pull the LoRAs or High-res upscaler lists!")
     # format some global lists, ensure default "None" options exist
-    print(global_var.style_names)
     if 'None' not in global_var.facefix_models:
         global_var.facefix_models.insert(0, 'None')
     if 'None' not in global_var.hyper_names:
