@@ -284,10 +284,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 strength = strength.replace(",", ".")
                 float(strength)
                 reply_adds += f'\nStrength: ``{strength}``'
-                reply_adds += f'\nURL Init Image: ``{init_image.url}``'
-            except Exception as e:
+            except(Exception,):
                 reply_adds += f"\nStrength can't be ``{strength}``! Setting to default of `0.75`."
                 strength = 0.75
+            reply_adds += f'\nURL Init Image: ``{init_image.url}``'
         if count != 1:
             max_count = settings.read(channel)['max_count']
             if count > max_count:
