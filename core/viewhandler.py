@@ -39,6 +39,14 @@ class DrawModal(Modal):
     def __init__(self, input_tuple) -> None:
         super().__init__(title="Change Prompt!")
         self.input_tuple = input_tuple
+
+        # run through mod function to get clean negative since I don't want to add it to stablecog tuple
+        self.clean_negative = ''
+        if settings.global_var.negative_prompt_prefix:
+            mod_results = settings.prompt_mod(input_tuple[2], input_tuple[3])
+            if settings.global_var.negative_prompt_prefix and mod_results[0] == "Mod":
+                self.clean_negative = mod_results[3]
+
         self.add_item(
             InputText(
                 label='Input your new prompt',
@@ -50,7 +58,7 @@ class DrawModal(Modal):
             InputText(
                 label='Input your new negative prompt (optional)',
                 style=discord.InputTextStyle.long,
-                value=input_tuple[3],
+                value=self.clean_negative,
                 required=False
             )
         )
@@ -221,6 +229,7 @@ class DrawModal(Modal):
             await interaction.response.send_message(embed=embed_err, ephemeral=True)
         else:
             # run through mod function if any moderation values are set in config
+            new_clean_negative = ''
             if settings.global_var.prompt_ban_list or settings.global_var.prompt_ignore_list or settings.global_var.negative_prompt_prefix:
                 mod_results = settings.prompt_mod(self.children[0].value, self.children[1].value)
                 if settings.global_var.prompt_ban_list and mod_results[0] == "Stop":
@@ -231,6 +240,7 @@ class DrawModal(Modal):
                         pen[1] = mod_results[1]
                     pen[2] = mod_results[1]
                     pen[3] = mod_results[2]
+                    new_clean_negative = mod_results[3]
 
             # update the prompt again if a valid model change is requested
             if model_found:
@@ -247,8 +257,8 @@ class DrawModal(Modal):
 
             # message additions if anything was changed
             prompt_output = f'\nNew prompt: ``{pen[1]}``'
-            if pen[3] != '' and pen[3] != self.input_tuple[3]:
-                prompt_output += f'\nNew negative prompt: ``{pen[3]}``'
+            if new_clean_negative != '' and new_clean_negative != self.clean_negative:
+                prompt_output += f'\nNew negative prompt: ``{new_clean_negative}``'
             if str(pen[4]) != str(self.input_tuple[4]):
                 prompt_output += f'\nNew model: ``{new_model}``'
             index_start = 5
@@ -382,6 +392,13 @@ class DrawView(View):
             # strip any folders from model name
             model_name = model_name.split('_', 1)[-1]
 
+            # run through mod function to get clean negative since I don't want to add it to stablecog tuple
+            clean_negative = ''
+            if settings.global_var.negative_prompt_prefix:
+                mod_results = settings.prompt_mod(rev[2], rev[3])
+                if settings.global_var.negative_prompt_prefix and mod_results[0] == "Mod":
+                    clean_negative = mod_results[3]
+
             # generate the command for copy-pasting, and also add embed fields
             embed = discord.Embed(title="About the image!", description="")
             prompt_field = rev[1]
@@ -395,8 +412,8 @@ class DrawView(View):
             copy_command = f'/draw prompt:{rev[1]} data_model:{display_name} steps:{rev[5]} width:{rev[6]} ' \
                            f'height:{rev[7]} guidance_scale:{rev[8]} sampler:{rev[9]} seed:{rev[10]}'
             if rev[3] != '':
-                copy_command += f' negative_prompt:{rev[3]}'
-                n_prompt_field = rev[3]
+                copy_command += f' negative_prompt:{clean_negative}'
+                n_prompt_field = clean_negative
                 if len(n_prompt_field) > 1024:
                     n_prompt_field = f'{n_prompt_field[:1010]}....'
                 embed.add_field(name=f'Negative prompt', value=f'``{n_prompt_field}``', inline=False)

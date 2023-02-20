@@ -128,10 +128,10 @@ def prompt_mod(prompt, negative_prompt):
         for z in global_var.negative_prompt_prefix:
             z = str(z.lower())
             if z in negative_prompt.lower():
-                pass
+                clean_negative_prompt = clean_negative_prompt.replace(z, "")
             else:
                 negative_prompt = f"{z} {negative_prompt}"
-        return "Mod", prompt, negative_prompt.strip(), clean_negative_prompt
+        return "Mod", prompt, negative_prompt.strip(), clean_negative_prompt.strip()
     return "None"
 
 
