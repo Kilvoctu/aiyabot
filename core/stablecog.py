@@ -222,7 +222,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 break
 
         # run through mod function if any moderation values are set in config
-        clean_negative = ''
+        clean_negative = negative_prompt
         if settings.global_var.prompt_ban_list or settings.global_var.prompt_ignore_list or settings.global_var.negative_prompt_prefix:
             mod_results = settings.prompt_mod(simple_prompt, negative_prompt)
             if mod_results[0] == "Stop":

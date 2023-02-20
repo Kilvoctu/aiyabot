@@ -41,7 +41,7 @@ class DrawModal(Modal):
         self.input_tuple = input_tuple
 
         # run through mod function to get clean negative since I don't want to add it to stablecog tuple
-        self.clean_negative = ''
+        self.clean_negative = input_tuple[3]
         if settings.global_var.negative_prompt_prefix:
             mod_results = settings.prompt_mod(input_tuple[2], input_tuple[3])
             if settings.global_var.negative_prompt_prefix and mod_results[0] == "Mod":
@@ -397,7 +397,7 @@ class DrawView(View):
             model_name = model_name.split('_', 1)[-1]
 
             # run through mod function to get clean negative since I don't want to add it to stablecog tuple
-            clean_negative = ''
+            clean_negative = rev[3]
             if settings.global_var.negative_prompt_prefix:
                 mod_results = settings.prompt_mod(rev[2], rev[3])
                 if settings.global_var.negative_prompt_prefix and mod_results[0] == "Mod":
