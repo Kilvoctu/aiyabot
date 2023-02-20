@@ -268,6 +268,8 @@ class DrawModal(Modal):
                 if str(pen[index]) != str(self.input_tuple[index]):
                     prompt_output += f'\nNew {value}: ``{pen[index]}``'
 
+            print(f'Redraw -- {interaction.user.name}#{interaction.user.discriminator} -- Prompt: {pen[1]}')
+
             # check queue again, but now we know user is not in queue
             if queuehandler.GlobalQueue.dream_thread.is_alive():
                 queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(stablecog.StableCog(self), *prompt_tuple, DrawView(prompt_tuple)))
@@ -332,6 +334,8 @@ class DrawView(View):
                 new_seed = list(self.input_tuple)
                 new_seed[10] = random.randint(0, 0xFFFFFFFF)
                 seed_tuple = tuple(new_seed)
+
+                print(f'Reroll -- {interaction.user.name}#{interaction.user.discriminator} -- Prompt: {seed_tuple[1]}')
 
                 # set up the draw dream and do queue code again for lack of a more elegant solution
                 draw_dream = stablecog.StableCog(self)
