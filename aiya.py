@@ -12,6 +12,8 @@ intents = discord.Intents.default()
 intents.members = True
 load_dotenv()
 self.logger = get_logger(__name__)
+os.system('git remote update')
+os.system('git status')
 
 # load extensions
 # check files and global variables
