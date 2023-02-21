@@ -11,3 +11,7 @@ resources/*.toml
 
 .env
 start.bat
+
+# Default Docker mounts.
+deploy/outputs
+deploy/resources
