@@ -422,8 +422,10 @@ def populate_global_vars():
         model_data = list(csv.reader(csv_file, delimiter='|'))
         for row in model_data[1:]:
             for model in r.json():
-                if row[1].split(os.sep)[-1] == model['filename'].split(os.sep)[-1] \
-                        or row[1].replace(os.sep, '_') == model['model_name']:
+                norm_csv_path = os.path.normpath(row[1])
+                norm_api_path = os.path.normpath(model['filename'])
+                if norm_csv_path.split(os.sep)[-1] == norm_api_path.split(os.sep)[-1] \
+                        or norm_csv_path.replace(os.sep, '_') == model['model_name']:
                     global_var.model_info[row[0]] = model['title'], model['model_name'], model['hash'], row[2]
                     break
     # add "Default" if models.csv is on default, or if no model matches are found
