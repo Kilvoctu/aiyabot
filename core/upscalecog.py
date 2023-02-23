@@ -215,8 +215,8 @@ class UpscaleCog(commands.Cog):
             file_path = f'{settings.global_var.dir}/{epoch_time}-x{queue_object.resize}-{self.file_name[0:120]}.png'
 
             # save local copy of image
+            image_data = response_data['image']
             if settings.global_var.save_outputs == 'True':
-                image_data = response_data['image']
                 with open(file_path, "wb") as fh:
                     fh.write(base64.b64decode(image_data))
                 print(f'Saved image: {file_path}')
