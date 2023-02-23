@@ -2,6 +2,7 @@ import base64
 import contextlib
 import discord
 import io
+import math
 import random
 import requests
 import time
@@ -149,9 +150,9 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         required=False,
     )
     @option(
-        'count',
-        int,
-        description='The number of images to generate. This is "Batch count", not "Batch size".',
+        'batch',
+        str,
+        description='The number of images to generate. Batch format: count,size',
         required=False,
     )
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
@@ -171,7 +172,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             strength: Optional[str] = None,
                             init_image: Optional[discord.Attachment] = None,
                             init_url: Optional[str],
-                            count: Optional[int] = None):
+                            batch: Optional[str] = None):
 
         # update defaults with any new defaults from settingscog
         channel = '% s' % ctx.channel.id
@@ -202,8 +203,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             lora = settings.read(channel)['lora']
         if strength is None:
             strength = settings.read(channel)['strength']
-        if count is None:
-            count = settings.read(channel)['count']
+        if batch is None:
+            batch = settings.read(channel)['batch']
 
         # if a model is not selected, do nothing
         model_name = 'Default'
@@ -256,11 +257,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             except(Exception,):
                 await ctx.send_response('URL image not found!\nI will do my best without it!')
 
-        # formatting aiya initial reply
+        # verify values and format aiya initial reply
         reply_adds = ''
         if (width != 512) or (height != 512):
             reply_adds += f' - Size: ``{width}``x``{height}``'
         reply_adds += f' - Seed: ``{seed}``'
+
         # lower step value to the highest setting if user goes over max steps
         if steps > settings.read(channel)['max_steps']:
             steps = settings.read(channel)['max_steps']
@@ -270,6 +272,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if clean_negative != settings.read(channel)['negative_prompt']:
             reply_adds += f'\nNegative Prompt: ``{clean_negative}``'
         if guidance_scale != settings.read(channel)['guidance_scale']:
+            # try to convert string to Web UI-friendly float
             try:
                 guidance_scale = guidance_scale.replace(",", ".")
                 float(guidance_scale)
@@ -280,6 +283,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if sampler != settings.read(channel)['sampler']:
             reply_adds += f'\nSampler: ``{sampler}``'
         if init_image:
+            # try to convert string to Web UI-friendly float
             try:
                 strength = strength.replace(",", ".")
                 float(strength)
@@ -288,12 +292,53 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 reply_adds += f"\nStrength can't be ``{strength}``! Setting to default of `0.75`."
                 strength = 0.75
             reply_adds += f'\nURL Init Image: ``{init_image.url}``'
-        if count != 1:
-            max_count = settings.read(channel)['max_count']
-            if count > max_count:
-                count = max_count
-                reply_adds += f'\nExceeded maximum of ``{count}`` images! This is the best I can do...'
-            reply_adds += f'\nCount: ``{count}``'
+        # try to convert batch to usable format
+        batch_check = settings.batch_format(batch)
+        batch = list(batch_check)
+        if batch[0] != 1 or batch[1] != 1:
+            max_batch = settings.batch_format(settings.read(channel)['max_batch'])
+            # if only one number is provided, try to generate the requested amount, prioritizing batch size
+            if batch[2] == 1:
+                # if over the limits, cut the number in half and let AIYA scale down
+                total = max_batch[0] * max_batch[1]
+
+                # add hard limit of 10 images until I can figure how to bypass this discord limit - single value edition
+                if batch[0] > 10:
+                    batch[0] = 10
+                    if total > 10:
+                        total = 10
+                    reply_adds += f"\nI'm currently limited to a max of 10 drawings per post..."
+
+                if batch[0] > total:
+                    batch[0] = math.ceil(batch[0] / 2)
+                    batch[1] = math.ceil(batch[0] / 2)
+                else:
+                    # do... math
+                    difference = math.ceil(batch[0] / max_batch[1])
+                    multiple = int(batch[0] / difference)
+                    new_total = difference * multiple
+                    requested = batch[0]
+                    batch[0], batch[1] = difference, multiple
+                    if requested % difference != 0:
+                        reply_adds += f"\nI can't draw exactly ``{requested}`` pictures! Settling for ``{new_total}``."
+            # check batch values against the maximum limits
+            if batch[0] > max_batch[0]:
+                reply_adds += f"\nThe max batch count I'm allowed here is ``{max_batch[0]}``!"
+                batch[0] = max_batch[0]
+            if batch[1] > max_batch[1]:
+                reply_adds += f"\nThe max batch size I'm allowed here is ``{max_batch[1]}``!"
+                batch[1] = max_batch[1]
+
+            # add hard limit of 10 images until I can figure how to bypass this discord limit - multi value edition
+            if batch[0] * batch[1] > 10:
+                while batch[0] * batch[1] > 10:
+                    if batch[0] != 1:
+                        batch[0] -= 1
+                    if batch[1] != 1:
+                        batch[1] -= 1
+                reply_adds += f"\nI'm currently limited to a max of 10 drawings per post..."
+
+            reply_adds += f'\nBatch count: ``{batch[0]}`` - Batch size: ``{batch[1]}``'
         if style != settings.read(channel)['style']:
             reply_adds += f'\nStyle: ``{style}``'
         if hypernet != settings.read(channel)['hypernet']:
@@ -308,7 +353,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         # set up tuple of parameters to pass into the Discord view
         input_tuple = (
             ctx, simple_prompt, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength,
-            init_image, count, style, facefix, highres_fix, clip_skip, hypernet, lora)
+            init_image, batch, style, facefix, highres_fix, clip_skip, hypernet, lora)
         view = viewhandler.DrawView(input_tuple)
         # setup the queue
         user_queue = 0
@@ -369,7 +414,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 "seed_resize_from_h": 0,
                 "seed_resize_from_w": 0,
                 "denoising_strength": None,
-                "n_iter": queue_object.batch_count,
+                "n_iter": queue_object.batch[0],
+                "batch_size": queue_object.batch[1],
                 "styles": [
                     queue_object.style
                 ]
@@ -462,7 +508,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     print(f'Saved image: {file_path}')
 
             # increment number of images generated
-            settings.stats_count(queue_object.batch_count)
+            settings.stats_count(queue_object.batch[0]*queue_object.batch[1])
 
             # post to discord
             def post_dream():
