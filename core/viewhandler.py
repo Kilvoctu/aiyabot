@@ -427,8 +427,10 @@ class DrawView(View):
             if rev[12]:
                 # not interested in adding embed fields for strength and init_image
                 copy_command += f' strength:{rev[11]} init_url:{rev[12].url}'
-            if rev[13] != 1:
-                copy_command += f' count:{rev[13]}'
+            if rev[13][0] != 1 or rev[13][1] != 1:
+                bat_string = ','.join(str(x) for x in rev[13])
+                bat_copy = settings.batch_format(bat_string)
+                copy_command += f' batch:{bat_copy[0]},{bat_copy[1]}'
             if rev[14] != 'None':
                 copy_command += f' style:{rev[14]}'
                 extra_params += f'\nStyle preset: ``{rev[14]}``'
