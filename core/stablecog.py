@@ -301,6 +301,14 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             if batch[2] == 1:
                 # if over the limits, cut the number in half and let AIYA scale down
                 total = max_batch[0] * max_batch[1]
+
+                # add hard limit of 10 images until I can figure how to bypass this discord limit - single value edition
+                if batch[0] > 10:
+                    batch[0] = 10
+                    if total > 10:
+                        total = 10
+                    reply_adds += f"\nI'm currently limited to a max of 10 drawings per post..."
+
                 if batch[0] > total:
                     batch[0] = math.ceil(batch[0] / 2)
                     batch[1] = math.ceil(batch[0] / 2)
@@ -311,7 +319,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     new_total = difference * multiple
                     requested = batch[0]
                     batch[0], batch[1] = difference, multiple
-                    if new_total != total:
+                    if requested % difference != 0:
                         reply_adds += f"\nI can't draw exactly ``{requested}`` pictures! Settling for ``{new_total}``."
             # check batch values against the maximum limits
             if batch[0] > max_batch[0]:
@@ -320,6 +328,16 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             if batch[1] > max_batch[1]:
                 reply_adds += f"\nThe max batch size I'm allowed here is ``{max_batch[1]}``!"
                 batch[1] = max_batch[1]
+
+            # add hard limit of 10 images until I can figure how to bypass this discord limit - multi value edition
+            if batch[0] * batch[1] > 10:
+                while batch[0] * batch[1] > 10:
+                    if batch[0] != 1:
+                        batch[0] -= 1
+                    if batch[1] != 1:
+                        batch[1] -= 1
+                reply_adds += f"\nI'm currently limited to a max of 10 drawings per post..."
+
             reply_adds += f'\nBatch count: ``{batch[0]}`` - Batch size: ``{batch[1]}``'
         if style != settings.read(channel)['style']:
             reply_adds += f'\nStyle: ``{style}``'
