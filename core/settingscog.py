@@ -153,17 +153,15 @@ class SettingsCog(commands.Cog):
         description='Set default strength (for init_img) for the channel (0.0 to 1.0).'
     )
     @option(
-        'count',
-        int,
-        description='Set default count for the channel',
-        min_value=1,
+        'batch',
+        str,
+        description='Set default batch for the channel (count,size)',
         required=False,
     )
     @option(
-        'max_count',
-        int,
-        description='Set maximum count for the channel',
-        min_value=1,
+        'max_batch',
+        str,
+        description='Set maximum batch for the channel (count,size)',
         required=False,
     )
     @option(
@@ -195,8 +193,8 @@ class SettingsCog(commands.Cog):
                                hypernet: Optional[str] = None,
                                lora: Optional[str] = None,
                                strength: Optional[str] = None,
-                               count: Optional[int] = None,
-                               max_count: Optional[int] = None,
+                               batch: Optional[str] = None,
+                               max_batch: Optional[str] = None,
                                upscaler_1: Optional[str] = None,
                                refresh: Optional[bool] = False):
         # get the channel id and check if a settings file exists
@@ -331,13 +329,22 @@ class SettingsCog(commands.Cog):
             new += f'\nUpscaler 1: ``"{upscaler_1}"``'
             set_new = True
 
-        if max_count is not None:
-            settings.update(channel, 'max_count', max_count)
-            new += f'\nMax count: ``{max_count}``'
-            # automatically lower default count if max count goes below it
-            if max_count < reviewer['count']:
-                settings.update(channel, 'count', max_count)
-                new += f'\nDefault count is too high! Lowering to ``{max_count}``.'
+        if max_batch is not None:
+            batch_check = settings.batch_format(reviewer['batch'])
+            max_batch = settings.batch_format(max_batch)
+
+            settings.update(channel, 'max_batch', f'{max_batch[0]},{max_batch[1]}')
+            new += f'\nMax batch (count,size): ``{max_batch[0]},{max_batch[1]}``'
+            # automatically lower default batch if max batch goes below it
+            if max_batch[0] < batch_check[0]:
+                settings.update(channel, 'batch', f'{max_batch[0]},{batch_check[1]}')
+                new += f'\nDefault batch count is too high! Lowering to ``{max_batch[0]}``.'
+            if max_batch[1] < batch_check[1]:
+                if max_batch[0] < batch_check[0]:
+                    settings.update(channel, 'batch', f'{max_batch[0]},{max_batch[1]}')
+                else:
+                    settings.update(channel, 'batch', f'{batch_check[0]},{max_batch[1]}')
+                new += f'\nDefault batch size is too high! Lowering to ``{max_batch[1]}``.'
             set_new = True
 
         # review settings again in case user is trying to set steps/counts and max steps/counts simultaneously
@@ -350,12 +357,17 @@ class SettingsCog(commands.Cog):
                 new += f'\nSteps: ``{steps}``'
             set_new = True
 
-        if count is not None:
-            if count > reviewer['max_count']:
-                new += f"\nMax count is ``{reviewer['max_count']}``! You can't go beyond it!"
+        if batch is not None:
+            batch = settings.batch_format(batch)
+            max_batch_check = settings.batch_format(reviewer['max_batch'])
+
+            if batch[0] > max_batch_check[0]:
+                new += f"\nMax batch count is ``{max_batch_check[0]}``! You can't go beyond it!"
+            elif batch[1] > max_batch_check[1]:
+                new += f"\nMax batch size is ``{max_batch_check[1]}``! You can't go beyond it!"
             else:
-                settings.update(channel, 'count', count)
-                new += f'\nCount: ``{count}``'
+                settings.update(channel, 'batch', f'{batch[0]},{batch[1]}')
+                new += f'\nbatch (count,size): ``{batch[0]},{batch[1]}``'
             set_new = True
 
         if set_new:

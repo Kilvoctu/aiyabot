@@ -30,7 +30,7 @@ input_tuple[0] = ctx
 [19] = lora
 '''
 tuple_names = ['ctx', 'simple_prompt', 'prompt', 'negative_prompt', 'data_model', 'steps', 'width', 'height',
-               'guidance_scale', 'sampler', 'seed', 'strength', 'init_image', 'batch_count', 'style', 'facefix',
+               'guidance_scale', 'sampler', 'seed', 'strength', 'init_image', 'batch', 'style', 'facefix',
                'highres_fix', 'clip_skip', 'hypernet', 'lora']
 
 

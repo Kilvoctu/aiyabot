@@ -30,8 +30,8 @@ template = {
     "hypernet": "None",
     "lora": "None",
     "strength": "0.75",
-    "count": 1,
-    "max_count": 1,
+    "batch": "1,1",
+    "max_batch": "1,1",
     "upscaler_1": "ESRGAN_4x"
 }
 
@@ -111,6 +111,27 @@ class GlobalVar:
 global_var = GlobalVar()
 
 
+def batch_format(batch_string):
+    format_batch_string = batch_string.replace(".", ",").split(",")
+    values_given = len(format_batch_string)
+    if values_given < 2:
+        format_batch_string.append('1')
+    # try ensure each value is an integer of at least 1
+    try:
+        count = int(format_batch_string[0])
+        if count < 1:
+            count = 1
+    except(Exception,):
+        count = 1
+    try:
+        size = int(format_batch_string[1])
+        if size < 1:
+            size = 1
+    except(Exception,):
+        size = 1
+    return count, size, values_given
+
+
 def prompt_mod(prompt, negative_prompt):
     clean_negative_prompt = negative_prompt
     # if any banned words are in prompt, return immediately
@@ -176,6 +197,17 @@ def read(channel_id):
     with open(path + channel_id + '.json', 'r') as configfile:
         settings = dict(template)
         settings.update(json.load(configfile))
+
+        # update deprecated 'count' to 'batch'
+        if 'count' in settings or 'max_count' in settings:
+            try:
+                settings['batch'] = settings.pop('count')
+                settings['max_batch'] = settings.pop('max_count')
+            except(Exception,):
+                pass
+            with open(path + channel_id + '.json', 'w') as configfile2:
+                json.dump(settings, configfile2, indent=1)
+
     return settings
 
 
