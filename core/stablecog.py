@@ -2,6 +2,7 @@ import base64
 import contextlib
 import discord
 import io
+import math
 import random
 import requests
 import time
@@ -296,20 +297,28 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         batch = list(batch_check)
         if batch[0] != 1 or batch[1] != 1:
             max_batch = settings.batch_format(settings.read(channel)['max_batch'])
-            # if only one number provided, match against highest limits between count/size
-            # to see if requested amount is possible. prioritize batch size
-            # to do: I need to think about this logic of this for a bit...
-            '''if batch[2] == 1:
-                user_value = max(batch[0], batch[1])
-                system_max_value = max(max_batch[0], max_batch[1])
-                max_amount = max_batch[0] * max_batch[1]'''
-
+            # if only one number is provided, try to generate the requested amount, prioritizing batch size
+            if batch[2] == 1:
+                # if over the limits, cut the number in half and let AIYA scale down
+                total = max_batch[0] * max_batch[1]
+                if batch[0] > total:
+                    batch[0] = math.ceil(batch[0] / 2)
+                    batch[1] = math.ceil(batch[0] / 2)
+                else:
+                    # do... math
+                    difference = math.ceil(batch[0] / max_batch[1])
+                    multiple = int(batch[0] / difference)
+                    new_total = difference * multiple
+                    requested = batch[0]
+                    batch[0], batch[1] = difference, multiple
+                    if new_total != total:
+                        reply_adds += f"\nI can't draw exactly ``{requested}`` pictures! Settling for ``{new_total}``."
             # check batch values against the maximum limits
             if batch[0] > max_batch[0]:
-                reply_adds += f"\nThe max batch count I can do here is ``{max_batch[0]}``!"
+                reply_adds += f"\nThe max batch count I'm allowed here is ``{max_batch[0]}``!"
                 batch[0] = max_batch[0]
             if batch[1] > max_batch[1]:
-                reply_adds += f"\nThe max batch size I can do here is ``{max_batch[1]}``!"
+                reply_adds += f"\nThe max batch size I'm allowed here is ``{max_batch[1]}``!"
                 batch[1] = max_batch[1]
             reply_adds += f'\nBatch count: ``{batch[0]}`` - Batch size: ``{batch[1]}``'
         if style != settings.read(channel)['style']:

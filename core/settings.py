@@ -116,7 +116,7 @@ def batch_format(batch_string):
     values_given = len(format_batch_string)
     if values_given < 2:
         format_batch_string.append('1')
-    # try ensure each value is an integer of at least 1
+    # try to ensure each value is an integer of at least 1
     try:
         count = int(format_batch_string[0])
         if count < 1:
@@ -161,10 +161,10 @@ def prompt_mod(prompt, negative_prompt):
 
 def stats_count(number):
     with open(f'{path}stats.txt', 'r') as f:
-        data = list(map(int, f.readlines()))
+        data = list(map(float, f.readlines()))
     data[0] += number
     with open(f'{path}stats.txt', 'w') as f:
-        f.write('\n'.join(str(x) for x in data))
+        f.write('\n'.join(str(int(x)) for x in data))
 
 
 def messages():
