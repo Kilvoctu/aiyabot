@@ -59,6 +59,24 @@ TOKEN = put your bot token here
 ```
 - Run AIYA by running launch.bat (or launch.sh for Linux)
 
+## Deploy with Docker
+
+AIYA can be deployed using Docker.
+
+The docker image supports additional configuration by adding environment variables or config file updates detailed in the [wiki](https://github.com/Kilvoctu/aiyabot/wiki/Configuration).
+
+### Docker run
+
+```bash
+docker run --name aiyabot --network=host --restart=always -e TOKEN=your_token_here -e TZ=America/New_York -v ./aiyabot/outputs:/app/outputs -v ./aiyabot/resources:/app/resources -d ghcr.io/kilvoctu/aiyabot:latest
+```
+
+### Docker compose
+
+- Clone the repo and refer to the `docker-compose.yml` file in the `deploy` directory.
+- Rename the `/deploy/.env.example` file to `.env` and update the `TOKEN` variable with your bot token (and any other configuration as desired).
+- Run `docker-compose up -d` to start the bot.
+
 ## Notes
 
 - [See wiki for notes on additional configuration.](https://github.com/Kilvoctu/aiyabot/wiki/Configuration)
