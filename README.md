@@ -71,6 +71,16 @@ The docker image supports additional configuration by adding environment variabl
 docker run --name aiyabot --network=host --restart=always -e TOKEN=your_token_here -e TZ=America/New_York -v ./aiyabot/outputs:/app/outputs -v ./aiyabot/resources:/app/resources -d ghcr.io/kilvoctu/aiyabot:latest
 ```
 
+Note the following environment variables work with the docker image:
+
+- `TOKEN` - **[Required]** Discord bot token.
+- `URL` - URL of the Web UI API. Defaults to `http://localhost:7860`.
+- `TZ` - Timezone for the container in the format `America/New_York`. Defaults to `America/New_York`
+- `APIUSER` - API username if required for your Web UI instance.
+- `APIPASS` - API password if required for your Web UI instance.
+- `USER` - Username if required for your Web UI instance.
+- `PASS` - Password if required for your Web UI instance.
+
 ### Docker compose
 
 - Clone the repo and refer to the `docker-compose.yml` file in the `deploy` directory.
