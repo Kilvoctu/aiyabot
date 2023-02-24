@@ -59,7 +59,7 @@ class InfoView(View):
                         break
             embed_page.add_field(name="", value=model_list, inline=True)
             if length > batch:
-                embed_page.set_footer(text=f'Page {self.page + 1} of {math.ceil(length / batch)}')
+                embed_page.set_footer(text=f'Page {self.page + 1} of {math.ceil(length / batch)} - {length} total')
             self.contents.append(embed_page)
             self.page += 1
         self.page = 0
@@ -86,7 +86,6 @@ class InfoView(View):
             styles.append(key)
 
         for i in range(0, length, batch):
-            style_list = ''
             embed_page = discord.Embed(title="Styles list", description=desc, colour=settings.global_var.embed_color)
             for key in styles[i:i + batch]:
                 for keyB, value in settings.global_var.style_names.items():
@@ -98,7 +97,7 @@ class InfoView(View):
                         embed_page.add_field(name=f"**{key}**", value=f"``{value}``", inline=False)
                         break
             if length > batch:
-                embed_page.set_footer(text=f'Page {self.page + 1} of {math.ceil(length / batch)}')
+                embed_page.set_footer(text=f'Page {self.page + 1} of {math.ceil(length / batch)} - {length} total')
             self.contents.append(embed_page)
             self.page += 1
         self.page = 0
@@ -131,7 +130,7 @@ class InfoView(View):
                 hyper_column_b += f'\n``{value}``'
             embed_page.add_field(name="", value=hyper_column_b, inline=True)
             if length > batch * 2:
-                embed_page.set_footer(text=f'Page {self.page + 1} of {math.ceil(length / (batch * 2))}')
+                embed_page.set_footer(text=f'Page {self.page + 1} of {math.ceil(length / (batch * 2))} - {length} total')
             self.contents.append(embed_page)
             self.page += 1
         self.page = 0
@@ -164,7 +163,7 @@ class InfoView(View):
                 lora_column_b += f'\n``{value}``'
             embed_page.add_field(name="", value=lora_column_b, inline=True)
             if length > batch*2:
-                embed_page.set_footer(text=f'Page {self.page + 1} of {math.ceil(length / (batch * 2))}')
+                embed_page.set_footer(text=f'Page {self.page + 1} of {math.ceil(length / (batch * 2))} - {length} total')
             self.contents.append(embed_page)
             self.page += 1
         self.page = 0
@@ -202,14 +201,14 @@ class InfoView(View):
                 embed_column_b += f'\n``{value}``'
             embed_page.add_field(name='', value=embed_column_b, inline=True)
             if total_length > batch * 2:
-                embed_page.set_footer(text=f'Page {self.page + 1} of {total_pages}')
+                embed_page.set_footer(text=f'Page {self.page + 1} of {total_pages} - {total_length} total')
             self.contents.append(embed_page)
             self.page += 1
 
         for i in range(0, sd2_length, batch * 2):
             embed_column_a, embed_column_b = '', ''
             embed_page = discord.Embed(title="Textual Inversion embeddings list",
-                                       description="{desc}\nThese embeddings are for **SD 2.X** models.",
+                                       description=f"{desc}\nThese embeddings are for **SD 2.X** models.",
                                        colour=settings.global_var.embed_color)
             for value in settings.global_var.embeddings_2[i:i + batch]:
                 embed_column_a += f'\n``{value}``'
@@ -219,7 +218,7 @@ class InfoView(View):
                 embed_column_b += f'\n``{value}``'
             embed_page.add_field(name='', value=embed_column_b, inline=True)
             if total_length > batch * 2:
-                embed_page.set_footer(text=f'Page {self.page + 1} of {total_pages}')
+                embed_page.set_footer(text=f'Page {self.page + 1} of {total_pages} - {total_length} total')
             self.contents.append(embed_page)
             self.page += 1
 
