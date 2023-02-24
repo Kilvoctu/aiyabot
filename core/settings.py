@@ -201,8 +201,8 @@ def read(channel_id):
         # update deprecated 'count' to 'batch'
         if 'count' in settings or 'max_count' in settings:
             try:
-                settings['batch'] = settings.pop('count')
-                settings['max_batch'] = settings.pop('max_count')
+                settings['batch'] = str(settings.pop('count'))
+                settings['max_batch'] = str(settings.pop('max_count'))
             except(Exception,):
                 pass
             with open(path + channel_id + '.json', 'w') as configfile2:
