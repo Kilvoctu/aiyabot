@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  aiyabot:
+    image: ghcr.io/kilvoctu/aiyabot:latest
+    environment:
+      TOKEN: "${TOKEN}"
+      TZ: "${TZ}"
+      URL: "${URL}"
+      APIUSER: "${APIUSER}"
+      APIPASS: "${APIPASS}"
+      DIR: "${DIR}"
+      USER: "${USER}"
+      PASS: "${PASS}"
+    container_name: aiyabot
+    restart: always
+    volumes:
+      - ../outputs:/app/outputs
+      - ../resources:/app/resources
+    network_mode: host
