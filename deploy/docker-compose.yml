@@ -2,9 +2,6 @@ version: '3'
 
 services:
   aiyabot:
-    build:
-      context: ..
-      dockerfile: dockerfile
     image: ghcr.io/kilvoctu/aiyabot:latest
     environment:
       TOKEN: "${TOKEN}"
