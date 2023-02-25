@@ -8,10 +8,11 @@ import time
 import tomlkit
 from typing import Optional
 
+from core import queuehandler
+
 self = discord.Bot()
 dir_path = os.path.dirname(os.path.realpath(__file__))
 path = 'resources/'.format(dir_path)
-
 
 # the fallback defaults for AIYA if bot host doesn't set anything
 template = {
@@ -157,6 +158,15 @@ def prompt_mod(prompt, negative_prompt):
                 negative_prompt = f"{z} {negative_prompt}"
         return "Mod", prompt, negative_prompt.strip(), clean_negative_prompt.strip()
     return "None"
+
+
+def queue_check(author_compare):
+    user_queue = 0
+    for queue_object in queuehandler.GlobalQueue.queue:
+        if queue_object.ctx.author.id == author_compare.id:
+            user_queue += 1
+            if user_queue >= global_var.queue_limit:
+                return "Stop"
 
 
 def stats_count(number):
@@ -384,7 +394,7 @@ def populate_global_vars():
     global_var.display_ignored_words = config['display_ignored_words']
     global_var.negative_prompt_prefix = [x for x in config['negative_prompt_prefix']]
     # slash command doesn't update this dynamically. Changes to size need a restart.
-    global_var.size_range = range(192, config['max_size']+64, 64)
+    global_var.size_range = range(192, config['max_size'] + 64, 64)
 
     # create persistent session since we'll need to do a few API calls
     s = requests.Session()

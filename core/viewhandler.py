@@ -273,12 +273,9 @@ class DrawModal(Modal):
             # check queue again, but now we know user is not in queue
             if queuehandler.GlobalQueue.dream_thread.is_alive():
                 queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(stablecog.StableCog(self), *prompt_tuple, DrawView(prompt_tuple)))
-                await interaction.response.send_message(
-                    f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``{prompt_output}')
             else:
                 await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(stablecog.StableCog(self), *prompt_tuple, DrawView(prompt_tuple)))
-                await interaction.response.send_message(
-                    f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``{prompt_output}')
+            await interaction.response.send_message(f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``{prompt_output}')
 
 
 # creating the view that holds the buttons for /draw output
@@ -297,16 +294,9 @@ class DrawView(View):
             end_user = f'{interaction.user.name}#{interaction.user.discriminator}'
             if end_user in self.message.content:
                 # if there's room in the queue, open up the modal
-                user_queue = 0
-                user_queue_limit = False
-                for queue_object in queuehandler.GlobalQueue.queue:
-                    if queue_object.ctx.author.id == interaction.user.id:
-                        user_queue += 1
-                        if user_queue >= settings.global_var.queue_limit:
-                            user_queue_limit = True
-                            break
+                user_queue_limit = settings.queue_check(interaction.user)
                 if queuehandler.GlobalQueue.dream_thread.is_alive():
-                    if user_queue_limit:
+                    if user_queue_limit == "Stop":
                         await interaction.response.send_message(content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.", ephemeral=True)
                     else:
                         await interaction.response.send_modal(DrawModal(self.input_tuple))
@@ -339,25 +329,16 @@ class DrawView(View):
 
                 # set up the draw dream and do queue code again for lack of a more elegant solution
                 draw_dream = stablecog.StableCog(self)
-                user_queue = 0
-                user_queue_limit = False
-                for queue_object in queuehandler.GlobalQueue.queue:
-                    if queue_object.ctx.author.id == interaction.user.id:
-                        user_queue += 1
-                        if user_queue >= settings.global_var.queue_limit:
-                            user_queue_limit = True
-                            break
+                user_queue_limit = settings.queue_check(interaction.user)
                 if queuehandler.GlobalQueue.dream_thread.is_alive():
-                    if user_queue_limit:
+                    if user_queue_limit == "Stop":
                         await interaction.response.send_message(content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.", ephemeral=True)
                     else:
                         queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(stablecog.StableCog(self), *seed_tuple, DrawView(seed_tuple)))
-                        await interaction.response.send_message(
-                            f'<@{interaction.user.id}>, {settings.messages()}\nQueue: '
-                            f'``{len(queuehandler.GlobalQueue.queue)}`` - ``{seed_tuple[1]}``'
-                            f'\nNew seed:``{seed_tuple[10]}``')
                 else:
                     await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(stablecog.StableCog(self), *seed_tuple, DrawView(seed_tuple)))
+
+                if user_queue_limit != "Stop":
                     await interaction.response.send_message(
                         f'<@{interaction.user.id}>, {settings.messages()}\nQueue: '
                         f'``{len(queuehandler.GlobalQueue.queue)}`` - ``{seed_tuple[1]}``'
