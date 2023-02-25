@@ -19,5 +19,7 @@ COPY ./resources /default/resources
 COPY ./outputs /default/outputs
 COPY . /app
 
+RUN chmod +x /app/docker-entrypoint.sh
+
 # Run the bot
 ENTRYPOINT [ "/app/docker-entrypoint.sh" ]
