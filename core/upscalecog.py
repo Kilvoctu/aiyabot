@@ -137,26 +137,17 @@ class UpscaleCog(commands.Cog):
         input_tuple = (ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength, gfpgan, codeformer, upscale_first)
         view = viewhandler.DeleteView(ctx.author.id)
         # set up the queue if an image was found
-        user_queue = 0
-        user_queue_limit = False
-        for queue_object in queuehandler.GlobalQueue.queue:
-            if queue_object.ctx.author.id == ctx.author.id:
-                user_queue += 1
-                if user_queue >= settings.global_var.queue_limit:
-                    user_queue_limit = True
-                    break
+        user_queue_limit = settings.queue_check(ctx.author)
         if has_image:
             if queuehandler.GlobalQueue.dream_thread.is_alive():
-                if user_queue_limit:
+                if user_queue_limit == "Stop":
                     await ctx.send_response(content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.", ephemeral=True)
                 else:
                     queuehandler.GlobalQueue.queue.append(queuehandler.UpscaleObject(self, *input_tuple, view))
-                    await ctx.send_response(
-                        f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
             else:
                 await queuehandler.process_dream(self, queuehandler.UpscaleObject(self, *input_tuple, view))
-                await ctx.send_response(
-                    f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
+            if user_queue_limit != "Stop":
+                await ctx.send_response(f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - Scale: ``{resize}``x - Upscaler: ``{upscaler_1}``{reply_adds}')
 
     # the function to queue Discord posts
     def post(self, event_loop: AbstractEventLoop, post_queue_object: queuehandler.PostObject):

@@ -65,28 +65,17 @@ class IdentifyCog(commands.Cog):
 
         view = viewhandler.DeleteView(ctx.author.id)
         # set up the queue if an image was found
-        user_queue = 0
-        user_queue_limit = False
-        for queue_object in queuehandler.GlobalQueue.queue:
-            if queue_object.ctx.author.id == ctx.author.id:
-                user_queue += 1
-                if user_queue >= settings.global_var.queue_limit:
-                    user_queue_limit = True
-                    break
+        user_queue_limit = settings.queue_check(ctx.author)
         if has_image:
             if queuehandler.GlobalQueue.dream_thread.is_alive():
-                if user_queue_limit:
+                if user_queue_limit == "Stop":
                     await ctx.send_response(content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.", ephemeral=True)
                 else:
                     queuehandler.GlobalQueue.queue.append(queuehandler.IdentifyObject(self, ctx, init_image, phrasing, view))
-                    await ctx.send_response(
-                        f"<@{ctx.author.id}>, I'm identifying the image!"
-                        f"\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``", delete_after=45.0)
             else:
                 await queuehandler.process_dream(self, queuehandler.IdentifyObject(self, ctx, init_image, phrasing, view))
-                await ctx.send_response(
-                    f"<@{ctx.author.id}>, I'm identifying the image!"
-                    f"\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``", delete_after=45.0)
+            if user_queue_limit != "Stop":
+                await ctx.send_response(f"<@{ctx.author.id}>, I'm identifying the image!\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``", delete_after=45.0)
 
     # the function to queue Discord posts
     def post(self, event_loop: AbstractEventLoop, post_queue_object: queuehandler.PostObject):

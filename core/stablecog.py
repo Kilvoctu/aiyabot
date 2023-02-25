@@ -356,25 +356,16 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             init_image, batch, style, facefix, highres_fix, clip_skip, hypernet, lora)
         view = viewhandler.DrawView(input_tuple)
         # setup the queue
-        user_queue = 0
-        user_queue_limit = False
-        for queue_object in queuehandler.GlobalQueue.queue:
-            if queue_object.ctx.author.id == ctx.author.id:
-                user_queue += 1
-                if user_queue >= settings.global_var.queue_limit:
-                    user_queue_limit = True
-                    break
+        user_queue_limit = settings.queue_check(ctx.author)
         if queuehandler.GlobalQueue.dream_thread.is_alive():
-            if user_queue_limit:
+            if user_queue_limit == "Stop":
                 await ctx.send_response(content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.", ephemeral=True)
             else:
                 queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(self, *input_tuple, view))
-                await ctx.send_response(
-                    f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{simple_prompt}``\nSteps: ``{steps}``{reply_adds}')
         else:
             await queuehandler.process_dream(self, queuehandler.DrawObject(self, *input_tuple, view))
-            await ctx.send_response(
-                f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{simple_prompt}``\nSteps: ``{steps}``{reply_adds}')
+        if user_queue_limit != "Stop":
+            await ctx.send_response(f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{simple_prompt}``\nSteps: ``{steps}``{reply_adds}')
 
     # the function to queue Discord posts
     def post(self, event_loop: AbstractEventLoop, post_queue_object: queuehandler.PostObject):
