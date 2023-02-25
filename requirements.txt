@@ -4,3 +4,4 @@ requests
 Pillow
 tomlkit
 urlextract
+PySimpleGUI
