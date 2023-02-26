@@ -37,10 +37,17 @@ class IdentifyCog(commands.Cog):
         required=False,
         choices=['Normal', 'Tags']
     )
+    @option(
+        'read_info',
+        bool,
+        description='Select this to instead try to grab image metadata info.',
+        required=False
+    )
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
                             init_image: Optional[discord.Attachment] = None,
                             init_url: Optional[str],
-                            phrasing: Optional[str] = 'Normal'):
+                            phrasing: Optional[str] = 'Normal',
+                            read_info: Optional[bool] = False):
 
         has_image = True
         # url *will* override init image for compatibility, can be changed here
@@ -71,9 +78,9 @@ class IdentifyCog(commands.Cog):
                 if user_queue_limit == "Stop":
                     await ctx.send_response(content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.", ephemeral=True)
                 else:
-                    queuehandler.GlobalQueue.queue.append(queuehandler.IdentifyObject(self, ctx, init_image, phrasing, view))
+                    queuehandler.GlobalQueue.queue.append(queuehandler.IdentifyObject(self, ctx, init_image, phrasing, read_info, view))
             else:
-                await queuehandler.process_dream(self, queuehandler.IdentifyObject(self, ctx, init_image, phrasing, view))
+                await queuehandler.process_dream(self, queuehandler.IdentifyObject(self, ctx, init_image, phrasing, read_info, view))
             if user_queue_limit != "Stop":
                 await ctx.send_response(f"<@{ctx.author.id}>, I'm identifying the image!\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``", delete_after=45.0)
 
@@ -112,19 +119,32 @@ class IdentifyCog(commands.Cog):
                 else:
                     s.post(settings.global_var.url + '/login')
 
-                response = s.post(url=f'{settings.global_var.url}/sdapi/v1/interrogate', json=payload)
-            response_data = response.json()
+                if queue_object.read_info:
+                    png_response = s.post(url=f'{settings.global_var.url}/sdapi/v1/png-info', json=payload)
+                else:
+                    response = s.post(url=f'{settings.global_var.url}/sdapi/v1/interrogate', json=payload)
+            if queue_object.read_info:
+                png_data = png_response.json().get("info")
+            else:
+                response_data = response.json()
 
             # post to discord
             def post_dream():
-                caption = response_data.get('caption')
+                if queue_object.read_info:
+                    caption = png_data
+                    embed_title = 'Parameters'
+                    if caption == "":
+                        caption = "No image info was found..."
+                else:
+                    caption = response_data.get('caption')
+                    embed_title = 'I think this is'
+
                 if len(caption) > 4096:
                     caption = caption[:4096]
 
-                embed = discord.Embed(title=f'I think this is', description=f'``{caption}``')
+                embed = discord.Embed(title=f'{embed_title}', description=f'``{caption}``')
                 embed.set_image(url=queue_object.init_image.url)
                 embed.colour = settings.global_var.embed_color
-
                 footer_args = dict(text=f'{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}')
                 if queue_object.ctx.author.avatar is not None:
                     footer_args['icon_url'] = queue_object.ctx.author.avatar.url
