@@ -19,7 +19,6 @@ os.system('git status')
 # check files and global variables
 settings.startup_check()
 settings.files_check()
-settings.sqlite_test()
 
 self.load_extension('core.settingscog')
 self.load_extension('core.stablecog')

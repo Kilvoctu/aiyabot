@@ -2,6 +2,7 @@ import csv
 import discord
 import json
 import os
+import pickle
 import random
 import requests
 import sqlite3
@@ -15,30 +16,24 @@ self = discord.Bot()
 dir_path = os.path.dirname(os.path.realpath(__file__))
 path = 'resources/'.format(dir_path)
 
-def sqlite_test():
-    conn = sqlite3.connect(f"{path}test.db")
-    c = conn.cursor()
 
-    c.execute("""CREATE TABLE IF NOT EXISTS queue_object (
-                 message_id string NOT NULL,
-                 queue_object
-                 )""")
+def store_in_db(object):
+    binary_obj = pickle.dumps(object)
+    print('binary_obj: ', binary_obj)
 
-    for i in range(0, 2):
-        name = 'test message id'
-        content = 'test object'
-        print("Name:", name, "Content:", content)
+    conn = sqlite3.connect(f'{path}messages.db')
+    conn.execute('CREATE TABLE IF NOT EXISTS Messages (binary_field BLOB)')
+    conn.execute('INSERT INTO Messages VALUES(?)', [sqlite3.Binary(binary_obj)])
+    conn.commit()
+    conn.close()
 
-        c.execute('select message_id from queue_object where message_id = ?', (name,))
-        does_exist = c.fetchone()
-        print("Exists?", does_exist)
+def retrieve_from_db():
+    conn = sqlite3.connect(f'{path}messages.db')
+    row = conn.execute('SELECT * FROM Messages').fetchone()
+    entry = pickle.loads(row[0])
+    conn.close()
+    return entry
 
-        if does_exist is None:
-            c.execute('insert into queue_object(message_id, queue_object) values(?, ?)', (name, content))
-            conn.commit()
-            print('Created', name)
-        else:
-            print(name, 'already exists')
 
 # the fallback defaults for AIYA if bot host doesn't set anything
 template = {
