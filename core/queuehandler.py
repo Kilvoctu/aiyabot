@@ -50,12 +50,11 @@ class UpscaleObject:
 
 # the queue object for identify (interrogate)
 class IdentifyObject:
-    def __init__(self, cog, ctx, init_image, phrasing, read_info, view):
+    def __init__(self, cog, ctx, init_image, phrasing, view):
         self.cog = cog
         self.ctx = ctx
         self.init_image = init_image
         self.phrasing = phrasing
-        self.read_info = read_info
         self.view = view
 
 
