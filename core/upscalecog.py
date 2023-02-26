@@ -25,6 +25,10 @@ class UpscaleCog(commands.Cog):
         self.bot = bot
         self.file_name = ''
 
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.bot.add_view(viewhandler.DeleteView(self))
+
     @commands.slash_command(name='upscale', description='Upscale an image', guild_only=True)
     @option(
         'init_image',
@@ -135,7 +139,7 @@ class UpscaleCog(commands.Cog):
 
         # set up tuple of parameters
         input_tuple = (ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength, gfpgan, codeformer, upscale_first)
-        view = viewhandler.DeleteView(ctx.author.id)
+        view = viewhandler.DeleteView(input_tuple)
         # set up the queue if an image was found
         user_queue_limit = settings.queue_check(ctx.author)
         if has_image:
@@ -220,8 +224,7 @@ class UpscaleCog(commands.Cog):
                     buffer.seek(0)
 
                     draw_time = '{0:.3f}'.format(end_time - start_time)
-                    message = f'my upscale of ``{queue_object.resize}``x took me ``{draw_time}`` ' \
-                              f'seconds!\n> *{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}*'
+                    message = f'my upscale of ``{queue_object.resize}``x took me ``{draw_time}`` seconds!'
                     file = discord.File(fp=buffer, filename=file_path)
 
                     queuehandler.process_post(
