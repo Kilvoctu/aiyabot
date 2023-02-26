@@ -19,7 +19,7 @@ class IdentifyCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        self.bot.add_view(viewhandler.DrawView(self))
+        self.bot.add_view(viewhandler.DeleteView(self))
 
     @commands.slash_command(name='identify', description='Describe an image', guild_only=True)
     @option(
@@ -69,7 +69,7 @@ class IdentifyCog(commands.Cog):
 
         # set up tuple of parameters to pass into the Discord view
         input_tuple = (ctx, init_image, phrasing)
-        view = viewhandler.DrawView(input_tuple)
+        view = viewhandler.DeleteView(input_tuple)
         # set up the queue if an image was found
         user_queue_limit = settings.queue_check(ctx.author)
         if has_image:

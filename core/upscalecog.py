@@ -27,7 +27,7 @@ class UpscaleCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        self.bot.add_view(viewhandler.DrawView(self))
+        self.bot.add_view(viewhandler.DeleteView(self))
 
     @commands.slash_command(name='upscale', description='Upscale an image', guild_only=True)
     @option(
@@ -139,7 +139,7 @@ class UpscaleCog(commands.Cog):
 
         # set up tuple of parameters
         input_tuple = (ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength, gfpgan, codeformer, upscale_first)
-        view = viewhandler.DrawView(input_tuple)
+        view = viewhandler.DeleteView(input_tuple)
         # set up the queue if an image was found
         user_queue_limit = settings.queue_check(ctx.author)
         if has_image:

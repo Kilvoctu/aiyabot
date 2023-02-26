@@ -460,3 +460,24 @@ class DrawView(View):
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.\n"
                                             "You can react with ❌ to delete the image.", ephemeral=True)
+
+class DeleteView(View):
+    def __init__(self, input_tuple):
+        super().__init__(timeout=None)
+        self.input_tuple = input_tuple
+
+    @discord.ui.button(
+        custom_id="button_x_solo",
+        emoji="❌")
+    async def delete(self, button, interaction):
+        try:
+            # check if the output is from the person who requested it
+            if interaction.user.id == self.input_tuple[0].author.id:
+                await interaction.message.delete()
+            else:
+                await interaction.response.send_message("You can't delete other people's images!", ephemeral=True)
+        except(Exception,):
+            button.disabled = True
+            await interaction.response.edit_message(view=self)
+            await interaction.followup.send("I may have been restarted. This button no longer works.\n"
+                                            "You can react with ❌ to delete the image.", ephemeral=True)
