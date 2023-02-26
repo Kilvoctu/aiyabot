@@ -17,6 +17,10 @@ class IdentifyCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.bot.add_view(viewhandler.DeleteView(self))
+
     @commands.slash_command(name='identify', description='Describe an image', guild_only=True)
     @option(
         'init_image',
@@ -35,19 +39,12 @@ class IdentifyCog(commands.Cog):
         str,
         description='The way the image will be described.',
         required=False,
-        choices=['Normal', 'Tags']
-    )
-    @option(
-        'read_info',
-        bool,
-        description='Select this to instead try to grab image metadata info.',
-        required=False
+        choices=['Normal', 'Tags', 'Metadata']
     )
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
                             init_image: Optional[discord.Attachment] = None,
                             init_url: Optional[str],
-                            phrasing: Optional[str] = 'Normal',
-                            read_info: Optional[bool] = False):
+                            phrasing: Optional[str] = 'Normal'):
 
         has_image = True
         # url *will* override init image for compatibility, can be changed here
@@ -67,10 +64,12 @@ class IdentifyCog(commands.Cog):
         # Update layman-friendly "phrasing" choices into what API understands
         if phrasing == 'Normal':
             phrasing = 'clip'
-        else:
+        elif phrasing == 'Tags':
             phrasing = 'deepdanbooru'
 
-        view = viewhandler.DeleteView(ctx.author.id)
+        # set up tuple of parameters to pass into the Discord view
+        input_tuple = (ctx, init_image, phrasing)
+        view = viewhandler.DeleteView(input_tuple)
         # set up the queue if an image was found
         user_queue_limit = settings.queue_check(ctx.author)
         if has_image:
@@ -78,9 +77,9 @@ class IdentifyCog(commands.Cog):
                 if user_queue_limit == "Stop":
                     await ctx.send_response(content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.", ephemeral=True)
                 else:
-                    queuehandler.GlobalQueue.queue.append(queuehandler.IdentifyObject(self, ctx, init_image, phrasing, read_info, view))
+                    queuehandler.GlobalQueue.queue.append(queuehandler.IdentifyObject(self, *input_tuple, view))
             else:
-                await queuehandler.process_dream(self, queuehandler.IdentifyObject(self, ctx, init_image, phrasing, read_info, view))
+                await queuehandler.process_dream(self, queuehandler.IdentifyObject(self, *input_tuple, view))
             if user_queue_limit != "Stop":
                 await ctx.send_response(f"<@{ctx.author.id}>, I'm identifying the image!\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``", delete_after=45.0)
 
@@ -104,7 +103,6 @@ class IdentifyCog(commands.Cog):
                 "image": 'data:image/png;base64,' + image,
                 "model": queue_object.phrasing
             }
-
             # send normal payload to webui
             with requests.Session() as s:
                 if settings.global_var.api_auth:
@@ -119,18 +117,18 @@ class IdentifyCog(commands.Cog):
                 else:
                     s.post(settings.global_var.url + '/login')
 
-                if queue_object.read_info:
+                if queue_object.phrasing == "Metadata":
                     png_response = s.post(url=f'{settings.global_var.url}/sdapi/v1/png-info', json=payload)
                 else:
                     response = s.post(url=f'{settings.global_var.url}/sdapi/v1/interrogate', json=payload)
-            if queue_object.read_info:
+            if queue_object.phrasing == "Metadata":
                 png_data = png_response.json().get("info")
             else:
                 response_data = response.json()
 
             # post to discord
             def post_dream():
-                if queue_object.read_info:
+                if queue_object.phrasing == "Metadata":
                     caption = png_data
                     embed_title = 'Parameters'
                     if caption == "":
