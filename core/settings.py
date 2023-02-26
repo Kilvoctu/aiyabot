@@ -17,22 +17,43 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 path = 'resources/'.format(dir_path)
 
 
-def store_in_db(object):
-    binary_obj = pickle.dumps(object)
-    print('binary_obj: ', binary_obj)
+def create_db():
+    connect = sqlite3.connect(f'{path}messages.db')
+    cursor = connect.cursor()
+    cursor.execute("DROP TABLE IF EXISTS MESSAGES")
+    # Creating table
+    table = """ CREATE TABLE MESSAGES (
+                task_id VARCHAR(255),
+                binary_object BLOB
+            ); """
+    cursor.execute(table)
+    print("Table is Ready")
+    connect.close()
+
+
+def store_in_db(task_id, queue_tuple):
+    blob = sqlite3.Binary(pickle.dumps(queue_tuple))
 
     conn = sqlite3.connect(f'{path}messages.db')
-    conn.execute('CREATE TABLE IF NOT EXISTS Messages (binary_field BLOB)')
-    conn.execute('INSERT INTO Messages VALUES(?)', [sqlite3.Binary(binary_obj)])
+    sql = ''' INSERT INTO MESSAGES (task_id, binary_object) VALUES (?, ?) '''
+    data_tuple = (task_id, blob)
+    conn.execute(sql, data_tuple)
     conn.commit()
     conn.close()
 
-def retrieve_from_db():
+def retrieve_from_db(task_id):
     conn = sqlite3.connect(f'{path}messages.db')
-    row = conn.execute('SELECT * FROM Messages').fetchone()
-    entry = pickle.loads(row[0])
+    row = conn.execute(f'SELECT * FROM MESSAGES WHERE task_id = "{task_id}"').fetchone()
+    print(row)
+    entry = pickle.loads(row[1])
     conn.close()
     return entry
+
+testo = ['1', '2', '3']
+#store_in_db(test)
+create_db()
+task = "aabc0bc9-1b2e-4944-badd-9eefc60f67ec"
+# print(retrieve_from_db(task))
 
 
 # the fallback defaults for AIYA if bot host doesn't set anything

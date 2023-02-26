@@ -7,6 +7,7 @@ import random
 import requests
 import time
 import traceback
+import uuid
 from asyncio import AbstractEventLoop
 from PIL import Image, PngImagePlugin
 from discord import option
@@ -354,8 +355,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         input_tuple = (
             ctx, simple_prompt, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler,
             seed, strength, init_image, batch, style, facefix, highres_fix, clip_skip, hypernet, lora)
-        #settings.store_in_db(input_tuple)
-        #print(settings.retrieve_from_db())
         view = viewhandler.DrawView(input_tuple)
         # setup the queue
         user_queue_limit = settings.queue_check(ctx.author)
@@ -385,6 +384,18 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.DrawObject):
         try:
             start_time = time.time()
+
+            index, index_start = 0, 3
+            task_id = str(uuid.uuid4())
+            clipboard_list = []
+            for attr, value in queue_object.__dict__.items():
+                if index < index_start:
+                    index += 1
+                elif attr == "view":
+                    pass
+                else:
+                    clipboard_list.append(value)
+            settings.store_in_db(task_id, clipboard_list)
 
             # create persistent session since we'll need to do a few API calls
             s = requests.Session()
