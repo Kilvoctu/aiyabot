@@ -8,6 +8,7 @@ resources/models.csv
 resources/stats.txt
 resources/*.json
 resources/*.toml
+resources/*.db
 
 .env
 start.bat

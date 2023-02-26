@@ -4,6 +4,7 @@ import json
 import os
 import random
 import requests
+import sqlite3
 import time
 import tomlkit
 from typing import Optional
@@ -13,6 +14,31 @@ from core import queuehandler
 self = discord.Bot()
 dir_path = os.path.dirname(os.path.realpath(__file__))
 path = 'resources/'.format(dir_path)
+
+def sqlite_test():
+    conn = sqlite3.connect(f"{path}test.db")
+    c = conn.cursor()
+
+    c.execute("""CREATE TABLE IF NOT EXISTS queue_object (
+                 message_id string NOT NULL,
+                 queue_object
+                 )""")
+
+    for i in range(0, 2):
+        name = 'test message id'
+        content = 'test object'
+        print("Name:", name, "Content:", content)
+
+        c.execute('select message_id from queue_object where message_id = ?', (name,))
+        does_exist = c.fetchone()
+        print("Exists?", does_exist)
+
+        if does_exist is None:
+            c.execute('insert into queue_object(message_id, queue_object) values(?, ?)', (name, content))
+            conn.commit()
+            print('Created', name)
+        else:
+            print(name, 'already exists')
 
 # the fallback defaults for AIYA if bot host doesn't set anything
 template = {
