@@ -17,6 +17,10 @@ class IdentifyCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.bot.add_view(viewhandler.DrawView(self))
+
     @commands.slash_command(name='identify', description='Describe an image', guild_only=True)
     @option(
         'init_image',
@@ -63,7 +67,9 @@ class IdentifyCog(commands.Cog):
         elif phrasing == 'Tags':
             phrasing = 'deepdanbooru'
 
-        view = viewhandler.DeleteView(ctx.author.id)
+        # set up tuple of parameters to pass into the Discord view
+        input_tuple = (ctx, init_image, phrasing)
+        view = viewhandler.DrawView(input_tuple)
         # set up the queue if an image was found
         user_queue_limit = settings.queue_check(ctx.author)
         if has_image:
@@ -71,9 +77,9 @@ class IdentifyCog(commands.Cog):
                 if user_queue_limit == "Stop":
                     await ctx.send_response(content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.", ephemeral=True)
                 else:
-                    queuehandler.GlobalQueue.queue.append(queuehandler.IdentifyObject(self, ctx, init_image, phrasing, view))
+                    queuehandler.GlobalQueue.queue.append(queuehandler.IdentifyObject(self, *input_tuple, view))
             else:
-                await queuehandler.process_dream(self, queuehandler.IdentifyObject(self, ctx, init_image, phrasing, view))
+                await queuehandler.process_dream(self, queuehandler.IdentifyObject(self, *input_tuple, view))
             if user_queue_limit != "Stop":
                 await ctx.send_response(f"<@{ctx.author.id}>, I'm identifying the image!\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``", delete_after=45.0)
 

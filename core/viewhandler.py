@@ -291,8 +291,7 @@ class DrawView(View):
     async def button_draw(self, button, interaction):
         try:
             # check if the output is from the person who requested it
-            end_user = f'{interaction.user.name}#{interaction.user.discriminator}'
-            if end_user in self.message.content:
+            if interaction.user.id == self.input_tuple[0].author.id:
                 # if there's room in the queue, open up the modal
                 user_queue_limit = settings.queue_check(interaction.user)
                 if queuehandler.GlobalQueue.dream_thread.is_alive():
@@ -318,8 +317,7 @@ class DrawView(View):
     async def button_roll(self, button, interaction):
         try:
             # check if the output is from the person who requested it
-            end_user = f'{interaction.user.name}#{interaction.user.discriminator}'
-            if end_user in self.message.content:
+            if interaction.user.id == self.input_tuple[0].author.id:
                 # update the tuple with a new seed
                 new_seed = list(self.input_tuple)
                 new_seed[10] = random.randint(0, 0xFFFFFFFF)
@@ -453,8 +451,7 @@ class DrawView(View):
     async def delete(self, button, interaction):
         try:
             # check if the output is from the person who requested it
-            end_user = f'{interaction.user.name}#{interaction.user.discriminator}'
-            if end_user in self.message.content:
+            if interaction.user.id == self.input_tuple[0].author.id:
                 await interaction.message.delete()
             else:
                 await interaction.response.send_message("You can't delete other people's images!", ephemeral=True)
@@ -463,21 +460,3 @@ class DrawView(View):
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.\n"
                                             "You can react with ❌ to delete the image.", ephemeral=True)
-
-
-# creating the view that holds a button to delete output
-class DeleteView(View):
-    def __init__(self, user):
-        super().__init__(timeout=None)
-        self.user = user
-
-    @discord.ui.button(
-        custom_id="button_x",
-        emoji="❌")
-    async def delete(self, button, interaction):
-        # check if the output is from the person who requested it
-        if interaction.user.id == self.user:
-            button.disabled = True
-            await interaction.message.delete()
-        else:
-            await interaction.response.send_message("You can't delete other people's images!", ephemeral=True)
