@@ -50,9 +50,9 @@ async def on_ready():
 async def on_raw_reaction_add(ctx):
     if ctx.emoji.name == '❌':
         try:
-            end_user = f'{ctx.member.name}#{ctx.member.discriminator}'
+            end_user = f'{ctx.user_id}'
             message = await self.get_channel(ctx.channel_id).fetch_message(ctx.message_id)
-            if end_user in message.content:
+            if end_user in message.content and "Queue" not in message.content:
                 await message.delete()
             # this is for deleting outputs from /identify
             if message.embeds:
