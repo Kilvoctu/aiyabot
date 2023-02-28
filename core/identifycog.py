@@ -104,26 +104,13 @@ class IdentifyCog(commands.Cog):
                 "model": queue_object.phrasing
             }
             # send normal payload to webui
-            with requests.Session() as s:
-                if settings.global_var.api_auth:
-                    s.auth = (settings.global_var.api_user, settings.global_var.api_pass)
+            s = settings.authenticate_user()
 
-                if settings.global_var.gradio_auth:
-                    login_payload = {
-                        'username': settings.global_var.username,
-                        'password': settings.global_var.password
-                    }
-                    s.post(settings.global_var.url + '/login', data=login_payload)
-                else:
-                    s.post(settings.global_var.url + '/login')
-
-                if queue_object.phrasing == "Metadata":
-                    png_response = s.post(url=f'{settings.global_var.url}/sdapi/v1/png-info', json=payload)
-                else:
-                    response = s.post(url=f'{settings.global_var.url}/sdapi/v1/interrogate', json=payload)
             if queue_object.phrasing == "Metadata":
+                png_response = s.post(url=f'{settings.global_var.url}/sdapi/v1/png-info', json=payload)
                 png_data = png_response.json().get("info")
             else:
+                response = s.post(url=f'{settings.global_var.url}/sdapi/v1/interrogate', json=payload)
                 response_data = response.json()
 
             # post to discord

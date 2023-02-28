@@ -384,11 +384,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         try:
             start_time = time.time()
 
-            # create persistent session since we'll need to do a few API calls
-            s = requests.Session()
-            if settings.global_var.api_auth:
-                s.auth = (settings.global_var.api_user, settings.global_var.api_pass)
-
             # construct a payload for data model, then the normal payload
             model_payload = {
                 "sd_model_checkpoint": queue_object.data_model
@@ -450,17 +445,9 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             }
             payload.update(override_payload)
 
-            # send normal payload to webui
-            if settings.global_var.gradio_auth:
-                login_payload = {
-                    'username': settings.global_var.username,
-                    'password': settings.global_var.password
-                }
-                s.post(settings.global_var.url + '/login', data=login_payload)
-            else:
-                s.post(settings.global_var.url + '/login')
+            # send normal payload to webui and only send model payload if one is defined
+            s = settings.authenticate_user()
 
-            # only send model payload if one is defined
             if queue_object.data_model != '':
                 s.post(url=f'{settings.global_var.url}/sdapi/v1/options', json=model_payload)
             if queue_object.init_image is not None:

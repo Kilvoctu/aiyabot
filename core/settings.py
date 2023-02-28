@@ -83,7 +83,7 @@ class GlobalVar:
     wait_message = []
     wait_message_count = 0
     embed_color = discord.Colour.from_rgb(222, 89, 28)
-    gradio_auth = False
+    gradio_auth = None
     username: Optional[str] = None
     password: Optional[str] = None
     api_auth = False
@@ -227,6 +227,31 @@ def update(channel_id: str, sett: str, value):
     settings[sett] = value
     with open(path + channel_id + '.json', 'w') as configfile:
         json.dump(settings, configfile, indent=1)
+
+
+def authenticate_user():
+    s = requests.Session()
+    if global_var.api_auth:
+        s.auth = (global_var.api_user, global_var.api_pass)
+
+    # do a check to see if --gradio-auth is set
+    if global_var.gradio_auth is None:
+        r = s.get(global_var.url + '/sdapi/v1/cmd-flags')
+        response_data = r.json()
+        if response_data['gradio_auth']:
+            global_var.gradio_auth = True
+        else:
+            global_var.gradio_auth = False
+
+    if global_var.gradio_auth:
+        login_payload = {
+            'username': global_var.username,
+            'password': global_var.password
+        }
+        s.post(global_var.url + '/login', data=login_payload)
+    else:
+        s.post(global_var.url + '/login')
+    return s
 
 
 def get_env_var_with_default(var: str, default: str) -> str:
@@ -397,24 +422,7 @@ def populate_global_vars():
     global_var.size_range = range(192, config['max_size'] + 64, 64)
 
     # create persistent session since we'll need to do a few API calls
-    s = requests.Session()
-    if global_var.api_auth:
-        s.auth = (global_var.api_user, global_var.api_pass)
-
-    # do a check to see if --gradio-auth is set
-    r0 = s.get(global_var.url + '/sdapi/v1/cmd-flags')
-    response_data = r0.json()
-    if response_data['gradio_auth']:
-        global_var.gradio_auth = True
-
-    if global_var.gradio_auth:
-        login_payload = {
-            'username': global_var.username,
-            'password': global_var.password
-        }
-        s.post(global_var.url + '/login', data=login_payload)
-    else:
-        s.post(global_var.url + '/login')
+    s = authenticate_user()
 
     # load many values from Web UI into global variables
     r1 = s.get(global_var.url + "/sdapi/v1/samplers")

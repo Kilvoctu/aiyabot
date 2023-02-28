@@ -2,6 +2,7 @@ import asyncio
 import discord
 import os
 import sys
+from core import ctxmenuhandler
 from core import settings
 from core.logging import get_logger
 from dotenv import load_dotenv
@@ -35,6 +36,17 @@ async def stats(ctx):
     embed = discord.Embed(title='Art generated', description=f'I have created {data[0]} pictures!',
                           color=settings.global_var.embed_color)
     await ctx.respond(embed=embed)
+
+
+# context menu commands
+@self.message_command(name="Get Message ID", guild_ids=[os.getenv("TEST_GUILD")])
+async def get_message_id(ctx, message: discord.Message):
+    await ctxmenuhandler.get_message_id(ctx, message)
+
+
+@self.message_command(name="Get Image Info", guild_ids=[os.getenv("TEST_GUILD")])
+async def get_image_info(ctx, message: discord.Message):
+    await ctxmenuhandler.get_image_info(ctx, message)
 
 
 @self.event
