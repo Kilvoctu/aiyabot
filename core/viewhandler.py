@@ -442,7 +442,9 @@ class DrawView(View):
             # if interaction fails, assume it's because aiya restarted (breaks buttons)
             button.disabled = True
             await interaction.response.edit_message(view=self)
-            await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
+            await interaction.followup.send("I may have been restarted. This button no longer works.\n"
+                                            "You can try to get the image info from **/identify** or the context menu.",
+                                            ephemeral=True)
 
     # the button to delete generated images
     @discord.ui.button(

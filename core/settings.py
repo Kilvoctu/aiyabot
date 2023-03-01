@@ -52,8 +52,6 @@ apipass = ""
 
 # Whether or not to save outputs to disk ("True"/"False")
 save_outputs = "True"
-# Whether or not to include parameter info into images ("True"/"False")
-save_metadata = "True"
 
 # The directory to save outputs (default = "outputs")
 dir = "outputs"
@@ -101,7 +99,6 @@ class GlobalVar:
     upscaler_names = []
     hires_upscaler_names = []
     save_outputs = "True"
-    save_metadata = "True"
     queue_limit = 1
     prompt_ban_list = []
     prompt_ignore_list = []
@@ -412,7 +409,6 @@ def populate_global_vars():
     global_var.api_pass = config['apipass']
 
     global_var.save_outputs = config['save_outputs']
-    global_var.save_metadata = config['save_metadata']
     global_var.queue_limit = config['queue_limit']
     global_var.prompt_ban_list = [x for x in config['prompt_ban_list']]
     global_var.prompt_ignore_list = [x for x in config['prompt_ignore_list']]

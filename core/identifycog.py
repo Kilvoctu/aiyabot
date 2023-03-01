@@ -8,6 +8,7 @@ from discord.ext import commands
 from threading import Thread
 from typing import Optional
 
+from core import ctxmenuhandler
 from core import queuehandler
 from core import viewhandler
 from core import settings
@@ -39,7 +40,7 @@ class IdentifyCog(commands.Cog):
         str,
         description='The way the image will be described.',
         required=False,
-        choices=['Normal', 'Tags', 'Metadata']
+        choices=['Normal', 'Tags', 'Image Info']
     )
     async def dream_handler(self, ctx: discord.ApplicationContext, *,
                             init_image: Optional[discord.Attachment] = None,
@@ -66,9 +67,12 @@ class IdentifyCog(commands.Cog):
             phrasing = 'clip'
         elif phrasing == 'Tags':
             phrasing = 'deepdanbooru'
+        else:
+            await ctxmenuhandler.parse_image_info(ctx, init_image.url, "slash")
+            return
 
         # set up tuple of parameters to pass into the Discord view
-        input_tuple = (ctx, init_image, phrasing)
+        input_tuple = (ctx, init_image.url, phrasing)
         view = viewhandler.DeleteView(input_tuple)
         # set up the queue if an image was found
         user_queue_limit = settings.queue_check(ctx.author)
@@ -98,7 +102,7 @@ class IdentifyCog(commands.Cog):
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.IdentifyObject):
         try:
             # construct a payload
-            image = base64.b64encode(requests.get(queue_object.init_image.url, stream=True).content).decode('utf-8')
+            image = base64.b64encode(requests.get(queue_object.init_image, stream=True).content).decode('utf-8')
             payload = {
                 "image": 'data:image/png;base64,' + image,
                 "model": queue_object.phrasing
@@ -106,29 +110,18 @@ class IdentifyCog(commands.Cog):
             # send normal payload to webui
             s = settings.authenticate_user()
 
-            if queue_object.phrasing == "Metadata":
-                png_response = s.post(url=f'{settings.global_var.url}/sdapi/v1/png-info', json=payload)
-                png_data = png_response.json().get("info")
-            else:
-                response = s.post(url=f'{settings.global_var.url}/sdapi/v1/interrogate', json=payload)
-                response_data = response.json()
+            response = s.post(url=f'{settings.global_var.url}/sdapi/v1/interrogate', json=payload)
+            response_data = response.json()
 
             # post to discord
             def post_dream():
-                if queue_object.phrasing == "Metadata":
-                    caption = png_data
-                    embed_title = 'Parameters'
-                    if caption == "":
-                        caption = "No image info was found..."
-                else:
-                    caption = response_data.get('caption')
-                    embed_title = 'I think this is'
-
+                caption = response_data.get('caption')
+                embed_title = 'I think this is'
                 if len(caption) > 4096:
                     caption = caption[:4096]
 
                 embed = discord.Embed(title=f'{embed_title}', description=f'``{caption}``')
-                embed.set_image(url=queue_object.init_image.url)
+                embed.set_image(url=queue_object.init_image)
                 embed.colour = settings.global_var.embed_color
                 footer_args = dict(text=f'{queue_object.ctx.author.name}#{queue_object.ctx.author.discriminator}')
                 if queue_object.ctx.author.avatar is not None:

@@ -467,17 +467,14 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 image = Image.open(io.BytesIO(base64.b64decode(image_base64.split(",", 1)[0])))
                 pil_images.append(image)
 
-                if settings.global_var.save_metadata == 'True':
-                    # grab png info
-                    png_payload = {
-                        "image": "data:image/png;base64," + image_base64
-                    }
-                    png_response = s.post(url=f'{settings.global_var.url}/sdapi/v1/png-info', json=png_payload)
+                # grab png info
+                png_payload = {
+                    "image": "data:image/png;base64," + image_base64
+                }
+                png_response = s.post(url=f'{settings.global_var.url}/sdapi/v1/png-info', json=png_payload)
 
-                    metadata = PngImagePlugin.PngInfo()
-                    metadata.add_text("parameters", png_response.json().get("info"))
-                else:
-                    metadata = ''
+                metadata = PngImagePlugin.PngInfo()
+                metadata.add_text("parameters", png_response.json().get("info"))
 
                 if settings.global_var.save_outputs == 'True':
                     epoch_time = int(time.time())
