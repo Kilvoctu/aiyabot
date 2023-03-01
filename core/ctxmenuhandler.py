@@ -1,13 +1,25 @@
 import base64
 import discord
+import re
 import requests
 from urlextract import URLExtract
 
 from core import settings
 
 
+def extra_net_search(field):
+    loras_used, hypers_used = {}, {}
+    lora_results = re.findall('<lora:(.*?)>', field, re.DOTALL)
+    hyper_results = re.findall('<hypernet:(.*?)>', field, re.DOTALL)
+    for lora in lora_results:
+        loras_used[lora.split(':')[0]] = lora.split(':')[1]
+    for hyper in hyper_results:
+        hypers_used[hyper.split(':')[0]] = hyper.split(':')[1]
+    return loras_used, hypers_used
+
+
 # functions to look for styles in the prompts
-def prompt_search(search, field):
+def style_search(search, field):
     search_list = search.split('{prompt}')
     matches = 0
     for y in search_list:
@@ -17,7 +29,7 @@ def prompt_search(search, field):
         return True
 
 
-def prompt_remove(search, field):
+def style_remove(search, field):
     search_list = search.split('{prompt}')
     for y in search_list:
         if y in field:
@@ -50,22 +62,23 @@ async def parse_image_info(ctx, image_url, command):
         # initialize extra params
         steps, size, guidance_scale, sampler, seed = '', '', '', '', ''
         style, facefix, highres_fix, clip_skip = '', '', '', ''
-        hypernet = ''
-        lora = ''
+
+        # try to find extra networks
+        hypernet, lora = extra_net_search(prompt_field)
 
         # try to find the style used and remove from prompts
         for key, value in settings.global_var.style_names.items():
             try:
                 style_prompt = list(value)
-                if prompt_search(style_prompt[0], prompt_field) and prompt_search(style_prompt[1], negative_prompt):
+                if style_search(style_prompt[0], prompt_field) and style_search(style_prompt[1], negative_prompt):
                     style = [key, value]
                     break
             except(Exception,):
                 pass
         # if style is not none then remove its tokens from prompts
         if style:
-            prompt_field = prompt_remove(style[1][0], prompt_field)
-            negative_prompt = prompt_remove(style[1][1], negative_prompt)
+            prompt_field = style_remove(style[1][0], prompt_field)
+            negative_prompt = style_remove(style[1][1], negative_prompt)
 
         # grab parameters
         extra_params_split = png_data_list[2].split(", ")
@@ -152,6 +165,15 @@ async def parse_image_info(ctx, image_url, command):
             extra_params += f'\nCLIP skip: ``{clip_skip}``'
 
         embed.add_field(name=f'Other parameters', value=extra_params, inline=False)
+
+        if lora or hypernet:
+            network_params = 'These additional networks were found.'
+            for key, value in hypernet.items():
+                network_params += f'\nLoRA: ``{key}`` (multiplier: ``{value}``)'
+            for key, value in lora.items():
+                network_params += f'\nHypernet: ``{key}`` (multiplier: ``{value}``)'
+            embed.add_field(name=f'Extra networks', value=network_params, inline=False)
+
         embed.add_field(name=f'Command for copying', value=f'', inline=False)
         embed.set_footer(text=copy_command)
 
