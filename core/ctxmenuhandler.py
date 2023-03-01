@@ -53,7 +53,11 @@ async def parse_image_info(ctx, image_url, command):
 
         # grab prompt and negative prompt
         prompt_field = png_data_list[0]
-        negative_prompt = str(png_data_list[1]).split("Negative prompt: ", 1)[1]
+        if "Negative prompt: " in png_data_list[1]:
+            negative_prompt = str(png_data_list[1]).split("Negative prompt: ", 1)[1]
+        else:
+            negative_prompt = ''
+            png_data_list.insert(1, '')
 
         # initialize model info
         display_name, model_name, model_hash = 'Unknown', 'Unknown', 'Unknown'
@@ -114,8 +118,6 @@ async def parse_image_info(ctx, image_url, command):
                 display_name = model[0]
                 if model[1][3]:
                     activator_token = f"\nActivator token - ``{model[1][3]}``"
-
-                if model[1][3] in prompt_field:
                     prompt_field = prompt_field.replace(f"{model[1][3]} ", "")
         # strip any folders from model name
         model_name = model_name.split('_', 1)[-1]
@@ -178,7 +180,8 @@ async def parse_image_info(ctx, image_url, command):
         embed.set_footer(text=copy_command)
 
         await ctx.respond(embed=embed, ephemeral=True)
-    except(Exception,):
+    except Exception as e:
+        print('The image info command broke: ' + str(e))
         if command == 'slash':
             message = "\nIf you're copying from Discord and think there should be image info," \
                       " try **Copy Link** instead of **Copy Image**"
