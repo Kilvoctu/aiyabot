@@ -5,10 +5,6 @@ import requests
 from core import settings
 
 
-async def account_creation_date(ctx, member: discord.Member):  # user commands return the member
-    await ctx.respond(f"{member.name}'s account was created on {member.created_at}")
-
-
 async def get_message_id(ctx, message: discord.Message):  # message commands return the message
     await ctx.respond(f"Message ID: `{message.id}`")
 
@@ -29,41 +25,86 @@ async def get_image_info(ctx, message: discord.Message):
     png_response = s.post(url=f'{settings.global_var.url}/sdapi/v1/png-info', json=payload)
     png_data = png_response.json().get("info")
     png_data_list = png_data.split("\n")
+
+    # grab prompt and negative prompt
+    prompt_field = png_data_list[0]
     negative_prompt = str(png_data_list[1]).split("Negative prompt: ", 1)[1]
+    # this prompt format goes into copy command
+    copy_prompt = ''
+
+    # initialize model info
+    display_name, model_name, model_hash = 'Unknown', 'Unknown', 'Unknown'
+    activator_token = ''
+
+    # initialize extra params
+    steps, size, guidance_scale, sampler, seed = '', '', '', '', ''
+    style = ''
+    facefix = ''
+    highres_fix = ''
+    clip_skip = ''
+    hypernet = ''
+    lora = ''
+    strength = ''
 
     print(f"this is the remaining params: {png_data_list[2]}")
+    extra_params_split = png_data_list[2].split(", ")
+    for line in extra_params_split:
+        # grab model info
+        if 'Model hash: ' in line:
+            model_hash = line.split(': ', 1)[1]
+        if 'Model: ' in line:
+            model_name = line.split(': ', 1)[1]
 
-    # give best effort in trying to parse the png info
+        # grab guaranteed extra params
+        if 'Steps: ' in line:
+            steps = line.split(': ', 1)[1]
+        if 'Size: ' in line:
+            size = line.split(': ', 1)[1]
+        if 'CFG scale: ' in line:
+            guidance_scale = line.split(': ', 1)[1]
+        if 'Sampler: ' in line:
+            sampler = line.split(': ', 1)[1]
+        if 'Seed: ' in line:
+            seed = line.split(': ', 1)[1]
+
+    width_height = size.split("x")
+
+    # try to find the model name and activator token
+    for model in settings.global_var.model_info.items():
+        if model[1][2] == model_hash or model[1][1] == model_name:
+            display_name = model[0]
+            activator_token = f"\nActivator token - ``{model[1][3]}``"
+
+            if model[1][3] in prompt_field:
+                copy_prompt = prompt_field.replace(f"{model[1][3]} ", "")
+    # strip any folders from model name
+    model_name = model_name.split('_', 1)[-1]
+
+    # give the best effort in trying to parse the png info
     embed = discord.Embed(title="About the image!", description="")
-    prompt_field = png_data_list[0]
     if len(prompt_field) > 1024:
         prompt_field = f'{prompt_field[:1010]}....'
     embed.colour = settings.global_var.embed_color
     embed.add_field(name=f'Prompt', value=f'``{prompt_field}``', inline=False)
-    # embed.add_field(name='Data model', value=f'Display name - ``{display_name}``\nModel name - ``{model_name}``'
-    #                                         f'\nShorthash - ``{model_hash}``{activator_token}', inline=False)
+    embed.add_field(name='Data model', value=f'Display name - ``{display_name}``\nModel name - ``{model_name}``'
+                                             f'\nShorthash - ``{model_hash}``{activator_token}', inline=False)
 
-    #copy_command = f'/draw prompt:{rev[1]} data_model:{display_name} steps:{rev[5]} width:{rev[6]} ' \
-    #               f'height:{rev[7]} guidance_scale:{rev[8]} sampler:{rev[9]} seed:{rev[10]}'
+    copy_command = f'/draw prompt:{copy_prompt} steps:{steps} width:{width_height[0]} height:{width_height[1]} ' \
+                   f'guidance_scale:{guidance_scale} sampler:{sampler} seed:{seed}'
+    if display_name != 'Unknown':
+        copy_command += f' data_model: {display_name}'
 
     if negative_prompt != '':
-        #copy_command += f' negative_prompt:{clean_negative}'
+        # copy_command += f' negative_prompt:{clean_negative}'
         n_prompt_field = negative_prompt
         if len(n_prompt_field) > 1024:
             n_prompt_field = f'{n_prompt_field[:1010]}....'
         embed.add_field(name=f'Negative prompt', value=f'``{n_prompt_field}``', inline=False)
 
-    #extra_params = f'Sampling steps: ``{rev[5]}``\nSize: ``{rev[6]}x{rev[7]}``\nClassifier-free guidance ' \
-    #               f'scale: ``{rev[8]}``\nSampling method: ``{rev[9]}``\nSeed: ``{rev[10]}``'
+    extra_params = f'Sampling steps: ``{steps}``\nSize: ``{size}``\nClassifier-free guidance scale: ``{guidance_scale}``\nSampling method: ``{sampler}``\nSeed: ``{seed}``'
     
-    #embed.add_field(name=f'Other parameters', value=extra_params, inline=False)
+    embed.add_field(name=f'Other parameters', value=extra_params, inline=False)
     embed.add_field(name=f'Command for copying', value=f'', inline=False)
-    #embed.set_footer(text=copy_command)
-
-    '''if len(copy_command) > 2048:
-        button.disabled = True
-        await interaction.response.edit_message(view=self)
-        await interaction.followup.send(
-            "The contents of 📋 exceeded Discord's character limit! Sorry, I can't display it...", ephemeral=True)'''
+    embed.set_footer(text=copy_command)
 
     await ctx.respond(embed=embed, ephemeral=True)
