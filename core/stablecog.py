@@ -91,7 +91,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         required=False,
     )
     @option(
-        'style',
+        'styles',
         str,
         description='Apply a predefined style to the generation.',
         required=False,
@@ -163,7 +163,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             guidance_scale: Optional[str] = None,
                             sampler: Optional[str] = None,
                             seed: Optional[int] = -1,
-                            style: Optional[str] = None,
+                            styles: Optional[str] = None,
                             facefix: Optional[str] = None,
                             highres_fix: Optional[str] = None,
                             clip_skip: Optional[int] = None,
@@ -189,8 +189,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             guidance_scale = settings.read(channel)['guidance_scale']
         if sampler is None:
             sampler = settings.read(channel)['sampler']
-        if style is None:
-            style = settings.read(channel)['style']
+        if styles is None:
+            styles = settings.read(channel)['style']
         if facefix is None:
             facefix = settings.read(channel)['facefix']
         if highres_fix is None:
@@ -339,8 +339,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 reply_adds += f"\nI'm currently limited to a max of 10 drawings per post..."
 
             reply_adds += f'\nBatch count: ``{batch[0]}`` - Batch size: ``{batch[1]}``'
-        if style != settings.read(channel)['style']:
-            reply_adds += f'\nStyle: ``{style}``'
+        if styles != settings.read(channel)['style']:
+            reply_adds += f'\nStyle: ``{styles}``'
         if hypernet != settings.read(channel)['hypernet']:
             reply_adds += f'\nHypernet: ``{hypernet}``'
         if lora != settings.read(channel)['lora']:
@@ -353,7 +353,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         # set up tuple of parameters to pass into the Discord view
         input_tuple = (
             ctx, simple_prompt, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength,
-            init_image, batch, style, facefix, highres_fix, clip_skip, hypernet, lora)
+            init_image, batch, styles, facefix, highres_fix, clip_skip, hypernet, lora)
         view = viewhandler.DrawView(input_tuple)
         # setup the queue
         user_queue_limit = settings.queue_check(ctx.author)
@@ -384,11 +384,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         try:
             start_time = time.time()
 
-            # create persistent session since we'll need to do a few API calls
-            s = requests.Session()
-            if settings.global_var.api_auth:
-                s.auth = (settings.global_var.api_user, settings.global_var.api_pass)
-
             # construct a payload for data model, then the normal payload
             model_payload = {
                 "sd_model_checkpoint": queue_object.data_model
@@ -408,7 +403,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 "n_iter": queue_object.batch[0],
                 "batch_size": queue_object.batch[1],
                 "styles": [
-                    queue_object.style
+                    queue_object.styles
                 ]
             }
 
@@ -450,17 +445,9 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             }
             payload.update(override_payload)
 
-            # send normal payload to webui
-            if settings.global_var.gradio_auth:
-                login_payload = {
-                    'username': settings.global_var.username,
-                    'password': settings.global_var.password
-                }
-                s.post(settings.global_var.url + '/login', data=login_payload)
-            else:
-                s.post(settings.global_var.url + '/login')
+            # send normal payload to webui and only send model payload if one is defined
+            s = settings.authenticate_user()
 
-            # only send model payload if one is defined
             if queue_object.data_model != '':
                 s.post(url=f'{settings.global_var.url}/sdapi/v1/options', json=model_payload)
             if queue_object.init_image is not None:
@@ -480,17 +467,14 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 image = Image.open(io.BytesIO(base64.b64decode(image_base64.split(",", 1)[0])))
                 pil_images.append(image)
 
-                if settings.global_var.save_metadata == 'True':
-                    # grab png info
-                    png_payload = {
-                        "image": "data:image/png;base64," + image_base64
-                    }
-                    png_response = s.post(url=f'{settings.global_var.url}/sdapi/v1/png-info', json=png_payload)
+                # grab png info
+                png_payload = {
+                    "image": "data:image/png;base64," + image_base64
+                }
+                png_response = s.post(url=f'{settings.global_var.url}/sdapi/v1/png-info', json=png_payload)
 
-                    metadata = PngImagePlugin.PngInfo()
-                    metadata.add_text("parameters", png_response.json().get("info"))
-                else:
-                    metadata = ''
+                metadata = PngImagePlugin.PngInfo()
+                metadata.add_text("parameters", png_response.json().get("info"))
 
                 if settings.global_var.save_outputs == 'True':
                     epoch_time = int(time.time())

@@ -188,20 +188,9 @@ class UpscaleCog(commands.Cog):
                 payload.update(up2_payload)
 
             # send normal payload to webui
-            with requests.Session() as s:
-                if settings.global_var.api_auth:
-                    s.auth = (settings.global_var.api_user, settings.global_var.api_pass)
+            s = settings.authenticate_user()
 
-                if settings.global_var.gradio_auth:
-                    login_payload = {
-                        'username': settings.global_var.username,
-                        'password': settings.global_var.password
-                    }
-                    s.post(settings.global_var.url + '/login', data=login_payload)
-                else:
-                    s.post(settings.global_var.url + '/login')
-
-                response = s.post(url=f'{settings.global_var.url}/sdapi/v1/extra-single-image', json=payload)
+            response = s.post(url=f'{settings.global_var.url}/sdapi/v1/extra-single-image', json=payload)
             response_data = response.json()
             end_time = time.time()
 
