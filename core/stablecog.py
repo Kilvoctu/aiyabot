@@ -91,7 +91,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         required=False,
     )
     @option(
-        'style',
+        'styles',
         str,
         description='Apply a predefined style to the generation.',
         required=False,
@@ -163,7 +163,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             guidance_scale: Optional[str] = None,
                             sampler: Optional[str] = None,
                             seed: Optional[int] = -1,
-                            style: Optional[str] = None,
+                            styles: Optional[str] = None,
                             facefix: Optional[str] = None,
                             highres_fix: Optional[str] = None,
                             clip_skip: Optional[int] = None,
@@ -189,8 +189,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             guidance_scale = settings.read(channel)['guidance_scale']
         if sampler is None:
             sampler = settings.read(channel)['sampler']
-        if style is None:
-            style = settings.read(channel)['style']
+        if styles is None:
+            styles = settings.read(channel)['style']
         if facefix is None:
             facefix = settings.read(channel)['facefix']
         if highres_fix is None:
@@ -339,8 +339,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 reply_adds += f"\nI'm currently limited to a max of 10 drawings per post..."
 
             reply_adds += f'\nBatch count: ``{batch[0]}`` - Batch size: ``{batch[1]}``'
-        if style != settings.read(channel)['style']:
-            reply_adds += f'\nStyle: ``{style}``'
+        if styles != settings.read(channel)['style']:
+            reply_adds += f'\nStyle: ``{styles}``'
         if hypernet != settings.read(channel)['hypernet']:
             reply_adds += f'\nHypernet: ``{hypernet}``'
         if lora != settings.read(channel)['lora']:
@@ -353,7 +353,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         # set up tuple of parameters to pass into the Discord view
         input_tuple = (
             ctx, simple_prompt, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength,
-            init_image, batch, style, facefix, highres_fix, clip_skip, hypernet, lora)
+            init_image, batch, styles, facefix, highres_fix, clip_skip, hypernet, lora)
         view = viewhandler.DrawView(input_tuple)
         # setup the queue
         user_queue_limit = settings.queue_check(ctx.author)
@@ -403,7 +403,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 "n_iter": queue_object.batch[0],
                 "batch_size": queue_object.batch[1],
                 "styles": [
-                    queue_object.style
+                    queue_object.styles
                 ]
             }
 

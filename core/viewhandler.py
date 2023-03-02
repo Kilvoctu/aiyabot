@@ -30,7 +30,7 @@ input_tuple[0] = ctx
 [19] = lora
 '''
 tuple_names = ['ctx', 'simple_prompt', 'prompt', 'negative_prompt', 'data_model', 'steps', 'width', 'height',
-               'guidance_scale', 'sampler', 'seed', 'strength', 'init_image', 'batch', 'style', 'facefix',
+               'guidance_scale', 'sampler', 'seed', 'strength', 'init_image', 'batch', 'styles', 'facefix',
                'highres_fix', 'clip_skip', 'hypernet', 'lora']
 
 
@@ -183,7 +183,7 @@ class DrawModal(Modal):
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is not valid for strength!.",
                                         value='Make sure you enter a number (preferably between 0.0 and 1.0).',
                                         inline=False)
-            if 'style:' in line:
+            if 'styles:' in line:
                 if line.split(':', 1)[1] in settings.global_var.style_names.keys():
                     pen[14] = line.split(':', 1)[1]
                 else:
@@ -411,7 +411,7 @@ class DrawView(View):
                 bat_copy = settings.batch_format(bat_string)
                 copy_command += f' batch:{bat_copy[0]},{bat_copy[1]}'
             if rev[14] != 'None':
-                copy_command += f' style:{rev[14]}'
+                copy_command += f' styles:{rev[14]}'
                 extra_params += f'\nStyle preset: ``{rev[14]}``'
             if rev[15] != 'None':
                 copy_command += f' facefix:{rev[15]}'

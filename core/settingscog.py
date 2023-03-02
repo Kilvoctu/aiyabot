@@ -106,7 +106,7 @@ class SettingsCog(commands.Cog):
         choices=settings.global_var.sampler_names,
     )
     @option(
-        'style',
+        'styles',
         str,
         description='Apply a predefined style to the generation.',
         required=False,
@@ -186,7 +186,7 @@ class SettingsCog(commands.Cog):
                                width: Optional[int] = None, height: Optional[int] = None,
                                guidance_scale: Optional[str] = None,
                                sampler: Optional[str] = None,
-                               style: Optional[str] = None,
+                               styles: Optional[str] = None,
                                facefix: Optional[str] = None,
                                highres_fix: Optional[str] = None,
                                clip_skip: Optional[int] = None,
@@ -289,9 +289,9 @@ class SettingsCog(commands.Cog):
             new += f'\nSampler: ``"{sampler}"``'
             set_new = True
 
-        if style is not None:
-            settings.update(channel, 'style', style)
-            new += f'\nStyle: ``"{style}"``'
+        if styles is not None:
+            settings.update(channel, 'style', styles)
+            new += f'\nStyle: ``"{styles}"``'
             set_new = True
 
         if facefix is not None:

@@ -154,7 +154,7 @@ async def parse_image_info(ctx, image_url, command):
                        f'``{guidance_scale}``\nSampling method: ``{sampler}``\nSeed: ``{seed}``'
 
         if style:
-            copy_command += f' style:{style[0]}'
+            copy_command += f' styles:{style[0]}'
             extra_params += f'\nStyle preset: ``{style[0]}``'
         if facefix:
             copy_command += f' facefix:{facefix}'
@@ -169,7 +169,7 @@ async def parse_image_info(ctx, image_url, command):
         embed.add_field(name=f'Other parameters', value=extra_params, inline=False)
 
         if lora or hypernet:
-            network_params = 'These additional networks were found.'
+            network_params = ''
             for key, value in hypernet.items():
                 network_params += f'\nLoRA: ``{key}`` (multiplier: ``{value}``)'
             for key, value in lora.items():
