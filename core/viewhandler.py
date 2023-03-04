@@ -361,7 +361,7 @@ class DrawView(View):
         emoji="📋")
     async def button_review(self, button, interaction):
         # reuse "read image info" command from ctxmenuhandler
-        init_url = ''
+        init_url = None
         try:
             attachment = self.message.attachments[0]
             if self.input_tuple[12]:
@@ -393,6 +393,7 @@ class DrawView(View):
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.\n"
                                             "You can react with ❌ to delete the image.", ephemeral=True)
+
 
 class DeleteView(View):
     def __init__(self, input_tuple):
