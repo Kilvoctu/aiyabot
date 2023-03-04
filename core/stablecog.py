@@ -497,7 +497,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
                         draw_time = '{0:.3f}'.format(end_time - start_time)
                         message = f'my {noun_descriptor} of ``{queue_object.simple_prompt}`` took me ``{draw_time}`` seconds!'
-                        file = discord.File(fp=buffer, filename=file_path)
+                        file = discord.File(fp=buffer, filename=f'{queue_object.seed}-{count}.png')
 
                         if count == 1:
                             content = f'<@{queue_object.ctx.author.id}>, {message}'
