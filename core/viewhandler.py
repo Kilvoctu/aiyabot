@@ -357,10 +357,12 @@ class DrawView(View):
         emoji="📋")
     async def button_review(self, button, interaction):
         # reuse "read image info" command from ctxmenuhandler
+        init_url = ''
         try:
             attachment = self.message.attachments[0]
-            init_url = self.input_tuple[12]
-            embed = await ctxmenuhandler.parse_image_info(init_url.url, attachment.url, "button")
+            if self.input_tuple[12]:
+                init_url = self.input_tuple[12].url
+            embed = await ctxmenuhandler.parse_image_info(init_url, attachment.url, "button")
             await interaction.response.send_message(embed=embed, ephemeral=True)
         except Exception as e:
             print('The clipboard button broke: ' + str(e))
