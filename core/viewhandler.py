@@ -22,7 +22,7 @@ input_tuple[0] = ctx
 [10] = seed
 [11] = strength
 [12] = init_image
-[13] = count
+[13] = batch
 [14] = style
 [15] = facefix
 [16] = highres_fix
@@ -251,6 +251,8 @@ class DrawModal(Modal):
                 pen[2] += f' <hypernet:{pen[18]}:0.85>'
             if pen[19] != 'None':
                 pen[2] += f' <lora:{pen[19]}:0.85>'
+            # set batch to 1
+            pen[13] = [1, 1]
 
             # the updated tuple to send to queue
             prompt_tuple = tuple(pen)
@@ -264,7 +266,7 @@ class DrawModal(Modal):
                 prompt_output += f'\nNew model: ``{new_model}``'
             index_start = 5
             for index, value in enumerate(tuple_names[index_start:], index_start):
-                if index == 17:
+                if index == 13 or index == 17:
                     continue
                 if str(pen[index]) != str(self.input_tuple[index]):
                     prompt_output += f'\nNew {value}: ``{pen[index]}``'
@@ -322,6 +324,8 @@ class DrawView(View):
                 # update the tuple with a new seed
                 new_seed = list(self.input_tuple)
                 new_seed[10] = random.randint(0, 0xFFFFFFFF)
+                # set batch to 1
+                new_seed[13] = [1, 1]
                 seed_tuple = tuple(new_seed)
 
                 print(f'Reroll -- {interaction.user.name}#{interaction.user.discriminator} -- Prompt: {seed_tuple[1]}')
