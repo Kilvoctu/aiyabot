@@ -88,6 +88,7 @@ class GlobalVar:
     api_user: Optional[str] = None
     api_pass: Optional[str] = None
     model_info = {}
+    lora_info = {}
     size_range = range(192, 1088, 64)
     sampler_names = []
     style_names = {}
@@ -352,7 +353,7 @@ def files_check():
             f.write('0')
 
     header = ['display_name', 'model_full_name', 'activator_token', 'hyperlink']
-    unset_model = ['Default', '', '']
+    unset_model = ['Default', '', '', '']
     make_model_file = True
     replace_model_file = False
     # if models.csv exists and has data
@@ -384,6 +385,41 @@ def files_check():
             writer = csv.writer(f, delimiter="|")
             writer.writerow(header)
             writer.writerow(unset_model)
+
+    ###NML: MAKE LORA FILE
+    header = ['display_name', 'lora_full_name', 'activator_token', 'hyperlink']
+    unset_lora = ['Default', '', '', '']
+    make_lora_file = True
+    replace_lora_file = False
+    # if lora.csv exists and has data
+    if os.path.isfile(f'{path}lora.csv'):
+        with open(f'{path}lora.csv', encoding='utf-8') as f:
+            reader = csv.reader(f, delimiter="|")
+            for i, row in enumerate(reader):
+                # if header is missing columns, reformat the file
+                if i == 0:
+                    if len(row) < 3:
+                        with open(f'{path}lora.csv', 'r') as fp:
+                            reader = csv.DictReader(fp, fieldnames=header, delimiter="|")
+                            with open(f'{path}lora2.csv', 'w', newline='') as fh:
+                                writer = csv.DictWriter(fh, fieldnames=reader.fieldnames, delimiter="|")
+                                writer.writeheader()
+                                header = next(reader)
+                                writer.writerows(reader)
+                                replace_lora_file = True
+                # if first row has data, do nothing
+                if i == 1:
+                    make_lora_file = False
+        if replace_lora_file:
+            os.remove(f'{path}lora.csv')
+            os.rename(f'{path}lora2.csv', f'{path}lora.csv')
+    # create/reformat model.csv if something is wrong
+    if make_lora_file:
+        print(f'Uh oh, missing lora.csv data. Creating a new one.')
+        with open(f'{path}lora.csv', 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f, delimiter="|")
+            writer.writerow(header)
+            writer.writerow(unset_lora)
 
     # if directory in DIR doesn't exist, create it
     dir_exists = os.path.exists(global_var.dir)
@@ -477,8 +513,25 @@ def populate_global_vars():
                     break
     # add "Default" if models.csv is on default, or if no model matches are found
     if not global_var.model_info:
-        global_var.model_info[row[0]] = '', '', '', '', ''
-
+        global_var.model_info[row[0]] = '', '', '', '',''
+        
+    # create nested dict for models based on display_name in models.csv
+    # model_info[0] = display name (top level)
+    # model_info[1][0] = "title". this is sent to the API
+    # model_info[1][1] = name of the model
+    # model_info[1][2] = shorthash
+    # model_info[1][3] = activator token
+    # model_info[1][4] = hyperlink
+    with open(f'{path}lora.csv', encoding='utf-8') as csv_file:
+        lora_data = list(csv.reader(csv_file, delimiter='|'))
+        for row in lora_data[1:]:
+            global_var.lora_info[row[0]] = row[0],row[1],row[2],row[3]
+            
+    # add "Default" if models.csv is on default, or if no model matches are found
+    if not global_var.lora_info:
+        global_var.lora_info[row[0]] = '', '', '', ''
+        
+        
     # iterate through config for anything unobtainable from API
     config_url = s.get(global_var.url + "/config")
     old_config = config_url.json()

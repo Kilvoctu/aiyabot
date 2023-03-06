@@ -36,7 +36,7 @@ class InfoView(View):
         self.contents = []
 
         # enable navigation buttons only when needed
-        if length > batch:
+        if length > batch * 2:
             self.enable_nav_buttons()
         else:
             self.disable_nav_buttons()
@@ -45,26 +45,29 @@ class InfoView(View):
         models = []
         for key in settings.global_var.model_info:
             models.append(key)
-
-        # create each page and place into "contents" list
-        for i in range(0, length, batch):
-            model_list = ''
+            
+        for i in range(0, length, batch * 2):
+            model_column_a, model_column_b = '', ''
             embed_page = discord.Embed(title="Models list", colour=settings.global_var.embed_color)
             for key in models[i:i + batch]:
                 for keyB, value in settings.global_var.model_info.items():
                     if key == keyB:
-                        # strip any folders from model full name
-                        filename = value[0].split(os.sep)[-1]
                         hyperlink = value[-1]
-                        model_list += f"\n[**{keyB}**]({hyperlink})"
-                        break
-            embed_page.add_field(name="", value=model_list, inline=True)
-            if length > batch:
-                embed_page.set_footer(text=f'Page {self.page + 1} of {math.ceil(length / batch)} - {length} total')
+                        model_column_a += f"\n[**{keyB}**]({hyperlink})"
+            embed_page.add_field(name="", value=model_column_a, inline=True)
+            i += batch
+            for key in models[i:i + batch]:
+                for keyB, value in settings.global_var.model_info.items():
+                    if key == keyB:
+                        hyperlink = value[-1]
+                        model_column_b += f"\n[**{keyB}**]({hyperlink})"
+            embed_page.add_field(name="", value=model_column_b, inline=True)
+            if length > batch*2:
+                embed_page.set_footer(text=f'Page {self.page + 1} of {math.ceil(length / (batch * 2))} - {length} total')
             self.contents.append(embed_page)
             self.page += 1
         self.page = 0
-
+        
         await interaction.response.edit_message(view=self, embed=self.contents[0])
 
     @discord.ui.button(
@@ -142,8 +145,8 @@ class InfoView(View):
         custom_id="button_lora",
         label="LoRAs", row=0)
     async def button_lora(self, _button, interaction):
-        length = len(settings.global_var.lora_names)
-        batch = 16
+        length = len(settings.global_var.lora_info)
+        batch = 10
         self.page = 0
         self.contents = []
         desc = 'To add manually to prompt, use <lora:``name``:``#``>\n``#`` = The effect multiplier (0.0 - 1.0)'
@@ -152,16 +155,29 @@ class InfoView(View):
             self.enable_nav_buttons()
         else:
             self.disable_nav_buttons()
+            
+        # create a subscript-able object for use later
+        loras = []
+        for key in settings.global_var.lora_info:
+            loras.append(key)
 
         for i in range(0, length, batch * 2):
             lora_column_a, lora_column_b = '', ''
             embed_page = discord.Embed(title="LoRA list", description=desc, colour=settings.global_var.embed_color)
-            for value in settings.global_var.lora_names[i:i+batch]:
-                lora_column_a += f'\n``{value}``'
+            for key in loras[i:i + batch]:
+                for keyB, value in settings.global_var.lora_info.items():
+                    if key == keyB:
+                        trigger = value[-2]
+                        hyperlink = value[-1]
+                        lora_column_a += f"\n[**{keyB}**]({hyperlink})"
             embed_page.add_field(name="", value=lora_column_a, inline=True)
             i += batch
-            for value in settings.global_var.lora_names[i:i+batch]:
-                lora_column_b += f'\n``{value}``'
+            for key in loras[i:i + batch]:
+                for keyB, value in settings.global_var.lora_info.items():
+                    if key == keyB:
+                        trigger = value[-2]
+                        hyperlink = value[-1]
+                        lora_column_b += f"\n[**{keyB}**]({hyperlink})"
             embed_page.add_field(name="", value=lora_column_b, inline=True)
             if length > batch*2:
                 embed_page.set_footer(text=f'Page {self.page + 1} of {math.ceil(length / (batch * 2))} - {length} total')
