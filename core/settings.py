@@ -351,7 +351,7 @@ def files_check():
         with open(f'{path}stats.txt', 'w') as f:
             f.write('0')
 
-    header = ['display_name', 'model_full_name', 'activator_token']
+    header = ['display_name', 'model_full_name', 'activator_token', 'hyperlink']
     unset_model = ['Default', '', '']
     make_model_file = True
     replace_model_file = False
@@ -464,6 +464,7 @@ def populate_global_vars():
     # model_info[1][1] = name of the model
     # model_info[1][2] = shorthash
     # model_info[1][3] = activator token
+    # model_info[1][4] = hyperlink
     with open(f'{path}models.csv', encoding='utf-8') as csv_file:
         model_data = list(csv.reader(csv_file, delimiter='|'))
         for row in model_data[1:]:
@@ -472,11 +473,11 @@ def populate_global_vars():
                 norm_api_path = os.path.normpath(model['filename'])
                 if norm_csv_path.split(os.sep)[-1] == norm_api_path.split(os.sep)[-1] \
                         or norm_csv_path.replace(os.sep, '_') == model['model_name']:
-                    global_var.model_info[row[0]] = model['title'], model['model_name'], model['hash'], row[2]
+                    global_var.model_info[row[0]] = model['title'], model['model_name'], model['hash'], row[2], row[3]
                     break
     # add "Default" if models.csv is on default, or if no model matches are found
     if not global_var.model_info:
-        global_var.model_info[row[0]] = '', '', '', ''
+        global_var.model_info[row[0]] = '', '', '', '', ''
 
     # iterate through config for anything unobtainable from API
     config_url = s.get(global_var.url + "/config")

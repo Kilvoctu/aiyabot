@@ -55,7 +55,8 @@ class InfoView(View):
                     if key == keyB:
                         # strip any folders from model full name
                         filename = value[0].split(os.sep)[-1]
-                        model_list += f'\n**{keyB}**\n``{filename}``'
+                        hyperlink = value[-1]
+                        model_list += f"\n[**{keyB}**]({hyperlink})"
                         break
             embed_page.add_field(name="", value=model_list, inline=True)
             if length > batch:
