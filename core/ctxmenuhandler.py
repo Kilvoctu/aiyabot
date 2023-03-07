@@ -5,6 +5,9 @@ import requests
 from urlextract import URLExtract
 
 from core import settings
+from core import queuehandler
+from core import upscalecog
+from core import viewhandler
 
 
 def extra_net_search(field):
@@ -213,6 +216,56 @@ async def get_image_info(ctx, message: discord.Message):
 
     if not urls:
         await ctx.respond(content="No images were found in the message...", ephemeral=True)
+        return
 
     for image_url in urls:
         await parse_image_info(ctx, image_url, "context")
+
+
+async def quick_upscale(self, ctx, message: discord.Message):
+    # look for images in message (we will only use the first one, though)
+    all_content = message.content
+    if message.attachments:
+        for i in message.attachments:
+            all_content += f"\n{i}"
+    extractor = URLExtract()
+    urls = extractor.find_urls(all_content)
+
+    if not urls:
+        await ctx.respond(content="No images were found in the message...", ephemeral=True)
+        return
+
+    # update defaults with any new defaults from settingscog
+    channel = '% s' % ctx.channel.id
+    settings.check(channel)
+    upscaler_1 = settings.read(channel)['upscaler_1']
+
+    init_image = requests.get(urls[0])
+    resize = 2.0
+    upscaler_2, upscaler_2_strength = "None", '0.5'
+    gfpgan, codeformer = '0.0', '0.0'
+    upscale_first = False
+
+    message = ''
+    if len(urls) > 1:
+        message = 'the first image '
+
+    # set up tuple of parameters
+    input_tuple = (
+        ctx, resize, init_image, upscaler_1, upscaler_2, upscaler_2_strength, gfpgan, codeformer, upscale_first)
+    view = viewhandler.DeleteView(input_tuple)
+    user_queue_limit = settings.queue_check(ctx.author)
+    upscale_dream = upscalecog.UpscaleCog(self)
+    if queuehandler.GlobalQueue.dream_thread.is_alive():
+        if user_queue_limit == "Stop":
+            await ctx.send_response(
+                content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.",
+                ephemeral=True)
+        else:
+            queuehandler.GlobalQueue.queue.append(queuehandler.UpscaleObject(upscalecog.UpscaleCog, *input_tuple, view))
+    else:
+        await queuehandler.process_dream(upscale_dream, queuehandler.UpscaleObject(upscale_dream, *input_tuple, view))
+    if user_queue_limit != "Stop":
+        await ctx.send_response(
+            f'<@{ctx.author.id}>, upscaling {message}using ``{upscaler_1}``!\n'
+            f'Queue: ``{len(queuehandler.GlobalQueue.queue)}``')
