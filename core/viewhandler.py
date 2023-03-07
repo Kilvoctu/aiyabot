@@ -2,6 +2,7 @@ import discord
 import random
 from discord.ui import InputText, Modal, View
 
+from core import ctxmenuhandler
 from core import queuehandler
 from core import settings
 from core import stablecog
@@ -21,7 +22,7 @@ input_tuple[0] = ctx
 [10] = seed
 [11] = strength
 [12] = init_image
-[13] = count
+[13] = batch
 [14] = style
 [15] = facefix
 [16] = highres_fix
@@ -250,6 +251,8 @@ class DrawModal(Modal):
                 pen[2] += f' <hypernet:{pen[18]}:0.85>'
             if pen[19] != 'None':
                 pen[2] += f' <lora:{pen[19]}:0.85>'
+            # set batch to 1
+            pen[13] = [1, 1]
 
             # the updated tuple to send to queue
             prompt_tuple = tuple(pen)
@@ -263,7 +266,7 @@ class DrawModal(Modal):
                 prompt_output += f'\nNew model: ``{new_model}``'
             index_start = 5
             for index, value in enumerate(tuple_names[index_start:], index_start):
-                if index == 17:
+                if index == 13 or index == 17:
                     continue
                 if str(pen[index]) != str(self.input_tuple[index]):
                     prompt_output += f'\nNew {value}: ``{pen[index]}``'
@@ -321,6 +324,8 @@ class DrawView(View):
                 # update the tuple with a new seed
                 new_seed = list(self.input_tuple)
                 new_seed[10] = random.randint(0, 0xFFFFFFFF)
+                # set batch to 1
+                new_seed[13] = [1, 1]
                 seed_tuple = tuple(new_seed)
 
                 print(f'Reroll -- {interaction.user.name}#{interaction.user.discriminator} -- Prompt: {seed_tuple[1]}')
@@ -355,87 +360,13 @@ class DrawView(View):
         custom_id="button_review",
         emoji="📋")
     async def button_review(self, button, interaction):
-        # simpler variable name
-        rev = self.input_tuple
-        # initial dummy data for a default models.csv
-        display_name = 'Default'
-        model_name, model_hash = 'Unknown', 'Unknown'
-        activator_token = ''
+        # reuse "read image info" command from ctxmenuhandler
+        init_url = None
         try:
-            # get the remaining model information we want from the data_model ("title") in the tuple
-            for model in settings.global_var.model_info.items():
-                if model[1][0] == rev[4] and model[1][0] != "Default":
-                    display_name = model[0]
-                    model_name = model[1][1]
-                    model_hash = model[1][2]
-                    if model[1][3]:
-                        activator_token = f'\nActivator token - ``{model[1][3]}``'
-                    break
-
-            # strip any folders from model name
-            model_name = model_name.split('_', 1)[-1]
-
-            # run through mod function to get clean negative since I don't want to add it to stablecog tuple
-            clean_negative = rev[3]
-            if settings.global_var.negative_prompt_prefix:
-                mod_results = settings.prompt_mod(rev[2], rev[3])
-                if settings.global_var.negative_prompt_prefix and mod_results[0] == "Mod":
-                    clean_negative = mod_results[3]
-
-            # generate the command for copy-pasting, and also add embed fields
-            embed = discord.Embed(title="About the image!", description="")
-            prompt_field = rev[1]
-            if len(prompt_field) > 1024:
-                prompt_field = f'{prompt_field[:1010]}....'
-            embed.colour = settings.global_var.embed_color
-            embed.add_field(name=f'Prompt', value=f'``{prompt_field}``', inline=False)
-            embed.add_field(name='Data model', value=f'Display name - ``{display_name}``\nModel name - ``{model_name}``'
-                                                     f'\nShorthash - ``{model_hash}``{activator_token}', inline=False)
-
-            copy_command = f'/draw prompt:{rev[1]} data_model:{display_name} steps:{rev[5]} width:{rev[6]} ' \
-                           f'height:{rev[7]} guidance_scale:{rev[8]} sampler:{rev[9]} seed:{rev[10]}'
-            if rev[3] != '':
-                copy_command += f' negative_prompt:{clean_negative}'
-                n_prompt_field = clean_negative
-                if len(n_prompt_field) > 1024:
-                    n_prompt_field = f'{n_prompt_field[:1010]}....'
-                embed.add_field(name=f'Negative prompt', value=f'``{n_prompt_field}``', inline=False)
-
-            extra_params = f'Sampling steps: ``{rev[5]}``\nSize: ``{rev[6]}x{rev[7]}``\nClassifier-free guidance ' \
-                           f'scale: ``{rev[8]}``\nSampling method: ``{rev[9]}``\nSeed: ``{rev[10]}``'
-            if rev[12]:
-                # not interested in adding embed fields for strength and init_image
-                copy_command += f' strength:{rev[11]} init_url:{rev[12].url}'
-            if rev[13][0] != 1 or rev[13][1] != 1:
-                bat_string = ','.join(str(x) for x in rev[13])
-                bat_copy = settings.batch_format(bat_string)
-                copy_command += f' batch:{bat_copy[0]},{bat_copy[1]}'
-            if rev[14] != 'None':
-                copy_command += f' styles:{rev[14]}'
-                extra_params += f'\nStyle preset: ``{rev[14]}``'
-            if rev[15] != 'None':
-                copy_command += f' facefix:{rev[15]}'
-                extra_params += f'\nFace restoration model: ``{rev[15]}``'
-            if rev[16] != 'Disabled':
-                copy_command += f' highres_fix:{rev[16]}'
-                extra_params += f'\nHigh-res fix: ``{rev[16]}``'
-            if rev[17] != 1:
-                copy_command += f' clip_skip:{rev[17]}'
-                extra_params += f'\nCLIP skip: ``{rev[17]}``'
-            if rev[18] != 'None':
-                copy_command += f' hypernet:{rev[18]}'
-                extra_params += f'\nHypernetwork model: ``{rev[18]}``'
-            if rev[19] != 'None':
-                copy_command += f' lora:{rev[19]}'
-                extra_params += f'\nLoRA model: ``{rev[19]}``'
-            embed.add_field(name=f'Other parameters', value=extra_params, inline=False)
-            embed.add_field(name=f'Command for copying', value=f'', inline=False)
-            embed.set_footer(text=copy_command)
-            if len(copy_command) > 2048:
-                button.disabled = True
-                await interaction.response.edit_message(view=self)
-                await interaction.followup.send("The contents of 📋 exceeded Discord's character limit! Sorry, I can't display it...", ephemeral=True)
-
+            attachment = self.message.attachments[0]
+            if self.input_tuple[12]:
+                init_url = self.input_tuple[12].url
+            embed = await ctxmenuhandler.parse_image_info(init_url, attachment.url, "button")
             await interaction.response.send_message(embed=embed, ephemeral=True)
         except Exception as e:
             print('The clipboard button broke: ' + str(e))
@@ -443,7 +374,7 @@ class DrawView(View):
             button.disabled = True
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.\n"
-                                            "You can try to get the image info from **/identify** or the context menu.",
+                                            "You can get the image info from the context menu or **/identify**.",
                                             ephemeral=True)
 
     # the button to delete generated images
@@ -462,6 +393,7 @@ class DrawView(View):
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.\n"
                                             "You can react with ❌ to delete the image.", ephemeral=True)
+
 
 class DeleteView(View):
     def __init__(self, input_tuple):

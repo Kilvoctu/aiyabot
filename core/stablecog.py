@@ -1,5 +1,4 @@
 import base64
-import contextlib
 import discord
 import io
 import math
@@ -301,14 +300,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             if batch[2] == 1:
                 # if over the limits, cut the number in half and let AIYA scale down
                 total = max_batch[0] * max_batch[1]
-
-                # add hard limit of 10 images until I can figure how to bypass this discord limit - single value edition
-                if batch[0] > 10:
-                    batch[0] = 10
-                    if total > 10:
-                        total = 10
-                    reply_adds += f"\nI'm currently limited to a max of 10 drawings per post..."
-
                 if batch[0] > total:
                     batch[0] = math.ceil(batch[0] / 2)
                     batch[1] = math.ceil(batch[0] / 2)
@@ -328,16 +319,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             if batch[1] > max_batch[1]:
                 reply_adds += f"\nThe max batch size I'm allowed here is ``{max_batch[1]}``!"
                 batch[1] = max_batch[1]
-
-            # add hard limit of 10 images until I can figure how to bypass this discord limit - multi value edition
-            if batch[0] * batch[1] > 10:
-                while batch[0] * batch[1] > 10:
-                    if batch[0] != 1:
-                        batch[0] -= 1
-                    if batch[1] != 1:
-                        batch[1] -= 1
-                reply_adds += f"\nI'm currently limited to a max of 10 drawings per post..."
-
             reply_adds += f'\nBatch count: ``{batch[0]}`` - Batch size: ``{batch[1]}``'
         if styles != settings.read(channel)['style']:
             reply_adds += f'\nStyle: ``{styles}``'
@@ -372,7 +353,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         event_loop.create_task(
             post_queue_object.ctx.channel.send(
                 content=post_queue_object.content,
-                files=post_queue_object.files,
+                file=post_queue_object.file,
                 view=post_queue_object.view
             )
         )
@@ -462,49 +443,51 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             file_name = "".join(c for c in queue_object.simple_prompt if c.isalnum() or c in keep_chars).rstrip()
 
             # save local copy of image and prepare PIL images
-            pil_images = []
-            for i, image_base64 in enumerate(response_data['images']):
-                image = Image.open(io.BytesIO(base64.b64decode(image_base64.split(",", 1)[0])))
-                pil_images.append(image)
+            image_data = response_data['images']
+            count = 0
+            for i in image_data:
+                count += 1
+                image = Image.open(io.BytesIO(base64.b64decode(i)))
 
                 # grab png info
                 png_payload = {
-                    "image": "data:image/png;base64," + image_base64
+                    "image": "data:image/png;base64," + i
                 }
                 png_response = s.post(url=f'{settings.global_var.url}/sdapi/v1/png-info', json=png_payload)
 
                 metadata = PngImagePlugin.PngInfo()
                 metadata.add_text("parameters", png_response.json().get("info"))
 
+                epoch_time = int(time.time())
+                file_path = f'{settings.global_var.dir}/{epoch_time}-{queue_object.seed}-{file_name[0:120]}-{count}.png'
                 if settings.global_var.save_outputs == 'True':
-                    epoch_time = int(time.time())
-                    file_path = f'{settings.global_var.dir}/{epoch_time}-{queue_object.seed}-{file_name[0:120]}-{i}.png'
                     image.save(file_path, pnginfo=metadata)
                     print(f'Saved image: {file_path}')
 
-            # increment number of images generated
-            settings.stats_count(queue_object.batch[0]*queue_object.batch[1])
+                settings.stats_count(1)
 
-            # post to discord
-            def post_dream():
-                with contextlib.ExitStack() as stack:
-                    buffer_handles = [stack.enter_context(io.BytesIO()) for _ in pil_images]
-
-                    image_count = len(pil_images)
+                # post to discord
+                def post_dream():
+                    content = ''
+                    image_count = len(image_data)
                     noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
-
-                    for (pil_image, buffer) in zip(pil_images, buffer_handles):
-                        pil_image.save(buffer, 'PNG', pnginfo=metadata)
-                        buffer.seek(0)
                     draw_time = '{0:.3f}'.format(end_time - start_time)
                     message = f'my {noun_descriptor} of ``{queue_object.simple_prompt}`` took me ``{draw_time}`` seconds!'
-                    files = [discord.File(fp=buffer, filename=f'{queue_object.seed}-{i}.png') for (i, buffer) in
-                             enumerate(buffer_handles)]
 
-                    queuehandler.process_post(
-                        self, queuehandler.PostObject(
-                            self, queue_object.ctx, content=f'<@{queue_object.ctx.author.id}>, {message}', file='', files=files, embed='', view=queue_object.view))
-            Thread(target=post_dream, daemon=True).start()
+                    if count == 1:
+                        content = f'<@{queue_object.ctx.author.id}>, {message}'
+
+                    with io.BytesIO() as buffer:
+                        image = Image.open(io.BytesIO(base64.b64decode(i)))
+                        image.save(buffer, 'PNG', pnginfo=metadata)
+                        buffer.seek(0)
+
+                        file = discord.File(fp=buffer, filename=f'{queue_object.seed}-{count}.png')
+
+                        queuehandler.process_post(
+                            self, queuehandler.PostObject(
+                                self, queue_object.ctx, content=content, file=file, embed='', view=queue_object.view))
+                Thread(target=post_dream, daemon=True).start()
 
         except KeyError:
             embed = discord.Embed(title='txt2img failed', description=f'An invalid parameter was found!',

@@ -130,7 +130,7 @@ class IdentifyCog(commands.Cog):
 
                 queuehandler.process_post(
                     self, queuehandler.PostObject(
-                        self, queue_object.ctx, content=f'<@{queue_object.ctx.author.id}>', file='', files='', embed=embed, view=queue_object.view))
+                        self, queue_object.ctx, content=f'<@{queue_object.ctx.author.id}>', file='', embed=embed, view=queue_object.view))
             Thread(target=post_dream, daemon=True).start()
 
         except Exception as e:

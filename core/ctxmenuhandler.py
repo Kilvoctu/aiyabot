@@ -66,6 +66,9 @@ async def parse_image_info(ctx, image_url, command):
         # initialize extra params
         steps, size, guidance_scale, sampler, seed = '', '', '', '', ''
         style, facefix, highres_fix, clip_skip = '', '', '', ''
+        strength, has_init_url = '', False
+        if command == 'button' and ctx is not None:
+            has_init_url = True
 
         # try to find extra networks
         hypernet, lora = extra_net_search(prompt_field)
@@ -110,6 +113,9 @@ async def parse_image_info(ctx, image_url, command):
             if 'Clip skip: ' in line:
                 clip_skip = line.split(': ', 1)[1]
 
+            if 'Denoising strength: ' in line:
+                strength = line.split(': ', 1)[1]
+
         width_height = size.split("x")
 
         # try to find the model name and activator token
@@ -129,8 +135,9 @@ async def parse_image_info(ctx, image_url, command):
             negative_prompt = mod_results[3]
 
         # create embed and give the best effort in trying to parse the png info
-        embed = discord.Embed(title="About the image!", description="This is what I'm able to find about this image.")
-        embed.set_thumbnail(url=image_url)
+        embed = discord.Embed(title="About the image!", description="")
+        if not has_init_url:  # for some reason this bugs out the embed
+            embed.set_thumbnail(url=image_url)
         if len(prompt_field) > 1024:
             prompt_field = f'{prompt_field[:1010]}....'
         embed.colour = settings.global_var.embed_color
@@ -141,7 +148,7 @@ async def parse_image_info(ctx, image_url, command):
         copy_command = f'/draw prompt:{prompt_field} steps:{steps} width:{width_height[0]} height:{width_height[1]}' \
                        f' guidance_scale:{guidance_scale} sampler:{sampler} seed:{seed}'
         if display_name != 'Unknown':
-            copy_command += f' data_model: {display_name}'
+            copy_command += f' data_model:{display_name}'
 
         if negative_prompt != '':
             copy_command += f' negative_prompt:{negative_prompt}'
@@ -176,8 +183,15 @@ async def parse_image_info(ctx, image_url, command):
                 network_params += f'\nHypernet: ``{key}`` (multiplier: ``{value}``)'
             embed.add_field(name=f'Extra networks', value=network_params, inline=False)
 
+        if has_init_url:
+            # not interested in adding embed fields for strength and init_image
+            copy_command += f' strength:{strength} init_url:{str(ctx)}'
+
         embed.add_field(name=f'Command for copying', value=f'', inline=False)
         embed.set_footer(text=copy_command)
+
+        if command == 'button':
+            return embed
 
         await ctx.respond(embed=embed, ephemeral=True)
     except Exception as e:

@@ -60,12 +60,11 @@ class IdentifyObject:
 
 # the queue object for posting to Discord
 class PostObject:
-    def __init__(self, cog, ctx, content, file, files, embed, view):
+    def __init__(self, cog, ctx, content, file, embed, view):
         self.cog = cog
         self.ctx = ctx
         self.content = content
         self.file = file
-        self.files = files
         self.embed = embed
         self.view = view
 
