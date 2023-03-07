@@ -44,6 +44,11 @@ async def get_image_info(ctx, message: discord.Message):
     await ctxmenuhandler.get_image_info(ctx, message)
 
 
+@self.message_command(name="Quick 2x Upscale")
+async def quick_upscale(ctx, message: discord.Message):
+    await ctxmenuhandler.quick_upscale(self, ctx, message)
+
+
 @self.event
 async def on_ready():
     self.logger.info(f'Logged in as {self.user.name} ({self.user.id})')
