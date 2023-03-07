@@ -492,11 +492,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     queuehandler.process_post(
                         self, queuehandler.PostObject(
                             self, queue_object.ctx, content=content, file=file, embed='', view=view))
-                # increment seed for view when using batch (on hold until can fix buttons)
-                '''batch_seed = list(queue_object.view.input_tuple)
-                batch_seed[10] += 1
-                new_tuple = tuple(batch_seed)
-                queue_object.view.input_tuple = new_tuple'''
+                # increment seed for view when using batch
+                if count != len(image_data):
+                    batch_seed = list(queue_object.view.input_tuple)
+                    batch_seed[10] += 1
+                    new_tuple = tuple(batch_seed)
+                    queue_object.view.input_tuple = new_tuple
 
         except KeyError:
             embed = discord.Embed(title='txt2img failed', description=f'An invalid parameter was found!',
