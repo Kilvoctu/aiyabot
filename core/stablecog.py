@@ -209,16 +209,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             data_model = settings.read(channel)['data_model']
 
         simple_prompt = prompt
-        # take selected data_model and get model_name, then update data_model with the full name
-        for model in settings.global_var.model_info.items():
-            if model[0] == data_model:
-                model_name = model[0]
-                data_model = model[1][0]
-                # look at the model for activator token and prepend prompt with it
-                if model[1][3]:
-                    prompt = model[1][3] + " " + prompt
-                break
-
         # run through mod function if any moderation values are set in config
         clean_negative = negative_prompt
         if settings.global_var.prompt_ban_list or settings.global_var.prompt_ignore_list or settings.global_var.negative_prompt_prefix:
@@ -232,6 +222,16 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 prompt = mod_results[1]
                 negative_prompt = mod_results[2]
                 clean_negative = mod_results[3]
+
+        # take selected data_model and get model_name, then update data_model with the full name
+        for model in settings.global_var.model_info.items():
+            if model[0] == data_model:
+                model_name = model[0]
+                data_model = model[1][0]
+                # look at the model for activator token and prepend prompt with it
+                if model[1][3]:
+                    prompt = model[1][3] + " " + prompt
+                break
 
         # if a hypernet or lora is used, append it to the prompt
         if hypernet != 'None':
