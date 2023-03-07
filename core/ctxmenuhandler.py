@@ -262,7 +262,7 @@ async def quick_upscale(self, ctx, message: discord.Message):
                 content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.",
                 ephemeral=True)
         else:
-            queuehandler.GlobalQueue.queue.append(queuehandler.UpscaleObject(upscalecog.UpscaleCog, *input_tuple, view))
+            queuehandler.GlobalQueue.queue.append(queuehandler.UpscaleObject(upscale_dream, *input_tuple, view))
     else:
         await queuehandler.process_dream(upscale_dream, queuehandler.UpscaleObject(upscale_dream, *input_tuple, view))
     if user_queue_limit != "Stop":
