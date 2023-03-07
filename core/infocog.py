@@ -112,7 +112,8 @@ class InfoView(View):
         batch = 16
         self.page = 0
         self.contents = []
-        desc = 'To add manually to prompt, use <hypernet:``name``:``#``>\n``#`` = The effect multiplier (0.0 - 1.0)'
+        desc = 'Select using the `extra_network` option.\n' \
+               'To add manually to prompt, use <hypernet:``name``:``#``>\n``#`` = The effect multiplier (0.0 - 1.0)'
 
         if length > batch * 2:
             self.enable_nav_buttons()
@@ -145,7 +146,8 @@ class InfoView(View):
         batch = 16
         self.page = 0
         self.contents = []
-        desc = 'To add manually to prompt, use <lora:``name``:``#``>\n``#`` = The effect multiplier (0.0 - 1.0)'
+        desc = 'Select using the `extra_network` option.\n' \
+               'To add manually to prompt, use <lora:``name``:``#``>\n``#`` = The effect multiplier (0.0 - 1.0)'
 
         if length > batch * 2:
             self.enable_nav_buttons()

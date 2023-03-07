@@ -116,18 +116,11 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         choices=[x for x in range(1, 13, 1)]
     )
     @option(
-        'hypernet',
+        'extra_net',
         str,
-        description='Apply a hypernetwork model to influence the output.',
+        description='Apply an extra network to influence the output.',
         required=False,
-        autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.hyper_autocomplete),
-    )
-    @option(
-        'lora',
-        str,
-        description='Apply a LoRA model to influence the output.',
-        required=False,
-        autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.lora_autocomplete),
+        autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.extra_net_autocomplete),
     )
     @option(
         'strength',
@@ -164,13 +157,13 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             facefix: Optional[str] = None,
                             highres_fix: Optional[str] = None,
                             clip_skip: Optional[int] = None,
-                            hypernet: Optional[str] = None,
-                            lora: Optional[str] = None,
+                            extra_net: Optional[str] = None,
                             strength: Optional[str] = None,
                             init_image: Optional[discord.Attachment] = None,
                             init_url: Optional[str],
                             batch: Optional[str] = None):
 
+        hypernet, lora = None, None
         # update defaults with any new defaults from settingscog
         channel = '% s' % ctx.channel.id
         settings.check(channel)
@@ -320,10 +313,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             reply_adds += f'\nBatch count: ``{batch[0]}`` - Batch size: ``{batch[1]}``'
         if styles != settings.read(channel)['style']:
             reply_adds += f'\nStyle: ``{styles}``'
-        if hypernet != settings.read(channel)['hypernet']:
-            reply_adds += f'\nHypernet: ``{hypernet}``'
-        if lora != settings.read(channel)['lora']:
-            reply_adds += f'\nLoRA: ``{lora}``'
+        if extra_net is not None:
+            reply_adds += f'\nExtra network: ``{hypernet}``'
         if facefix != settings.read(channel)['facefix']:
             reply_adds += f'\nFace restoration: ``{facefix}``'
         if clip_skip != settings.read(channel)['clip_skip']:
@@ -332,7 +323,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         # set up tuple of parameters to pass into the Discord view
         input_tuple = (
             ctx, simple_prompt, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength,
-            init_image, batch, styles, facefix, highres_fix, clip_skip, hypernet, lora)
+            init_image, batch, styles, facefix, highres_fix, clip_skip, extra_net)
         view = viewhandler.DrawView(input_tuple)
         # setup the queue
         user_queue_limit = settings.queue_check(ctx.author)

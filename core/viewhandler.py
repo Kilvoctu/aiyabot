@@ -27,12 +27,11 @@ input_tuple[0] = ctx
 [15] = facefix
 [16] = highres_fix
 [17] = clip_skip
-[18] = hypernet
-[19] = lora
+[18] = extra_net
 '''
 tuple_names = ['ctx', 'simple_prompt', 'prompt', 'negative_prompt', 'data_model', 'steps', 'width', 'height',
                'guidance_scale', 'sampler', 'seed', 'strength', 'init_image', 'batch', 'styles', 'facefix',
-               'highres_fix', 'clip_skip', 'hypernet', 'lora']
+               'highres_fix', 'clip_skip', 'extra_net']
 
 
 # the modal that is used for the 🖋 button
@@ -207,22 +206,13 @@ class DrawModal(Modal):
                     invalid_input = True
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is too much CLIP to skip!",
                                         value='The range is from `1` to `12`.', inline=False)
-            if 'hypernet:' in line:
-                if line.split(':', 1)[1] in settings.global_var.hyper_names:
+            if 'extra_net:' in line:
+                if line.split(':', 1)[1] in settings.global_var.extra_nets:
                     pen[18] = line.split(':', 1)[1]
                 else:
                     invalid_input = True
-                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` isn't one of these hypernetworks!",
-                                        value=', '.join(['`%s`' % x for x in settings.global_var.hyper_names]),
-                                        inline=False)
-
-            if 'lora:' in line:
-                if line.split(':', 1)[1] in settings.global_var.lora_names:
-                    pen[19] = line.split(':', 1)[1]
-                else:
-                    invalid_input = True
-                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` can't be found! Try one of these LoRA.",
-                                        value=', '.join(['`%s`' % x for x in settings.global_var.lora_names]),
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` isn't one of these extra networks!",
+                                        value=', '.join(['`%s`' % x for x in settings.global_var.extra_nets]),
                                         inline=False)
 
         # stop and give a useful message if any extended edit values aren't recognized

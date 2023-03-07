@@ -34,6 +34,11 @@ class SettingsCog(commands.Cog):
             lora for lora in settings.global_var.lora_names
         ]
 
+    def extra_net_autocomplete(self: discord.AutocompleteContext):
+        return [
+            extra for extra in settings.global_var.extra_nets
+        ]
+
     def upscaler_autocomplete(self: discord.AutocompleteContext):
         return [
             upscaler for upscaler in settings.global_var.upscaler_names
