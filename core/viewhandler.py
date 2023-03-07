@@ -236,11 +236,14 @@ class DrawModal(Modal):
             # update the prompt again if a valid model change is requested
             if model_found:
                 pen[2] = new_token + pen[1]
-            # if a hypernetwork or lora is added, append it to prompt
+            # figure out what extra_net was used
             if pen[18] != 'None':
-                pen[2] += f' <hypernet:{pen[18]}:0.85>'
-            if pen[19] != 'None':
-                pen[2] += f' <lora:{pen[19]}:0.85>'
+                for network in settings.global_var.hyper_names:
+                    if pen[18] == network:
+                        pen[2] += f' <hypernet:{pen[18]}:0.85>'
+                for network in settings.global_var.lora_names:
+                    if pen[18] == network:
+                        pen[2] += f' <lora:{pen[18]}:0.85>'
             # set batch to 1
             pen[13] = [1, 1]
 
@@ -256,7 +259,7 @@ class DrawModal(Modal):
                 prompt_output += f'\nNew model: ``{new_model}``'
             index_start = 5
             for index, value in enumerate(tuple_names[index_start:], index_start):
-                if index == 13 or index == 17:
+                if index == 13 or index == 16:
                     continue
                 if str(pen[index]) != str(self.input_tuple[index]):
                     prompt_output += f'\nNew {value}: ``{pen[index]}``'

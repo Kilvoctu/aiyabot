@@ -154,10 +154,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             sampler: Optional[str] = None,
                             seed: Optional[int] = -1,
                             styles: Optional[str] = None,
+                            extra_net: Optional[str] = None,
                             facefix: Optional[str] = None,
                             highres_fix: Optional[str] = None,
                             clip_skip: Optional[int] = None,
-                            extra_net: Optional[str] = None,
                             strength: Optional[str] = None,
                             init_image: Optional[discord.Attachment] = None,
                             init_url: Optional[str],
@@ -226,11 +226,19 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     prompt = model[1][3] + " " + prompt
                 break
 
-        # if a hypernet or lora is used, append it to the prompt
+        # append any channel default hypernet or lora to the prompt
         if hypernet != 'None':
             prompt += f' <hypernet:{hypernet}:0.85>'
         if lora != 'None':
             prompt += f' <lora:{lora}:0.85>'
+        # figure out what extra_net was used
+        if extra_net is not None and extra_net != 'None':
+            for network in settings.global_var.hyper_names:
+                if extra_net == network:
+                    prompt += f' <hypernet:{extra_net}:0.85>'
+            for network in settings.global_var.lora_names:
+                if extra_net == network:
+                    prompt += f' <lora:{extra_net}:0.85>'
 
         if data_model != '':
             print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
@@ -313,8 +321,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             reply_adds += f'\nBatch count: ``{batch[0]}`` - Batch size: ``{batch[1]}``'
         if styles != settings.read(channel)['style']:
             reply_adds += f'\nStyle: ``{styles}``'
-        if extra_net is not None:
-            reply_adds += f'\nExtra network: ``{hypernet}``'
+        if extra_net is not None and extra_net != 'None':
+            reply_adds += f'\nExtra network: ``{extra_net}``'
         if facefix != settings.read(channel)['facefix']:
             reply_adds += f'\nFace restoration: ``{facefix}``'
         if clip_skip != settings.read(channel)['clip_skip']:

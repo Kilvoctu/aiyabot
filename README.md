@@ -20,11 +20,10 @@ To generate an image from text, use the /draw command and include your prompt as
 - sampling method
 - seed
 - Web UI styles
+- extra networks (hypernetwork, LoRA)
 - face restoration
 - high-res fix
 - CLIP skip
-- hypernetworks
-- LoRA
 - img2img
 - denoising strength
 - batch count

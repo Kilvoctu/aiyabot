@@ -36,7 +36,7 @@ class SettingsCog(commands.Cog):
 
     def extra_net_autocomplete(self: discord.AutocompleteContext):
         return [
-            extra for extra in settings.global_var.extra_nets
+            network for network in settings.global_var.extra_nets
         ]
 
     def upscaler_autocomplete(self: discord.AutocompleteContext):
@@ -118,6 +118,20 @@ class SettingsCog(commands.Cog):
         autocomplete=discord.utils.basic_autocomplete(style_autocomplete),
     )
     @option(
+        'hypernet',
+        str,
+        description='Set default hypernetwork model for the channel',
+        required=False,
+        autocomplete=discord.utils.basic_autocomplete(hyper_autocomplete),
+    )
+    @option(
+        'lora',
+        str,
+        description='Set default LoRA for the channel',
+        required=False,
+        autocomplete=discord.utils.basic_autocomplete(lora_autocomplete),
+    )
+    @option(
         'facefix',
         str,
         description='Tries to improve faces in images.',
@@ -137,20 +151,6 @@ class SettingsCog(commands.Cog):
         description='Set default CLIP skip for the channel',
         required=False,
         choices=[x for x in range(1, 13, 1)]
-    )
-    @option(
-        'hypernet',
-        str,
-        description='Set default hypernetwork model for the channel',
-        required=False,
-        autocomplete=discord.utils.basic_autocomplete(hyper_autocomplete),
-    )
-    @option(
-        'lora',
-        str,
-        description='Set default LoRA for the channel',
-        required=False,
-        autocomplete=discord.utils.basic_autocomplete(lora_autocomplete),
     )
     @option(
         'strength',
@@ -192,11 +192,11 @@ class SettingsCog(commands.Cog):
                                guidance_scale: Optional[str] = None,
                                sampler: Optional[str] = None,
                                styles: Optional[str] = None,
+                               hypernet: Optional[str] = None,
+                               lora: Optional[str] = None,
                                facefix: Optional[str] = None,
                                highres_fix: Optional[str] = None,
                                clip_skip: Optional[int] = None,
-                               hypernet: Optional[str] = None,
-                               lora: Optional[str] = None,
                                strength: Optional[str] = None,
                                batch: Optional[str] = None,
                                max_batch: Optional[str] = None,
