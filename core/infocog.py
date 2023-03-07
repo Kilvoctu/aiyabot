@@ -287,18 +287,24 @@ class InfoView(View):
         embed_tips4.add_field(name="❌",
                               value="The button used to delete any unwanted outputs. If this button isn't working, you can add a ❌ reaction instead.")
         embed_tips4.add_field(name="\u200B", value="\u200B")
+
+        embed_tips5 = discord.Embed(title="Context menu",
+                                    description="You have the option to use context menu commands on any message!\n"
+                                                "To use the commands, right-click (or tap and hold) any message then find me under 'Apps'.\n"
+                                                "\nThe context menu is useful if you need to interact with images when the buttons are missing or broken, or even interacting with images not created by me.",
+                                    colour=settings.global_var.embed_color)
         # For those who fork AIYA, feel free to edit or add to this per your needs,
         # but please don't just delete me from credits and claim my work as yours.
         url = 'https://github.com/Kilvoctu/aiyabot'
         thumb = 'https://raw.githubusercontent.com/Kilvoctu/kilvoctu.github.io/master/pics/previewthumb.png'
         wiki = 'https://github.com/Kilvoctu/aiyabot/wiki#using-aiya'
-        embed_tips5 = discord.Embed(title="Extra Information",
+        embed_tips6 = discord.Embed(title="Extra Information",
                                     description=f"For more detailed documentation, check out the [wiki]({wiki}) in my [home]({url})!\n\n"
                                                 f"Also, feel free to report bugs or leave feedback! I'm open-source Python Discord bot AIYA, developed by *Kilvoctu#1238*, maintained with care."
                                                 f"\n\nPlease enjoy making AI art with me~!",
                                     colour=settings.global_var.embed_color)
-        embed_tips5.set_thumbnail(url=thumb)
-        embed_tips5.set_footer(text='Have a lovely day!', icon_url=thumb)
+        embed_tips6.set_thumbnail(url=thumb)
+        embed_tips6.set_footer(text='Have a lovely day!', icon_url=thumb)
 
         self.page = 0
         self.contents = [
@@ -306,7 +312,8 @@ class InfoView(View):
             embed_tips2,
             embed_tips3,
             embed_tips4,
-            embed_tips5
+            embed_tips5,
+            embed_tips6
         ]
 
         await interaction.response.edit_message(view=self, embed=self.contents[0])
