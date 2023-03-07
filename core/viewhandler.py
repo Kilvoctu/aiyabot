@@ -361,8 +361,6 @@ class DrawView(View):
         emoji="📋")
     async def button_review(self, button, interaction):
         # reuse "read image info" command from ctxmenuhandler
-        print(self.message.id)
-        print(self.input_tuple[10])
         init_url = None
         try:
             attachment = self.message.attachments[0]
