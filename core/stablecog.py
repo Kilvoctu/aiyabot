@@ -163,7 +163,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             init_url: Optional[str],
                             batch: Optional[str] = None):
 
-        hypernet, lora = None, None
         # update defaults with any new defaults from settingscog
         channel = '% s' % ctx.channel.id
         settings.check(channel)
@@ -187,10 +186,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             highres_fix = settings.read(channel)['highres_fix']
         if clip_skip is None:
             clip_skip = settings.read(channel)['clip_skip']
-        if hypernet is None:
-            hypernet = settings.read(channel)['hypernet']
-        if lora is None:
-            lora = settings.read(channel)['lora']
         if strength is None:
             strength = settings.read(channel)['strength']
         if batch is None:
@@ -229,11 +224,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         net_multi = 0.85
         if extra_net is not None:
             prompt, extra_net, net_multi = settings.extra_net_check(prompt, extra_net, net_multi)
-        # append any channel default hypernet or lora to the prompt
-        if hypernet != 'None':
-            prompt += f' <hypernet:{hypernet}:0.85>'
-        if lora != 'None':
-            prompt += f' <lora:{lora}:0.85>'
+        prompt = settings.extra_net_defaults(prompt, channel)
 
         if data_model != '':
             print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')

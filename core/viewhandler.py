@@ -255,6 +255,8 @@ class DrawModal(Modal):
             # figure out what extra_net was used
             if pen[18] != 'None':
                 pen[2], pen[18], new_net_multi = settings.extra_net_check(pen[2], pen[18], net_multi)
+            channel = '% s' % pen[0].channel.id
+            pen[2] = settings.extra_net_defaults(pen[2], channel)
             # set batch to 1
             pen[13] = [1, 1]
 

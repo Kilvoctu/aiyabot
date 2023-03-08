@@ -180,6 +180,18 @@ def extra_net_check(prompt, extra_net, net_multi):
     return prompt, extra_net, net_multi
 
 
+def extra_net_defaults(prompt, channel):
+    check(channel)
+    hypernet = read(channel)['hypernet']
+    lora = read(channel)['lora']
+    # append channel default hypernet or lora to the prompt
+    if hypernet != 'None' and hypernet not in prompt:
+        prompt += f' <hypernet:{hypernet}:0.85>'
+    if lora != 'None' and lora not in prompt:
+        prompt += f' <lora:{lora}:0.85>'
+    return prompt
+
+
 def queue_check(author_compare):
     user_queue = 0
     for queue_object in queuehandler.GlobalQueue.queue:
@@ -525,4 +537,3 @@ def populate_global_vars():
     global_var.extra_nets = global_var.hyper_names + global_var.lora_names
     global_var.lora_names.insert(0, 'None')
     global_var.hires_upscaler_names.insert(0, 'Disabled')
-
