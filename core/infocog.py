@@ -64,7 +64,10 @@ class InfoView(View):
             self.page += 1
         self.page = 0
 
-        await interaction.response.edit_message(view=self, embed=self.contents[0])
+        try:
+            await interaction.response.edit_message(view=self, embed=self.contents[0])
+        except(Exception,):
+            await interaction.followup.send(view=self, embed=self.contents[0], ephemeral=True)
 
     @discord.ui.button(
         custom_id="button_styles",
@@ -102,7 +105,10 @@ class InfoView(View):
             self.page += 1
         self.page = 0
 
-        await interaction.response.edit_message(view=self, embed=self.contents[0])
+        try:
+            await interaction.response.edit_message(view=self, embed=self.contents[0])
+        except(Exception,):
+            await interaction.followup.send(view=self, embed=self.contents[0], ephemeral=True)
 
     @discord.ui.button(
         custom_id="button_hyper",
@@ -136,7 +142,10 @@ class InfoView(View):
             self.page += 1
         self.page = 0
 
-        await interaction.response.edit_message(view=self, embed=self.contents[0])
+        try:
+            await interaction.response.edit_message(view=self, embed=self.contents[0])
+        except(Exception,):
+            await interaction.followup.send(view=self, embed=self.contents[0], ephemeral=True)
 
     @discord.ui.button(
         custom_id="button_lora",

@@ -3,6 +3,7 @@ import random
 from discord.ui import InputText, Modal, View
 
 from core import ctxmenuhandler
+from core import infocog
 from core import queuehandler
 from core import settings
 from core import stablecog
@@ -113,6 +114,7 @@ class DrawModal(Modal):
         new_model, new_token, bad_input = '', '', ''
         model_found = False
         invalid_input = False
+        infocog_view = infocog.InfoView()
         embed_err = discord.Embed(title="I can't redraw this!", description="")
 
         # iterate through extended edit for any changes
@@ -131,10 +133,11 @@ class DrawModal(Modal):
                             new_token = f'{model[1][3]} '.lstrip(' ')
                             break
                     if not model_found:
-                        invalid_input = True
-                        embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is not found. Try one of these models!",
-                                            value=', '.join(['`%s`' % x for x in settings.global_var.model_info]),
-                                            inline=False)
+                        embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is not found.",
+                                            value="I used the info command for you! Try one of these models!")
+                        await interaction.response.send_message(embed=embed_err, ephemeral=True)
+                        await infocog.InfoView.button_model(infocog_view, '', interaction)
+                        return
 
             if 'steps:' in line:
                 max_steps = settings.read('% s' % pen[0].channel.id)['max_steps']
@@ -187,10 +190,12 @@ class DrawModal(Modal):
                 if line.split(':', 1)[1] in settings.global_var.style_names.keys():
                     pen[14] = line.split(':', 1)[1]
                 else:
-                    invalid_input = True
-                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` isn't my style. Here's the style list!",
-                                        value=', '.join(['`%s`' % x for x in settings.global_var.style_names]),
-                                        inline=False)
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` isn't my style.",
+                                        value="I've pulled up the styles list for you from the info command!")
+                    await interaction.response.send_message(embed=embed_err, ephemeral=True)
+                    await infocog.InfoView.button_style(infocog_view, '', interaction)
+                    return
+
             if 'facefix:' in line:
                 if line.split(':', 1)[1] in settings.global_var.facefix_models:
                     pen[15] = line.split(':', 1)[1]
@@ -210,10 +215,11 @@ class DrawModal(Modal):
                 if line.split(':', 1)[1] in settings.global_var.extra_nets:
                     pen[18] = line.split(':', 1)[1]
                 else:
-                    invalid_input = True
-                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` isn't one of these extra networks!",
-                                        value=', '.join(['`%s`' % x for x in settings.global_var.extra_nets]),
-                                        inline=False)
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is an unknown extra network!",
+                                        value="I used the info command for you! Please review the hypernets and LoRAs.")
+                    await interaction.response.send_message(embed=embed_err, ephemeral=True)
+                    await infocog.InfoView.button_hyper(infocog_view, '', interaction)
+                    return
 
         # stop and give a useful message if any extended edit values aren't recognized
         if invalid_input:
