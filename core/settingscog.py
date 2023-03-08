@@ -211,6 +211,7 @@ class SettingsCog(commands.Cog):
         embed.set_footer(text=f'Channel id: {channel}')
         embed.colour = settings.global_var.embed_color
         current, new, new_n_prompt = '', '', ''
+        dummy_prompt, lora_multi, hyper_multi = '', 0.85, 0.85
         set_new = False
 
         if current_settings:
@@ -315,13 +316,23 @@ class SettingsCog(commands.Cog):
             set_new = True
 
         if hypernet is not None:
+            message = ''
+            if ':' in hypernet:
+                dummy_prompt, hypernet, hyper_multi = settings.extra_net_check(dummy_prompt, hypernet, hyper_multi)
+                settings.update(channel, 'hypernet_multi', hyper_multi)
+                message = f' (multiplier: ``{hyper_multi}``)'
             settings.update(channel, 'hypernet', hypernet)
-            new += f'\nHypernet: ``"{hypernet}"``'
+            new += f'\nHypernet: ``"{hypernet}"``{message}'
             set_new = True
 
         if lora is not None:
+            message = ''
+            if ':' in lora:
+                dummy_prompt, lora, lora_multi = settings.extra_net_check(dummy_prompt, lora, lora_multi)
+                settings.update(channel, 'lora_multi', lora_multi)
+                message = f' (multiplier: ``{lora_multi}``)'
             settings.update(channel, 'lora', lora)
-            new += f'\nLoRA: ``"{lora}"``'
+            new += f'\nLoRA: ``"{lora}"``{message}'
             set_new = True
 
         if strength is not None:

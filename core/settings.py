@@ -29,7 +29,9 @@ template = {
     "highres_fix": 'Disabled',
     "clip_skip": 1,
     "hypernet": "None",
+    "hyper_multi": "0.85",
     "lora": "None",
+    "lora_multi": "0.85",
     "strength": "0.75",
     "batch": "1,1",
     "max_batch": "1,1",
@@ -183,12 +185,14 @@ def extra_net_check(prompt, extra_net, net_multi):
 def extra_net_defaults(prompt, channel):
     check(channel)
     hypernet = read(channel)['hypernet']
+    hyper_multi = read(channel)['hyper_multi']
     lora = read(channel)['lora']
+    lora_multi = read(channel)['lora_multi']
     # append channel default hypernet or lora to the prompt
     if hypernet != 'None' and hypernet not in prompt:
-        prompt += f' <hypernet:{hypernet}:0.85>'
+        prompt += f' <hypernet:{hypernet}:{hyper_multi}>'
     if lora != 'None' and lora not in prompt:
-        prompt += f' <lora:{lora}:0.85>'
+        prompt += f' <lora:{lora}:{lora_multi}>'
     return prompt
 
 
