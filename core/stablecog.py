@@ -95,6 +95,13 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.style_autocomplete),
     )
     @option(
+        'extra_net',
+        str,
+        description='Apply an extra network to influence the output. To set multiplier, add :# (# = 0.0 - 1.0)',
+        required=False,
+        autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.extra_net_autocomplete),
+    )
+    @option(
         'facefix',
         str,
         description='Tries to improve faces in images.',
@@ -114,13 +121,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         description='Number of last layers of CLIP model to skip.',
         required=False,
         choices=[x for x in range(1, 13, 1)]
-    )
-    @option(
-        'extra_net',
-        str,
-        description='Apply an extra network to influence the output.',
-        required=False,
-        autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.extra_net_autocomplete),
     )
     @option(
         'strength',
@@ -226,29 +226,14 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     prompt = model[1][3] + " " + prompt
                 break
 
+        net_multi = 0.85
+        if extra_net is not None:
+            prompt, extra_net, net_multi = settings.extra_net_check(prompt, extra_net, net_multi)
         # append any channel default hypernet or lora to the prompt
         if hypernet != 'None':
             prompt += f' <hypernet:{hypernet}:0.85>'
         if lora != 'None':
             prompt += f' <lora:{lora}:0.85>'
-        # grab extra net multiplier if there is one
-        net_multi = 0.85
-        if ':' in extra_net:
-            net_multi = extra_net.split(':', 1)[1]
-            extra_net = extra_net.split(':', 1)[0]
-            try:
-                net_multi = net_multi.replace(",", ".")
-                float(net_multi)
-            except(Exception,):
-                net_multi = 0.85
-        # figure out what extra_net was used
-        if extra_net is not None and extra_net != 'None':
-            for network in settings.global_var.hyper_names:
-                if extra_net == network:
-                    prompt += f' <hypernet:{extra_net}:{str(net_multi)}>'
-            for network in settings.global_var.lora_names:
-                if extra_net == network:
-                    prompt += f' <lora:{extra_net}:{str(net_multi)}>'
 
         if data_model != '':
             print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')

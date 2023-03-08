@@ -1,5 +1,6 @@
 import discord
 import random
+import re
 from discord.ui import InputText, Modal, View
 
 from core import ctxmenuhandler
@@ -115,7 +116,12 @@ class DrawModal(Modal):
         model_found = False
         invalid_input = False
         infocog_view = infocog.InfoView()
+        net_multi, new_net_multi = 0.85, 0
         embed_err = discord.Embed(title="I can't redraw this!", description="")
+        # if extra network is used, find the multiplier
+        if pen[18]:
+            if pen[18] in pen[2]:
+                net_multi = re.search(f'{pen[18]}:(.*)>', pen[2]).group(1)
 
         # iterate through extended edit for any changes
         for line in self.children[3].value.split('\n'):
@@ -212,7 +218,11 @@ class DrawModal(Modal):
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is too much CLIP to skip!",
                                         value='The range is from `1` to `12`.', inline=False)
             if 'extra_net:' in line:
-                if line.split(':', 1)[1] in settings.global_var.extra_nets:
+                if line.count(':') == 2:
+                    net_check = re.search(':(.*):', line).group(1)
+                    if net_check in settings.global_var.extra_nets:
+                        pen[18] = line.split(':', 1)[1]
+                elif line.count(':') == 1 and line.split(':', 1)[1] in settings.global_var.extra_nets:
                     pen[18] = line.split(':', 1)[1]
                 else:
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is an unknown extra network!",
@@ -244,12 +254,7 @@ class DrawModal(Modal):
                 pen[2] = new_token + pen[1]
             # figure out what extra_net was used
             if pen[18] != 'None':
-                for network in settings.global_var.hyper_names:
-                    if pen[18] == network:
-                        pen[2] += f' <hypernet:{pen[18]}:0.85>'
-                for network in settings.global_var.lora_names:
-                    if pen[18] == network:
-                        pen[2] += f' <lora:{pen[18]}:0.85>'
+                pen[2], pen[18], new_net_multi = settings.extra_net_check(pen[2], pen[18], net_multi)
             # set batch to 1
             pen[13] = [1, 1]
 
@@ -265,10 +270,15 @@ class DrawModal(Modal):
                 prompt_output += f'\nNew model: ``{new_model}``'
             index_start = 5
             for index, value in enumerate(tuple_names[index_start:], index_start):
-                if index == 13 or index == 16:
+                if index == 13 or index == 16 or index == 18:
                     continue
                 if str(pen[index]) != str(self.input_tuple[index]):
                     prompt_output += f'\nNew {value}: ``{pen[index]}``'
+            if str(pen[18]) != 'None':
+                if str(pen[18]) != str(self.input_tuple[18]) and new_net_multi != net_multi or new_net_multi != net_multi:
+                    prompt_output += f'\nNew extra network: ``{pen[18]}`` (multiplier: ``{new_net_multi}``)'
+                elif str(pen[18]) != str(self.input_tuple[18]):
+                    prompt_output += f'\nNew extra network: ``{pen[18]}``'
 
             print(f'Redraw -- {interaction.user.name}#{interaction.user.discriminator} -- Prompt: {pen[1]}')
 

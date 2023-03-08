@@ -158,6 +158,28 @@ def prompt_mod(prompt, negative_prompt):
     return "None"
 
 
+def extra_net_check(prompt, extra_net, net_multi):
+    # grab extra net multiplier if there is one
+    if ':' in extra_net:
+        net_multi = extra_net.split(':', 1)[1]
+        extra_net = extra_net.split(':', 1)[0]
+        try:
+            net_multi = net_multi.replace(",", ".")
+            float(net_multi)
+        except(Exception,):
+            # set default if invalid net multiplier is given
+            net_multi = 0.85
+    # figure out what extra_net was used
+    if extra_net is not None and extra_net != 'None':
+        for network in global_var.hyper_names:
+            if extra_net == network:
+                prompt += f' <hypernet:{extra_net}:{str(net_multi)}>'
+        for network in global_var.lora_names:
+            if extra_net == network:
+                prompt += f' <lora:{extra_net}:{str(net_multi)}>'
+    return prompt, extra_net, net_multi
+
+
 def queue_check(author_compare):
     user_queue = 0
     for queue_object in queuehandler.GlobalQueue.queue:
