@@ -231,14 +231,24 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             prompt += f' <hypernet:{hypernet}:0.85>'
         if lora != 'None':
             prompt += f' <lora:{lora}:0.85>'
+        # grab extra net multiplier if there is one
+        net_multi = 0.85
+        if ':' in extra_net:
+            net_multi = extra_net.split(':', 1)[1]
+            extra_net = extra_net.split(':', 1)[0]
+            try:
+                net_multi = net_multi.replace(",", ".")
+                float(net_multi)
+            except(Exception,):
+                net_multi = 0.85
         # figure out what extra_net was used
         if extra_net is not None and extra_net != 'None':
             for network in settings.global_var.hyper_names:
                 if extra_net == network:
-                    prompt += f' <hypernet:{extra_net}:0.85>'
+                    prompt += f' <hypernet:{extra_net}:{str(net_multi)}>'
             for network in settings.global_var.lora_names:
                 if extra_net == network:
-                    prompt += f' <lora:{extra_net}:0.85>'
+                    prompt += f' <lora:{extra_net}:{str(net_multi)}>'
 
         if data_model != '':
             print(f'Request -- {ctx.author.name}#{ctx.author.discriminator} -- Prompt: {prompt}')
@@ -323,6 +333,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             reply_adds += f'\nStyle: ``{styles}``'
         if extra_net is not None and extra_net != 'None':
             reply_adds += f'\nExtra network: ``{extra_net}``'
+            if net_multi != 0.85:
+                reply_adds += f' (multiplier: ``{net_multi}``)'
         if facefix != settings.read(channel)['facefix']:
             reply_adds += f'\nFace restoration: ``{facefix}``'
         if clip_skip != settings.read(channel)['clip_skip']:
