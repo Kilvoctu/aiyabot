@@ -452,7 +452,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 settings.stats_count(1)
 
                 # set up discord message
-                content = f'<@{queue_object.ctx.author.id}>'
+                content = f'> for {queue_object.ctx.author.name}'
                 image_count = len(image_data)
                 noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
                 draw_time = '{0:.3f}'.format(end_time - start_time)
@@ -465,7 +465,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 if len(image_data) > 1:
                     if count == 1:
                         content = f'<@{queue_object.ctx.author.id}>, {message}\n' \
-                                  f'*Please use the context menu if you need to review drawings without buttons.*'
+                                  f'*Please use the context menu for drawings without buttons.*'
                     if count != len(image_data):
                         view = None
 
