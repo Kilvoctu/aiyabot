@@ -1,8 +1,10 @@
 import discord
 import random
+import re
 from discord.ui import InputText, Modal, View
 
 from core import ctxmenuhandler
+from core import infocog
 from core import queuehandler
 from core import settings
 from core import stablecog
@@ -27,12 +29,11 @@ input_tuple[0] = ctx
 [15] = facefix
 [16] = highres_fix
 [17] = clip_skip
-[18] = hypernet
-[19] = lora
+[18] = extra_net
 '''
 tuple_names = ['ctx', 'simple_prompt', 'prompt', 'negative_prompt', 'data_model', 'steps', 'width', 'height',
                'guidance_scale', 'sampler', 'seed', 'strength', 'init_image', 'batch', 'styles', 'facefix',
-               'highres_fix', 'clip_skip', 'hypernet', 'lora']
+               'highres_fix', 'clip_skip', 'extra_net']
 
 
 # the modal that is used for the 🖋 button
@@ -114,7 +115,13 @@ class DrawModal(Modal):
         new_model, new_token, bad_input = '', '', ''
         model_found = False
         invalid_input = False
+        infocog_view = infocog.InfoView()
+        net_multi, new_net_multi = 0.85, 0
         embed_err = discord.Embed(title="I can't redraw this!", description="")
+        # if extra network is used, find the multiplier
+        if pen[18]:
+            if pen[18] in pen[2]:
+                net_multi = re.search(f'{pen[18]}:(.*)>', pen[2]).group(1)
 
         # iterate through extended edit for any changes
         for line in self.children[3].value.split('\n'):
@@ -132,10 +139,11 @@ class DrawModal(Modal):
                             new_token = f'{model[1][3]} '.lstrip(' ')
                             break
                     if not model_found:
-                        invalid_input = True
-                        embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is not found. Try one of these models!",
-                                            value=', '.join(['`%s`' % x for x in settings.global_var.model_info]),
-                                            inline=False)
+                        embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is not found.",
+                                            value="I used the info command for you! Try one of these models!")
+                        await interaction.response.send_message(embed=embed_err, ephemeral=True)
+                        await infocog.InfoView.button_model(infocog_view, '', interaction)
+                        return
 
             if 'steps:' in line:
                 max_steps = settings.read('% s' % pen[0].channel.id)['max_steps']
@@ -188,10 +196,12 @@ class DrawModal(Modal):
                 if line.split(':', 1)[1] in settings.global_var.style_names.keys():
                     pen[14] = line.split(':', 1)[1]
                 else:
-                    invalid_input = True
-                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` isn't my style. Here's the style list!",
-                                        value=', '.join(['`%s`' % x for x in settings.global_var.style_names]),
-                                        inline=False)
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` isn't my style.",
+                                        value="I've pulled up the styles list for you from the info command!")
+                    await interaction.response.send_message(embed=embed_err, ephemeral=True)
+                    await infocog.InfoView.button_style(infocog_view, '', interaction)
+                    return
+
             if 'facefix:' in line:
                 if line.split(':', 1)[1] in settings.global_var.facefix_models:
                     pen[15] = line.split(':', 1)[1]
@@ -207,23 +217,19 @@ class DrawModal(Modal):
                     invalid_input = True
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is too much CLIP to skip!",
                                         value='The range is from `1` to `12`.', inline=False)
-            if 'hypernet:' in line:
-                if line.split(':', 1)[1] in settings.global_var.hyper_names:
+            if 'extra_net:' in line:
+                if line.count(':') == 2:
+                    net_check = re.search(':(.*):', line).group(1)
+                    if net_check in settings.global_var.extra_nets:
+                        pen[18] = line.split(':', 1)[1]
+                elif line.count(':') == 1 and line.split(':', 1)[1] in settings.global_var.extra_nets:
                     pen[18] = line.split(':', 1)[1]
                 else:
-                    invalid_input = True
-                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` isn't one of these hypernetworks!",
-                                        value=', '.join(['`%s`' % x for x in settings.global_var.hyper_names]),
-                                        inline=False)
-
-            if 'lora:' in line:
-                if line.split(':', 1)[1] in settings.global_var.lora_names:
-                    pen[19] = line.split(':', 1)[1]
-                else:
-                    invalid_input = True
-                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` can't be found! Try one of these LoRA.",
-                                        value=', '.join(['`%s`' % x for x in settings.global_var.lora_names]),
-                                        inline=False)
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` is an unknown extra network!",
+                                        value="I used the info command for you! Please review the hypernets and LoRAs.")
+                    await interaction.response.send_message(embed=embed_err, ephemeral=True)
+                    await infocog.InfoView.button_hyper(infocog_view, '', interaction)
+                    return
 
         # stop and give a useful message if any extended edit values aren't recognized
         if invalid_input:
@@ -246,11 +252,11 @@ class DrawModal(Modal):
             # update the prompt again if a valid model change is requested
             if model_found:
                 pen[2] = new_token + pen[1]
-            # if a hypernetwork or lora is added, append it to prompt
+            # figure out what extra_net was used
             if pen[18] != 'None':
-                pen[2] += f' <hypernet:{pen[18]}:0.85>'
-            if pen[19] != 'None':
-                pen[2] += f' <lora:{pen[19]}:0.85>'
+                pen[2], pen[18], new_net_multi = settings.extra_net_check(pen[2], pen[18], net_multi)
+            channel = '% s' % pen[0].channel.id
+            pen[2] = settings.extra_net_defaults(pen[2], channel)
             # set batch to 1
             pen[13] = [1, 1]
 
@@ -266,10 +272,15 @@ class DrawModal(Modal):
                 prompt_output += f'\nNew model: ``{new_model}``'
             index_start = 5
             for index, value in enumerate(tuple_names[index_start:], index_start):
-                if index == 13 or index == 17:
+                if index == 13 or index == 16 or index == 18:
                     continue
                 if str(pen[index]) != str(self.input_tuple[index]):
                     prompt_output += f'\nNew {value}: ``{pen[index]}``'
+            if str(pen[18]) != 'None':
+                if str(pen[18]) != str(self.input_tuple[18]) and new_net_multi != net_multi or new_net_multi != net_multi:
+                    prompt_output += f'\nNew extra network: ``{pen[18]}`` (multiplier: ``{new_net_multi}``)'
+                elif str(pen[18]) != str(self.input_tuple[18]):
+                    prompt_output += f'\nNew extra network: ``{pen[18]}``'
 
             print(f'Redraw -- {interaction.user.name}#{interaction.user.discriminator} -- Prompt: {pen[1]}')
 

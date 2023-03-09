@@ -29,7 +29,9 @@ template = {
     "highres_fix": 'Disabled',
     "clip_skip": 1,
     "hypernet": "None",
+    "hyper_multi": "0.85",
     "lora": "None",
+    "lora_multi": "0.85",
     "strength": "0.75",
     "batch": "1,1",
     "max_batch": "1,1",
@@ -96,6 +98,7 @@ class GlobalVar:
     embeddings_2 = []
     hyper_names = []
     lora_names = []
+    extra_nets = []
     upscaler_names = []
     hires_upscaler_names = []
     save_outputs = "True"
@@ -155,6 +158,42 @@ def prompt_mod(prompt, negative_prompt):
                 negative_prompt = f"{z} {negative_prompt}"
         return "Mod", prompt, negative_prompt.strip(), clean_negative_prompt.strip()
     return "None"
+
+
+def extra_net_check(prompt, extra_net, net_multi):
+    # grab extra net multiplier if there is one
+    if ':' in extra_net:
+        net_multi = extra_net.split(':', 1)[1]
+        extra_net = extra_net.split(':', 1)[0]
+        try:
+            net_multi = net_multi.replace(",", ".")
+            float(net_multi)
+        except(Exception,):
+            # set default if invalid net multiplier is given
+            net_multi = 0.85
+    # figure out what extra_net was used
+    if extra_net is not None and extra_net != 'None':
+        for network in global_var.hyper_names:
+            if extra_net == network:
+                prompt += f' <hypernet:{extra_net}:{str(net_multi)}>'
+        for network in global_var.lora_names:
+            if extra_net == network:
+                prompt += f' <lora:{extra_net}:{str(net_multi)}>'
+    return prompt, extra_net, net_multi
+
+
+def extra_net_defaults(prompt, channel):
+    check(channel)
+    hypernet = read(channel)['hypernet']
+    hyper_multi = read(channel)['hyper_multi']
+    lora = read(channel)['lora']
+    lora_multi = read(channel)['lora_multi']
+    # append channel default hypernet or lora to the prompt
+    if hypernet != 'None' and hypernet not in prompt:
+        prompt += f' <hypernet:{hypernet}:{hyper_multi}>'
+    if lora != 'None' and lora not in prompt:
+        prompt += f' <lora:{lora}:{lora_multi}>'
+    return prompt
 
 
 def queue_check(author_compare):
@@ -499,5 +538,6 @@ def populate_global_vars():
     if 'None' not in global_var.hyper_names:
         global_var.hyper_names.insert(0, 'None')
     global_var.lora_names.remove('')
+    global_var.extra_nets = global_var.hyper_names + global_var.lora_names
     global_var.lora_names.insert(0, 'None')
     global_var.hires_upscaler_names.insert(0, 'Disabled')

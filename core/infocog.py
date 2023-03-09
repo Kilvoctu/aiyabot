@@ -64,7 +64,10 @@ class InfoView(View):
             self.page += 1
         self.page = 0
 
-        await interaction.response.edit_message(view=self, embed=self.contents[0])
+        try:
+            await interaction.response.edit_message(view=self, embed=self.contents[0])
+        except(Exception,):
+            await interaction.followup.send(view=self, embed=self.contents[0], ephemeral=True)
 
     @discord.ui.button(
         custom_id="button_styles",
@@ -102,7 +105,10 @@ class InfoView(View):
             self.page += 1
         self.page = 0
 
-        await interaction.response.edit_message(view=self, embed=self.contents[0])
+        try:
+            await interaction.response.edit_message(view=self, embed=self.contents[0])
+        except(Exception,):
+            await interaction.followup.send(view=self, embed=self.contents[0], ephemeral=True)
 
     @discord.ui.button(
         custom_id="button_hyper",
@@ -112,7 +118,8 @@ class InfoView(View):
         batch = 16
         self.page = 0
         self.contents = []
-        desc = 'To add manually to prompt, use <hypernet:``name``:``#``>\n``#`` = The effect multiplier (0.0 - 1.0)'
+        desc = 'Select using the `extra_network` option.\n' \
+               'To add manually to prompt, use <hypernet:``name``:``#``>\n``#`` = The effect multiplier (0.0 - 1.0)'
 
         if length > batch * 2:
             self.enable_nav_buttons()
@@ -135,7 +142,10 @@ class InfoView(View):
             self.page += 1
         self.page = 0
 
-        await interaction.response.edit_message(view=self, embed=self.contents[0])
+        try:
+            await interaction.response.edit_message(view=self, embed=self.contents[0])
+        except(Exception,):
+            await interaction.followup.send(view=self, embed=self.contents[0], ephemeral=True)
 
     @discord.ui.button(
         custom_id="button_lora",
@@ -145,7 +155,8 @@ class InfoView(View):
         batch = 16
         self.page = 0
         self.contents = []
-        desc = 'To add manually to prompt, use <lora:``name``:``#``>\n``#`` = The effect multiplier (0.0 - 1.0)'
+        desc = 'Select using the `extra_network` option.\n' \
+               'To add manually to prompt, use <lora:``name``:``#``>\n``#`` = The effect multiplier (0.0 - 1.0)'
 
         if length > batch * 2:
             self.enable_nav_buttons()
