@@ -241,7 +241,7 @@ async def quick_upscale(self, ctx, message: discord.Message):
     upscaler_1 = settings.read(channel)['upscaler_1']
 
     init_image = requests.get(urls[0])
-    resize = 2.0
+    resize = settings.global_var.quick_upscale_resize
     upscaler_2, upscaler_2_strength = "None", '0.5'
     gfpgan, codeformer = '0.0', '0.0'
     upscale_first = False
@@ -267,5 +267,5 @@ async def quick_upscale(self, ctx, message: discord.Message):
         await queuehandler.process_dream(upscale_dream, queuehandler.UpscaleObject(upscale_dream, *input_tuple, view))
     if user_queue_limit != "Stop":
         await ctx.send_response(
-            f'<@{ctx.author.id}>, upscaling {message}using ``{upscaler_1}``!\n'
+            f'<@{ctx.author.id}>, upscaling {message}by ``{resize}``x using ``{upscaler_1}``!\n'
             f'Queue: ``{len(queuehandler.GlobalQueue.queue)}``')

@@ -64,14 +64,17 @@ queue_limit = 1
 # The maximum value allowed for width/height (keep as multiple of 64)
 max_size = 1024
 
-# AIYA won't generate if prompt has any words in the ban list.
+# The resize amount when using context menu Quick Upscale
+quick_upscale_resize = 2.0
+
+# AIYA won't generate if prompt has any words in the ban list
 # Separate with commas; example, ["a", "b", "c"]
 prompt_ban_list = []
-# These words will be automatically removed from the prompt.
+# These words will be automatically removed from the prompt
 prompt_ignore_list = []
-# Choose whether or not ignored words are displayed to user.
+# Choose whether or not ignored words are displayed to user
 display_ignored_words = "False"
-# These words will be added to the beginning of the negative prompt.
+# These words will be added to the beginning of the negative prompt
 negative_prompt_prefix = []
 """
 
@@ -103,6 +106,7 @@ class GlobalVar:
     hires_upscaler_names = []
     save_outputs = "True"
     queue_limit = 1
+    quick_upscale_resize = 2.0
     prompt_ban_list = []
     prompt_ignore_list = []
     display_ignored_words = "False"
@@ -449,6 +453,7 @@ def populate_global_vars():
 
     global_var.save_outputs = config['save_outputs']
     global_var.queue_limit = config['queue_limit']
+    global_var.quick_upscale_resize = config['quick_upscale_resize']
     global_var.prompt_ban_list = [x for x in config['prompt_ban_list']]
     global_var.prompt_ignore_list = [x for x in config['prompt_ignore_list']]
     global_var.display_ignored_words = config['display_ignored_words']

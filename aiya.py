@@ -44,7 +44,7 @@ async def get_image_info(ctx, message: discord.Message):
     await ctxmenuhandler.get_image_info(ctx, message)
 
 
-@self.message_command(name="Quick 2x Upscale")
+@self.message_command(name=f"Quick Upscale")
 async def quick_upscale(ctx, message: discord.Message):
     await ctxmenuhandler.quick_upscale(self, ctx, message)
 
