@@ -13,30 +13,7 @@ from core import queuehandler
 self = discord.Bot()
 dir_path = os.path.dirname(os.path.realpath(__file__))
 path = 'resources/'.format(dir_path)
-
-# the fallback defaults for AIYA if bot host doesn't set anything
-template = {
-    "negative_prompt": "",
-    "data_model": "",
-    "steps": 30,
-    "max_steps": 50,
-    "width": 512,
-    "height": 512,
-    "guidance_scale": "7.0",
-    "sampler": "Euler a",
-    "style": "None",
-    "facefix": "None",
-    "highres_fix": 'Disabled',
-    "clip_skip": 1,
-    "hypernet": "None",
-    "hyper_multi": "0.85",
-    "lora": "None",
-    "lora_multi": "0.85",
-    "strength": "0.75",
-    "batch": "1,1",
-    "max_batch": "1,1",
-    "upscaler_1": "ESRGAN_4x"
-}
+template = {}
 
 # default config data
 default_config = """# This is the config file. It's advisable to restart if any changes are made.
@@ -76,6 +53,29 @@ prompt_ignore_list = []
 display_ignored_words = "False"
 # These words will be added to the beginning of the negative prompt
 negative_prompt_prefix = []
+
+
+# the fallback channel defaults template for AIYA if nothing is set
+negative_prompt = ""
+data_model = ""
+steps = 30
+max_steps = 50
+width = 512
+height = 512
+guidance_scale = "7.0"
+sampler = "Euler a"
+style = "None"
+facefix = "None"
+highres_fix = 'Disabled'
+clip_skip = 1
+hypernet = "None"
+hyper_multi = "0.85"
+lora = "None"
+lora_multi = "0.85"
+strength = "0.75"
+batch = "1,1"
+max_batch = "1,1"
+upscaler_1 = "ESRGAN_4x"
 """
 
 
@@ -237,6 +237,39 @@ def check(channel_id):
                     print('I see models.csv is on defaults. Updating model settings to default.')
 
 
+def config_auth(config):
+    global_var.url = config['url']
+    global_var.dir = config['dir']
+    global_var.username = config['user']
+    global_var.password = config['pass']
+    global_var.api_user = config['apiuser']
+    global_var.api_pass = config['apipass']
+
+
+def generate_template(template_pop, config):
+    template_pop['negative_prompt'] = config['negative_prompt']
+    template_pop['data_model'] = config['data_model']
+    template_pop['steps'] = config['steps']
+    template_pop['max_steps'] = config['max_steps']
+    template_pop['width'] = config['width']
+    template_pop['height'] = config['height']
+    template_pop['guidance_scale'] = config['guidance_scale']
+    template_pop['sampler'] = config['sampler']
+    template_pop['style'] = config['style']
+    template_pop['facefix'] = config['facefix']
+    template_pop['highres_fix'] = config['highres_fix']
+    template_pop['clip_skip'] = config['clip_skip']
+    template_pop['hypernet'] = config['hypernet']
+    template_pop['hyper_multi'] = config['hyper_multi']
+    template_pop['lora'] = config['lora']
+    template_pop['lora_multi'] = config['lora_multi']
+    template_pop['strength'] = config['strength']
+    template_pop['batch'] = config['batch']
+    template_pop['max_batch'] = config['max_batch']
+    template_pop['upscaler_1'] = config['upscaler_1']
+    return template_pop
+
+
 def build(channel_id):
     settings = json.dumps(template, indent=1)
     with open(path + channel_id + '.json', 'w') as configfile:
@@ -345,15 +378,10 @@ def startup_check():
         tomlkit.dump(config, f)
         f.close()
 
-    global_var.url = config['url']
+    config_auth(config)
+    generate_template(template, config)
     print(f'Using URL: {global_var.url}')
-    global_var.dir = config['dir']
     print(f'Using outputs directory: {global_var.dir}')
-
-    global_var.username = config['user']
-    global_var.password = config['pass']
-    global_var.api_user = config['apiuser']
-    global_var.api_pass = config['apipass']
 
     # check if Web UI is running
     connected = False
@@ -444,12 +472,8 @@ def populate_global_vars():
         config = tomlkit.loads(content)
 
     # update these again in case changes were made
-    global_var.url = config['url']
-    global_var.dir = config['dir']
-    global_var.username = config['user']
-    global_var.password = config['pass']
-    global_var.api_user = config['apiuser']
-    global_var.api_pass = config['apipass']
+    config_auth(config)
+    generate_template(template, config)
 
     global_var.save_outputs = config['save_outputs']
     global_var.queue_limit = config['queue_limit']
