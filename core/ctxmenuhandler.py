@@ -268,4 +268,4 @@ async def quick_upscale(self, ctx, message: discord.Message):
     if user_queue_limit != "Stop":
         await ctx.send_response(
             f'<@{ctx.author.id}>, upscaling {message}by ``{resize}``x using ``{upscaler_1}``!\n'
-            f'Queue: ``{len(queuehandler.GlobalQueue.queue)}``')
+            f'Queue: ``{len(queuehandler.GlobalQueue.queue)}``', delete_after=45.0)
