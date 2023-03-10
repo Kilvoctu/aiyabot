@@ -258,7 +258,8 @@ class DrawModal(Modal):
             channel = '% s' % pen[0].channel.id
             pen[2] = settings.extra_net_defaults(pen[2], channel)
             # set batch to 1
-            pen[13] = [1, 1]
+            if settings.global_var.batch_buttons == "False":
+                pen[13] = [1, 1]
 
             # the updated tuple to send to queue
             prompt_tuple = tuple(pen)
@@ -336,7 +337,8 @@ class DrawView(View):
                 new_seed = list(self.input_tuple)
                 new_seed[10] = random.randint(0, 0xFFFFFFFF)
                 # set batch to 1
-                new_seed[13] = [1, 1]
+                if settings.global_var.batch_buttons == "False":
+                    new_seed[13] = [1, 1]
                 seed_tuple = tuple(new_seed)
 
                 print(f'Reroll -- {interaction.user.name}#{interaction.user.discriminator} -- Prompt: {seed_tuple[1]}')
