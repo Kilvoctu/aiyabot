@@ -571,7 +571,8 @@ def populate_global_vars():
         global_var.facefix_models.insert(0, 'None')
     if 'None' not in global_var.hyper_names:
         global_var.hyper_names.insert(0, 'None')
-    global_var.lora_names.remove('')
+    if '' in global_var.lora_names:
+        global_var.lora_names.remove('')
     global_var.extra_nets = global_var.hyper_names + global_var.lora_names
     global_var.lora_names.insert(0, 'None')
     global_var.hires_upscaler_names.insert(0, 'Disabled')
