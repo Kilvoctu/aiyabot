@@ -41,6 +41,9 @@ queue_limit = 1
 # Whether or not buttons keep generating in batches ("True"/"False")
 batch_buttons = "False"
 
+# Whether or not buttons are restricted to user who requested image ("True"/"False")
+restrict_buttons = "True"
+
 # The maximum value allowed for width/height (keep as multiple of 64)
 max_size = 1024
 
@@ -110,6 +113,7 @@ class GlobalVar:
     save_outputs = "True"
     queue_limit = 1
     batch_buttons = "False"
+    restrict_buttons = "True"
     quick_upscale_resize = 2.0
     prompt_ban_list = []
     prompt_ignore_list = []
@@ -482,6 +486,7 @@ def populate_global_vars():
     global_var.save_outputs = config['save_outputs']
     global_var.queue_limit = config['queue_limit']
     global_var.batch_buttons = config['batch_buttons']
+    global_var.restrict_buttons = config['restrict_buttons']
     global_var.quick_upscale_resize = config['quick_upscale_resize']
     global_var.prompt_ban_list = [x for x in config['prompt_ban_list']]
     global_var.prompt_ignore_list = [x for x in config['prompt_ignore_list']]

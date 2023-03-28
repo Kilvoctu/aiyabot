@@ -304,9 +304,13 @@ class DrawView(View):
         custom_id="button_re-prompt",
         emoji="🖋")
     async def button_draw(self, button, interaction):
+        buttons_free = True
         try:
             # check if the output is from the person who requested it
-            if interaction.user.id == self.input_tuple[0].author.id:
+            if settings.global_var.restrict_buttons == 'True':
+                if interaction.user.id != self.input_tuple[0].author.id:
+                    buttons_free = False
+            if buttons_free:
                 # if there's room in the queue, open up the modal
                 user_queue_limit = settings.queue_check(interaction.user)
                 if queuehandler.GlobalQueue.dream_thread.is_alive():
@@ -330,9 +334,13 @@ class DrawView(View):
         custom_id="button_re-roll",
         emoji="🎲")
     async def button_roll(self, button, interaction):
+        buttons_free = True
         try:
             # check if the output is from the person who requested it
-            if interaction.user.id == self.input_tuple[0].author.id:
+            if settings.global_var.restrict_buttons == 'True':
+                if interaction.user.id != self.input_tuple[0].author.id:
+                    buttons_free = False
+            if buttons_free:
                 # update the tuple with a new seed
                 new_seed = list(self.input_tuple)
                 new_seed[10] = random.randint(0, 0xFFFFFFFF)
