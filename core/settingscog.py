@@ -49,6 +49,17 @@ class SettingsCog(commands.Cog):
             hires for hires in settings.global_var.hires_upscaler_names
         ]
 
+    # do autocomplete here to handle when max_size exceeds discord limits
+    def size_autocomplete(self: discord.AutocompleteContext):
+        return [
+            size for size in settings.global_var.size_range_exceed
+        ]
+
+    if len(settings.global_var.size_range) == 0:
+        size_auto = discord.utils.basic_autocomplete(size_autocomplete)
+    else:
+        size_auto = None
+
     @commands.slash_command(name='settings', description='Review and change channel defaults', guild_only=True)
     @option(
         'current_settings',
@@ -88,14 +99,16 @@ class SettingsCog(commands.Cog):
         int,
         description='Set default width for the channel',
         required=False,
-        choices=[x for x in range(192, 1088, 64)]
+        autocomplete=size_auto,
+        choices=settings.global_var.size_range
     )
     @option(
         'height',
         int,
         description='Set default height for the channel',
         required=False,
-        choices=[x for x in range(192, 1088, 64)]
+        autocomplete=size_auto,
+        choices=settings.global_var.size_range
     )
     @option(
         'guidance_scale',

@@ -100,6 +100,7 @@ class GlobalVar:
     api_pass: Optional[str] = None
     model_info = {}
     size_range = range(192, 1088, 64)
+    size_range_exceed = None
     sampler_names = []
     style_names = {}
     facefix_models = []
@@ -494,6 +495,9 @@ def populate_global_vars():
     global_var.negative_prompt_prefix = [x for x in config['negative_prompt_prefix']]
     # slash command doesn't update this dynamically. Changes to size need a restart.
     global_var.size_range = range(192, config['max_size'] + 64, 64)
+    if len(global_var.size_range) > 25:
+        global_var.size_range_exceed = [x for x in global_var.size_range]
+        global_var.size_range = []
 
     # create persistent session since we'll need to do a few API calls
     s = authenticate_user()

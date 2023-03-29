@@ -23,6 +23,11 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     def __init__(self, bot):
         self.bot = bot
 
+    if len(settings.global_var.size_range) == 0:
+        size_auto = discord.utils.basic_autocomplete(settingscog.SettingsCog.size_autocomplete)
+    else:
+        size_auto = None
+
     @commands.Cog.listener()
     async def on_ready(self):
         self.bot.add_view(viewhandler.DrawView(self))
@@ -59,14 +64,16 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         int,
         description='Width of the generated image.',
         required=False,
-        choices=[x for x in settings.global_var.size_range]
+        autocomplete=size_auto,
+        choices=settings.global_var.size_range
     )
     @option(
         'height',
         int,
         description='Height of the generated image.',
         required=False,
-        choices=[x for x in settings.global_var.size_range]
+        autocomplete=size_auto,
+        choices=settings.global_var.size_range
     )
     @option(
         'guidance_scale',
