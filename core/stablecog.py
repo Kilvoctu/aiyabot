@@ -493,8 +493,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     new_tuple = tuple(batch_seed)
                     queue_object.view.input_tuple = new_tuple
 
-        except KeyError:
-            embed = discord.Embed(title='txt2img failed', description=f'An invalid parameter was found!',
+        except KeyError as e:
+            embed = discord.Embed(title='txt2img failed', description=f'An invalid parameter was found!\n{e}',
                                   color=settings.global_var.embed_color)
             event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
         except Exception as e:

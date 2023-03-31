@@ -123,6 +123,11 @@ class DrawModal(Modal):
             if pen[18] in pen[2]:
                 net_multi = re.search(f'{pen[18]}:(.*)>', pen[2]).group(1)
 
+        if settings.global_var.size_range:
+            max_size = settings.global_var.size_range
+        else:
+            max_size = settings.global_var.size_range_exceed
+
         # iterate through extended edit for any changes
         for line in self.children[3].value.split('\n'):
             if 'data_model:' in line:
@@ -155,19 +160,19 @@ class DrawModal(Modal):
                                         value=f"Keep steps between `0` and `{max_steps}`.", inline=False)
             if 'width:' in line:
                 try:
-                    pen[6] = [x for x in settings.global_var.size_range if x == int(line.split(':', 1)[1])][0]
+                    pen[6] = [x for x in max_size if x == int(line.split(':', 1)[1])][0]
                 except(Exception,):
                     invalid_input = True
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` width is no good! These widths I can do.",
-                                        value=', '.join(['`%s`' % x for x in settings.global_var.size_range]),
+                                        value=', '.join(['`%s`' % x for x in max_size]),
                                         inline=False)
             if 'height:' in line:
                 try:
-                    pen[7] = [x for x in settings.global_var.size_range if x == int(line.split(':', 1)[1])][0]
+                    pen[7] = [x for x in max_size if x == int(line.split(':', 1)[1])][0]
                 except(Exception,):
                     invalid_input = True
                     embed_err.add_field(name=f"`{line.split(':', 1)[1]}` height is no good! These heights I can do.",
-                                        value=', '.join(['`%s`' % x for x in settings.global_var.size_range]),
+                                        value=', '.join(['`%s`' % x for x in max_size]),
                                         inline=False)
             if 'guidance_scale:' in line:
                 try:
