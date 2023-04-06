@@ -93,6 +93,7 @@ Note the following environment variables work with the docker image:
 
 - [See wiki for notes on additional configuration.](https://github.com/Kilvoctu/aiyabot/wiki/Configuration)
 - [See wiki for notes on swapping models.](https://github.com/Kilvoctu/aiyabot/wiki/Model-swapping)
+- [📋 requires a Web UI script. Please see wiki for details.](https://github.com/Kilvoctu/aiyabot/wiki/Frequently-asked-questions-and-other-tips-(setup)#the--and-other-png-info-related-commands-are-not-working)
 - Ensure AIYA has `bot` and `application.commands` scopes when inviting to your Discord server, and intents are enabled.
 - As /settings can be abused, consider reviewing who can access the command. This can be done through Apps -> Integrations in your Server Settings. Read more about /settings [here.](https://github.com/Kilvoctu/aiyabot/wiki/settings-command)
 - AIYA uses Web UI's legacy high-res fix method. To ensure this works correctly, in your Web UI settings, enable this option: `For hires fix, use width/height sliders to set final resolution rather than first pass`
@@ -108,4 +109,6 @@ AIYA only exists thanks to these awesome people:
   - https://github.com/harubaru/discord-stable-diffusion
 - gingivere0, for PayloadFormatter class for the original API. Without that, I'd have given up from the start. Also has a great Discord bot as a no-slash-command alternative.
   - https://github.com/gingivere0/dalebot
+- ashen-sensored, for developing a workaround for Discord removing PNG info to image uploads.
+  - https://github.com/ashen-sensored/sd_webui_stealth_pnginfo 
 - You, for using AIYA and contributing with PRs, bug reports, feedback, and more!
