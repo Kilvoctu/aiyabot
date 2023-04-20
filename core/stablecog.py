@@ -437,6 +437,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             # save local copy of image and prepare PIL images
             image_data = response_data['images']
             count = 0
+            discord_files = []
             for i in image_data:
                 count += 1
                 image = Image.open(io.BytesIO(base64.b64decode(i)))
@@ -457,24 +458,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     print(f'Saved image: {file_path}')
 
                 settings.stats_count(1)
-
-                # set up discord message
-                content = f'> for {queue_object.ctx.author.name}'
-                image_count = len(image_data)
-                noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
-                draw_time = '{0:.3f}'.format(end_time - start_time)
-                message = f'my {noun_descriptor} of ``{queue_object.simple_prompt}`` took me ``{draw_time}`` seconds!'
-
-                view = queue_object.view
-                if count == 1:
-                    content = f'<@{queue_object.ctx.author.id}>, {message}'
-                # only enable buttons on last image in batch
-                if len(image_data) > 1:
-                    if count == 1:
-                        content = f'<@{queue_object.ctx.author.id}>, {message}\n' \
-                                  f'*Please use the context menu for drawings without buttons.*'
-                    if count != len(image_data):
-                        view = None
 
                 # post to discord
                 with io.BytesIO() as buffer:
@@ -505,15 +488,27 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     buffer.seek(0)
 
                     file = discord.File(fp=buffer, filename=f'{queue_object.seed}-{count}.png')
-                    queuehandler.process_post(
-                        self, queuehandler.PostObject(
-                            self, queue_object.ctx, content=content, file=file, embed='', view=view))
+                    discord_files.append(file)
+
                 # increment seed for view when using batch
                 if count != len(image_data):
                     batch_seed = list(queue_object.view.input_tuple)
                     batch_seed[10] += 1
                     new_tuple = tuple(batch_seed)
                     queue_object.view.input_tuple = new_tuple
+
+            # set up discord message
+            image_count = len(image_data)
+            noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
+            draw_time = '{0:.3f}'.format(end_time - start_time)
+            message = f'my {noun_descriptor} of ``{queue_object.simple_prompt}`` took me ``{draw_time}`` seconds!'
+            view = queue_object.view
+            content = f'<@{queue_object.ctx.author.id}>, {message}'
+
+            # post discord message
+            queuehandler.process_post(
+                self, queuehandler.PostObject(
+                    self, queue_object.ctx, content=content, file=discord_files, embed='', view=view))
 
         except KeyError as e:
             embed = discord.Embed(title='txt2img failed', description=f'An invalid parameter was found!\n{e}',
