@@ -198,9 +198,9 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if batch is None:
             batch = settings.read(channel)['batch']
 
-        # Add per channel negative_prompt_cprefix
-        if settings.read(channel)['negative_prompt_cprefix'] is not None:
-            negative_prompt = settings.read(channel)['negative_prompt_cprefix'] + ' ' + negative_prompt
+        # Add per channel n_prefix
+        if settings.read(channel)['n_prefix'] != "":
+            negative_prompt = settings.read(channel)['n_prefix'] + ' ' + negative_prompt
 
         # if a model is not selected, do nothing
         model_name = 'Default'
