@@ -230,7 +230,7 @@ class SettingsCog(commands.Cog):
         embed = discord.Embed(title="Channel Defaults Summary", description="")
         embed.set_footer(text=f'Channel id: {channel}')
         embed.colour = settings.global_var.embed_color
-        current, new, new_n_prompt = '', '', ''
+        current, new, new_n_prompt, new_n_prefix = '', '', '', ''
         dummy_prompt, lora_multi, hyper_multi = '', 0.85, 0.85
         set_new = False
 
