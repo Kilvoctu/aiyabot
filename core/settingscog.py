@@ -74,7 +74,7 @@ class SettingsCog(commands.Cog):
         required=False,
     )
     @option(
-        'n_prompt_prefix',
+        'n_prefix',
         str,
         description='Set default negative prompt prefix for the channel',
         required=False,
@@ -429,6 +429,8 @@ class SettingsCog(commands.Cog):
             embed.add_field(name=f'New defaults', value=new, inline=False)
         if new_n_prompt:
             embed.add_field(name=f'New default negative prompt', value=f'``{new_n_prompt}``', inline=False)
+        if new_n_prefix:
+            embed.add_field(name=f'New default negative prefix', value=f'``{new_n_prefix}``', inline=False)
 
         await ctx.send_response(embed=embed, ephemeral=True)
 
