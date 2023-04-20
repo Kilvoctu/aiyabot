@@ -345,7 +345,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         event_loop.create_task(
             post_queue_object.ctx.channel.send(
                 content=post_queue_object.content,
-                file=post_queue_object.file,
+                files=post_queue_object.file,
                 view=post_queue_object.view
             )
         )
