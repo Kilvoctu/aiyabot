@@ -305,11 +305,6 @@ class DrawView(View):
         super().__init__(timeout=None)
         self.input_tuple = input_tuple
 
-        batch = input_tuple[13][0] * input_tuple[13][1]
-        for x in batch:
-            y = 1 + x // 5
-            self.add_item(RemixButton(x, y))
-
     # the 🖋 button will allow a new prompt and keep same parameters for everything else
     @discord.ui.button(
         custom_id="button_re-prompt",
@@ -426,32 +421,12 @@ class DrawView(View):
             await interaction.followup.send("I may have been restarted. This button no longer works.\n"
                                             "You can react with ❌ to delete the image.", ephemeral=True)
 
-
-class DeleteView(View):
-    def __init__(self, input_tuple):
-        super().__init__(timeout=None)
-        self.input_tuple = input_tuple
-
+    # Remix button         
     @discord.ui.button(
-        custom_id="button_x_solo",
-        emoji="❌")
-    async def delete(self, button, interaction):
-        try:
-            # check if the output is from the person who requested it
-            if interaction.user.id == self.input_tuple[0].author.id:
-                await interaction.message.delete()
-            else:
-                await interaction.response.send_message("You can't delete other people's images!", ephemeral=True)
-        except(Exception,):
-            button.disabled = True
-            await interaction.response.edit_message(view=self)
-            await interaction.followup.send("I may have been restarted. This button no longer works.\n"
-                                            "You can react with ❌ to delete the image.", ephemeral=True)
-
-# Buttons for each batch to reroll
-class RemixButton(discord.ui.Button['DrawView']):
-    def __init__(self, x: int, y: int):
-        super().__init__(style=discord.ButtonStyle.secondary, label=f'V{x}', row=y, emoji="🎲")
+        label="1",
+        custom_id="button_re-roll",
+        emoji="🎲",
+        row=1)
     async def button_remix(self, button, interaction):
         buttons_free = True
         try:
@@ -466,7 +441,7 @@ class RemixButton(discord.ui.Button['DrawView']):
                 # set batch to 1
                 if settings.global_var.batch_buttons == "False":
                     new_remix[13] = [1, 1]
-                new_remix[12] = requests.get(interaction.message.attachments[self.x].proxy_url)
+                new_remix[12] = requests.get(interaction.message.attachments[0].proxy_url)
                 
                 remix_tuple = tuple(new_remix)
 
@@ -488,7 +463,7 @@ class RemixButton(discord.ui.Button['DrawView']):
                         f'<@{interaction.user.id}>, {settings.messages()}\nQueue: '
                         f'``{len(queuehandler.GlobalQueue.queue)}`` - ``{remix_tuple[1]}``'
                         f'\nNew Seed:``{remix_tuple[10]}``'
-                        f'\nBase Image Filename:``{interaction.message.attachments[self.x].filename}``')
+                        f'\nBase Image Filename:``{interaction.message.attachments[0].filename}``')
             else:
                 await interaction.response.send_message("You can't use other people's 🎲!", ephemeral=True)
         except Exception as e:
@@ -497,3 +472,25 @@ class RemixButton(discord.ui.Button['DrawView']):
             button.disabled = True
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
+
+
+class DeleteView(View):
+    def __init__(self, input_tuple):
+        super().__init__(timeout=None)
+        self.input_tuple = input_tuple
+
+    @discord.ui.button(
+        custom_id="button_x_solo",
+        emoji="❌")
+    async def delete(self, button, interaction):
+        try:
+            # check if the output is from the person who requested it
+            if interaction.user.id == self.input_tuple[0].author.id:
+                await interaction.message.delete()
+            else:
+                await interaction.response.send_message("You can't delete other people's images!", ephemeral=True)
+        except(Exception,):
+            button.disabled = True
+            await interaction.response.edit_message(view=self)
+            await interaction.followup.send("I may have been restarted. This button no longer works.\n"
+                                            "You can react with ❌ to delete the image.", ephemeral=True)
