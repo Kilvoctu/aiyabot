@@ -305,6 +305,11 @@ class DrawView(View):
         super().__init__(timeout=None)
         self.input_tuple = input_tuple
 
+        batch = input_tuple[13][0] * input_tuple[13][1]
+        for x in batch:
+            y = 1 + x // 5
+            self.add_item(RemixButton(x, y))
+
     # the 🖋 button will allow a new prompt and keep same parameters for everything else
     @discord.ui.button(
         custom_id="button_re-prompt",
@@ -421,58 +426,6 @@ class DrawView(View):
             await interaction.followup.send("I may have been restarted. This button no longer works.\n"
                                             "You can react with ❌ to delete the image.", ephemeral=True)
 
-    # Remix button         
-    @discord.ui.button(
-        label="1",
-        custom_id="button_re-roll",
-        emoji="🎲",
-        row=1)
-    async def button_remix(self, button, interaction):
-        buttons_free = True
-        try:
-            # check if the output is from the person who requested it
-            if settings.global_var.restrict_buttons == 'True':
-                if interaction.user.id != self.input_tuple[0].author.id:
-                    buttons_free = False
-            if buttons_free:
-                # update the tuple with a new seed
-                new_remix = list(self.input_tuple)
-                new_remix[10] = random.randint(0, 0xFFFFFFFF)
-                # set batch to 1
-                if settings.global_var.batch_buttons == "False":
-                    new_remix[13] = [1, 1]
-                new_remix[12] = requests.get(interaction.message.attachments[0].proxy_url)
-                
-                remix_tuple = tuple(new_remix)
-
-                print(f'Reroll -- {interaction.user.name}#{interaction.user.discriminator} -- Prompt: {remix_tuple[1]}')
-
-                # set up the draw dream and do queue code again for lack of a more elegant solution
-                draw_dream = stablecog.StableCog(self)
-                user_queue_limit = settings.queue_check(interaction.user)
-                if queuehandler.GlobalQueue.dream_thread.is_alive():
-                    if user_queue_limit == "Stop":
-                        await interaction.response.send_message(content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.", ephemeral=True)
-                    else:
-                        queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(stablecog.StableCog(self), *remix_tuple, DrawView(remix_tuple)))
-                else:
-                    await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(stablecog.StableCog(self), *remix_tuple, DrawView(remix_tuple)))
-
-                if user_queue_limit != "Stop":
-                    await interaction.response.send_message(
-                        f'<@{interaction.user.id}>, {settings.messages()}\nQueue: '
-                        f'``{len(queuehandler.GlobalQueue.queue)}`` - ``{remix_tuple[1]}``'
-                        f'\nNew Seed:``{remix_tuple[10]}``'
-                        f'\nBase Image Filename:``{interaction.message.attachments[0].filename}``')
-            else:
-                await interaction.response.send_message("You can't use other people's 🎲!", ephemeral=True)
-        except Exception as e:
-            print('The dice roll button broke: ' + str(e))
-            # if interaction fails, assume it's because aiya restarted (breaks buttons)
-            button.disabled = True
-            await interaction.response.edit_message(view=self)
-            await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
-
 
 class DeleteView(View):
     def __init__(self, input_tuple):
@@ -494,3 +447,53 @@ class DeleteView(View):
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.\n"
                                             "You can react with ❌ to delete the image.", ephemeral=True)
+
+# Buttons for each batch to reroll
+class RemixButton(discord.ui.Button['DrawView']):
+    def __init__(self, x: int, y: int):
+        super().__init__(style=discord.ButtonStyle.secondary, label=f'V{x}', row=y, emoji="🎲")
+    async def button_remix(self, button, interaction):
+        buttons_free = True
+        try:
+            # check if the output is from the person who requested it
+            if settings.global_var.restrict_buttons == 'True':
+                if interaction.user.id != self.input_tuple[0].author.id:
+                    buttons_free = False
+            if buttons_free:
+                # update the tuple with a new seed
+                new_remix = list(self.input_tuple)
+                new_remix[10] = random.randint(0, 0xFFFFFFFF)
+                # set batch to 1
+                if settings.global_var.batch_buttons == "False":
+                    new_remix[13] = [1, 1]
+                new_remix[12] = requests.get(interaction.message.attachments[self.x].proxy_url)
+                
+                remix_tuple = tuple(new_remix)
+
+                print(f'Reroll -- {interaction.user.name}#{interaction.user.discriminator} -- Prompt: {remix_tuple[1]}')
+
+                # set up the draw dream and do queue code again for lack of a more elegant solution
+                draw_dream = stablecog.StableCog(self)
+                user_queue_limit = settings.queue_check(interaction.user)
+                if queuehandler.GlobalQueue.dream_thread.is_alive():
+                    if user_queue_limit == "Stop":
+                        await interaction.response.send_message(content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.", ephemeral=True)
+                    else:
+                        queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(stablecog.StableCog(self), *remix_tuple, DrawView(remix_tuple)))
+                else:
+                    await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(stablecog.StableCog(self), *remix_tuple, DrawView(remix_tuple)))
+
+                if user_queue_limit != "Stop":
+                    await interaction.response.send_message(
+                        f'<@{interaction.user.id}>, {settings.messages()}\nQueue: '
+                        f'``{len(queuehandler.GlobalQueue.queue)}`` - ``{remix_tuple[1]}``'
+                        f'\nNew Seed:``{remix_tuple[10]}``'
+                        f'\nBase Image Filename:``{interaction.message.attachments[self.x].filename}``')
+            else:
+                await interaction.response.send_message("You can't use other people's 🎲!", ephemeral=True)
+        except Exception as e:
+            print('The dice roll button broke: ' + str(e))
+            # if interaction fails, assume it's because aiya restarted (breaks buttons)
+            button.disabled = True
+            await interaction.response.edit_message(view=self)
+            await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
