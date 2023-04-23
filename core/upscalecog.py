@@ -125,7 +125,7 @@ class UpscaleCog(commands.Cog):
 
         # formatting aiya initial reply
         reply_adds = ''
-        if upscaler_2:
+        if upscaler_2 != "None":
             reply_adds += f'\nUpscaler 2: ``{upscaler_2}``'
             reply_adds += f' - Strength: ``{upscaler_2_strength}``'
 
@@ -180,7 +180,7 @@ class UpscaleCog(commands.Cog):
                 "codeformer_visibility": queue_object.codeformer,
                 "upscale_first": queue_object.upscale_first
             }
-            if queue_object.upscaler_2 is not None:
+            if queue_object.upscaler_2 != "None":
                 up2_payload = {
                     "upscaler_2": queue_object.upscaler_2,
                     "extras_upscaler_2_visibility": queue_object.upscaler_2_strength
