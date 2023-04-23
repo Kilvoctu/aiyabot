@@ -218,7 +218,7 @@ class UpscaleCog(commands.Cog):
 
                     queuehandler.process_post(
                         self, queuehandler.PostObject(
-                            self, queue_object.ctx, content=f'<@{queue_object.ctx.author.id}>, {message}', file=file, embed='', view=queue_object.view))
+                            self, queue_object.ctx, content=f'<@{queue_object.ctx.author.id}>, {message}', files='', file=file, embed='', view=queue_object.view))
             Thread(target=post_dream, daemon=True).start()
 
         except Exception as e:
