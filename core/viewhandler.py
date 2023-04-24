@@ -8,6 +8,7 @@ from core import infocog
 from core import queuehandler
 from core import settings
 from core import stablecog
+from core import upscalecog
 
 '''
 The input_tuple index reference
@@ -303,6 +304,8 @@ class DrawView(View):
     def __init__(self, input_tuple):
         super().__init__(timeout=None)
         self.input_tuple = input_tuple
+        
+        
 
     # the 🖋 button will allow a new prompt and keep same parameters for everything else
     @discord.ui.button(
@@ -380,6 +383,51 @@ class DrawView(View):
             button.disabled = True
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
+    
+    # the ⬆️ button will upscale the selected image
+    @discord.ui.button(
+        custom_id="button_upscale",
+        emoji="⬆️")
+    async def button_upscale(self, button, interaction):
+        buttons_free = True
+        try:
+            # check if the output is from the person who requested it
+            if settings.global_var.restrict_buttons == 'True':
+                if interaction.user.id != self.input_tuple[0].author.id:
+                    buttons_free = False
+            if buttons_free:
+                # check if we are dealing with a batch or a single image.
+                if self.input_tuple[13] != [1, 1]:
+                    init_image = self.children[5].values[0]
+                else:    
+                    init_image = self.message.attachments[0]
+                
+                upscale_tuple = (self.input_tuple[0], 2.0, init_image)
+                print(f'Upscaling -- {interaction.user.name}#{interaction.user.discriminator}')
+
+                # set up the draw dream and do queue code again for lack of a more elegant solution
+                draw_dream = upscalecog.UpscaleCog(self)
+                user_queue_limit = settings.queue_check(interaction.user)
+                if queuehandler.GlobalQueue.dream_thread.is_alive():
+                    if user_queue_limit == "Stop":
+                        await interaction.response.send_message(content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.", ephemeral=True)
+                    else:
+                        queuehandler.GlobalQueue.queue.append(queuehandler.UpscaleObject(upscalecog.UpscaleCog(self), *upscale_tuple, DeleteView(upscale_tuple)))
+                else:
+                    await queuehandler.process_dream(draw_dream, queuehandler.UpscaleObject(upscalecog.UpscaleCog(self), *upscale_tuple, DeleteView(upscale_tuple)))
+
+                if user_queue_limit != "Stop":
+                    await interaction.response.send_message(
+                        f'<@{interaction.user.id}>, {settings.messages()}\nQueue: '
+                        f'``{len(queuehandler.GlobalQueue.queue)}`` - Upscaling')
+            else:
+                await interaction.response.send_message("You can't use other people's ⬆️!", ephemeral=True)
+        except Exception as e:
+            print('The upscale button broke: ' + str(e))
+            # if interaction fails, assume it's because aiya restarted (breaks buttons)
+            button.disabled = True
+            await interaction.response.edit_message(view=self)
+            await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
 
     # the 📋 button will let you review the parameters of the generation
     @discord.ui.button(
@@ -419,7 +467,37 @@ class DrawView(View):
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.\n"
                                             "You can react with ❌ to delete the image.", ephemeral=True)
-
+            
+    @discord.ui.select(
+        custom_id = "select_image",
+        placeholder = "Click to load images",
+        min_values = 1,
+        max_values = 1,
+        row = 1,
+        options = [
+            discord.SelectOption(label="Click to load images")
+        ],
+    )
+    async def select_callback(self, select, interaction):
+        try:
+            # Build option list and add dropdown
+            select_options = []
+            batch = list(self.input_tuple)
+            batch_size = batch[13][0] * batch[13][1]
+            for i in range(batch_size):
+                filename = f'{settings.global_var.dir}/{self.input_tuple[15]}-{self.input_tuple[10]}-{i}.png'
+                select_option = (str(i), filename)
+                select_options.append(select_option)
+                
+            select.options = [
+                discord.SelectOption(label=label, value=value)
+                for label, value in select_options
+            ]
+        except Exception as e:
+            print('The dropdown broke: ' + str(e))
+            select.disabled = True
+            await interaction.response.edit_message(view=self)
+            await interaction.followup.send("I may have been restarted. This dropdown no longer works.", ephemeral=True)
 
 class DeleteView(View):
     def __init__(self, input_tuple):
