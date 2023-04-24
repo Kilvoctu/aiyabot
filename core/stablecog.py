@@ -326,11 +326,14 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             reply_adds += f'\nFace restoration: ``{facefix}``'
         if clip_skip != settings.read(channel)['clip_skip']:
             reply_adds += f'\nCLIP skip: ``{clip_skip}``'
+            
+        epoch_time = int(time.time()) 
 
         # set up tuple of parameters to pass into the Discord view
         input_tuple = (
             ctx, simple_prompt, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength,
-            init_image, batch, styles, facefix, highres_fix, clip_skip, extra_net)
+            init_image, batch, styles, facefix, highres_fix, clip_skip, extra_net, epoch_time)
+        
         view = viewhandler.DrawView(input_tuple)
         # setup the queue
         user_queue_limit = settings.queue_check(ctx.author)
@@ -437,7 +440,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             # create safe/sanitized filename
             keep_chars = (' ', '.', '_')
             file_name = "".join(c for c in queue_object.simple_prompt if c.isalnum() or c in keep_chars).rstrip()
-            epoch_time = int(time.time()) 
+            epoch_time = queue_object.epoch_time
 
             # save local copy of image and prepare PIL images
             image_data = response_data['images']
@@ -497,7 +500,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 metadata.add_text("parameters", png_response.json().get("info"))
                 str_parameters = png_response.json().get("info")
 
-                file_path = f'{settings.global_var.dir}/{epoch_time}-{queue_object.seed}-{file_name[0:120]}-{count}.png'
+                file_path = f'{settings.global_var.dir}/{epoch_time}-{queue_object.seed}-{count}.png'
 
                 # if we are using a batch we need to save the files to disk
                 if settings.global_var.save_outputs == 'True' or batch == True:
