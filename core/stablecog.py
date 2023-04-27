@@ -346,6 +346,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             post_queue_object.ctx.channel.send(
                 content=post_queue_object.content,
                 file=post_queue_object.file,
+                files=post_queue_object.files,
                 view=post_queue_object.view
             )
         )
@@ -437,26 +438,9 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             # save local copy of image and prepare PIL images
             image_data = response_data['images']
             count = 0
-            for i in image_data:
-                count += 1
-                image = Image.open(io.BytesIO(base64.b64decode(i)))
-
-                # grab png info
-                png_payload = {
-                    "image": "data:image/png;base64," + i
-                }
-                png_response = s.post(url=f'{settings.global_var.url}/sdapi/v1/png-info', json=png_payload)
-
-                metadata = PngImagePlugin.PngInfo()
-                metadata.add_text("parameters", png_response.json().get("info"))
-
-                epoch_time = int(time.time())
-                file_path = f'{settings.global_var.dir}/{epoch_time}-{queue_object.seed}-{file_name[0:120]}-{count}.png'
-                if settings.global_var.save_outputs == 'True':
-                    image.save(file_path, pnginfo=metadata)
-                    print(f'Saved image: {file_path}')
-
-                settings.stats_count(1)
+            i = 0
+            while i < len(image_data):
+                files = []
 
                 # set up discord message
                 content = f'> for {queue_object.ctx.author.name}'
@@ -475,39 +459,68 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                                   f'*Please use the context menu for drawings without buttons.*'
                     if count != len(image_data):
                         view = None
+                for j in range(9):
+                    count += 1
 
-                # post to discord
-                with io.BytesIO() as buffer:
-                    image = Image.open(io.BytesIO(base64.b64decode(i)))
+                    if(count > len(image_data)):
+                        break
 
-                    # add stealth pnginfo
-                    image.putalpha(255)
-                    pixels = image.load()
-                    str_parameters = png_response.json().get("info")
-                    signature_str = 'stealth_pnginfo'
-                    binary_signature = ''.join(format(byte, '08b') for byte in signature_str.encode('utf-8'))
-                    binary_param = ''.join(format(byte, '08b') for byte in str_parameters.encode('utf-8'))
-                    param_len = len(binary_param)
-                    binary_param_len = format(param_len, '032b')
-                    binary_data = binary_signature + binary_param_len + binary_param
-                    index = 0
-                    for x in range(queue_object.width):
-                        for y in range(queue_object.height):
-                            if index < len(binary_data):
-                                r, g, b, a = pixels[x, y]
-                                a = (a & ~1) | int(binary_data[index])
-                                pixels[x, y] = (r, g, b, a)
-                                index += 1
-                            else:
-                                break
+                    img = image_data[i]
+                    image = Image.open(io.BytesIO(base64.b64decode(img)))
 
-                    image.save(buffer, 'PNG', pnginfo=metadata)
-                    buffer.seek(0)
+                    # grab png info
+                    png_payload = {
+                        "image": "data:image/png;base64," + img
+                    }
+                    png_response = s.post(url=f'{settings.global_var.url}/sdapi/v1/png-info', json=png_payload)
 
-                    file = discord.File(fp=buffer, filename=f'{queue_object.seed}-{count}.png')
-                    queuehandler.process_post(
-                        self, queuehandler.PostObject(
-                            self, queue_object.ctx, content=content, file=file, embed='', view=view))
+                    metadata = PngImagePlugin.PngInfo()
+                    metadata.add_text("parameters", png_response.json().get("info"))
+
+                    epoch_time = int(time.time())
+                    file_path = f'{settings.global_var.dir}/{epoch_time}-{queue_object.seed}-{file_name[0:120]}-{count}.png'
+                    if settings.global_var.save_outputs == 'True':
+                        image.save(file_path, pnginfo=metadata)
+                        print(f'Saved image: {file_path}')
+
+                    settings.stats_count(1)
+
+                    # post to discord
+                    with io.BytesIO() as buffer:
+                        image = Image.open(io.BytesIO(base64.b64decode(img)))
+
+                        # add stealth pnginfo
+                        image.putalpha(255)
+                        pixels = image.load()
+                        str_parameters = png_response.json().get("info")
+                        signature_str = 'stealth_pnginfo'
+                        binary_signature = ''.join(format(byte, '08b') for byte in signature_str.encode('utf-8'))
+                        binary_param = ''.join(format(byte, '08b') for byte in str_parameters.encode('utf-8'))
+                        param_len = len(binary_param)
+                        binary_param_len = format(param_len, '032b')
+                        binary_data = binary_signature + binary_param_len + binary_param
+                        index = 0
+                        for x in range(queue_object.width):
+                            for y in range(queue_object.height):
+                                if index < len(binary_data):
+                                    r, g, b, a = pixels[x, y]
+                                    a = (a & ~1) | int(binary_data[index])
+                                    pixels[x, y] = (r, g, b, a)
+                                    index += 1
+                                else:
+                                    break
+
+                        image.save(buffer, 'PNG', pnginfo=metadata)
+                        buffer.seek(0)
+
+                        file = discord.File(fp=buffer, filename=f'{queue_object.seed}-{count}.png')
+
+                        files.append(file)
+
+                    i += 1
+                queuehandler.process_post(
+                    self, queuehandler.PostObject(
+                        self, queue_object.ctx, content=content, files=files, embed='', view=view))
                 # increment seed for view when using batch
                 if count != len(image_data):
                     batch_seed = list(queue_object.view.input_tuple)
