@@ -449,16 +449,9 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 draw_time = '{0:.3f}'.format(end_time - start_time)
                 message = f'my {noun_descriptor} of ``{queue_object.simple_prompt}`` took me ``{draw_time}`` seconds!'
 
-                view = queue_object.view
-                if count == 1:
+                if count == 0:
                     content = f'<@{queue_object.ctx.author.id}>, {message}'
-                # only enable buttons on last image in batch
-                if len(image_data) > 1:
-                    if count == 1:
-                        content = f'<@{queue_object.ctx.author.id}>, {message}\n' \
-                                  f'*Please use the context menu for drawings without buttons.*'
-                    if count != len(image_data):
-                        view = None
+
                 for j in range(9):
                     count += 1
 
@@ -518,9 +511,18 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                         files.append(file)
 
                     i += 1
+
+                view = queue_object.view
+                # only enable buttons on last image in batch
+                if len(image_data) > 1:
+                    if count == 1:
+                        content = f'<@{queue_object.ctx.author.id}>, {message}\n' \
+                                  f'*Please use the context menu for drawings without buttons.*'
+                    if count != len(image_data):
+                        view = None
                 queuehandler.process_post(
                     self, queuehandler.PostObject(
-                        self, queue_object.ctx, content=content, files=files, embed='', view=view))
+                        self, queue_object.ctx, content=content, file=None, files=files, embed='', view=view))
                 # increment seed for view when using batch
                 if count != len(image_data):
                     batch_seed = list(queue_object.view.input_tuple)
