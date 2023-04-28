@@ -68,7 +68,7 @@ class IdentifyCog(commands.Cog):
         elif phrasing == 'Tags':
             phrasing = 'deepdanbooru'
         else:
-            await ctxmenuhandler.parse_image_info(ctx, init_image.url, "slash")
+            await ctxmenuhandler.parse_image_info(None, [init_image.url], "slash")
             return
 
         # set up tuple of parameters to pass into the Discord view
