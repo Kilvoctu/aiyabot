@@ -462,8 +462,7 @@ class IdentifyView(View):
                 button.disabled = self.input_tuple[2]-1 < 0
                 self.children[1].disabled = self.input_tuple[2]+1 >= len(self.input_tuple[1])
                 await interaction.response.edit_message(embed=embed, view=self)
-        except(Exception,) as exc:
-            print(exc)
+        except(Exception,):
             await interaction.response.edit_message(view=None)
             await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
 
@@ -479,7 +478,6 @@ class IdentifyView(View):
                 button.disabled = self.input_tuple[2]+1 >= len(self.input_tuple[1])
                 self.children[0].disabled = self.input_tuple[2]-1 < 0
                 await interaction.response.edit_message(embed=embed, view=self)
-        except(Exception,) as exc:
-            print(exc)
+        except(Exception,):
             await interaction.response.edit_message(view=None)
             await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
