@@ -40,8 +40,9 @@ def style_remove(search, field):
     return field.strip(',')
 
 
-async def parse_image_info(ctx, image_url, command):
+async def parse_image_info(ctx, image_urls, command, index=0):
     message = ''
+    image_url = image_urls[index]
     try:
         # construct a payload
         image = base64.b64encode(requests.get(image_url, stream=True).content).decode('utf-8')
@@ -196,7 +197,15 @@ async def parse_image_info(ctx, image_url, command):
         if command == 'button':
             return embed
 
-        await ctx.respond(embed=embed, ephemeral=True)
+        input_tuple = (None, image_urls, index)
+        view = viewhandler.IdentifyView(input_tuple)
+
+        if len(image_urls)==1:
+            view = None
+        else:
+            embed.title += " (1/"+str(len(image_urls))+")"
+
+        await ctx.respond(embed=embed, view=view, ephemeral=True)
     except Exception as e:
         print('The image info command broke: ' + str(e))
         if command == 'slash':
@@ -218,8 +227,7 @@ async def get_image_info(ctx, message: discord.Message):
         await ctx.respond(content="No images were found in the message...", ephemeral=True)
         return
 
-    for image_url in urls:
-        await parse_image_info(ctx, image_url, "context")
+    await parse_image_info(ctx, urls, "context")
 
 
 async def quick_upscale(self, ctx, message: discord.Message):

@@ -389,10 +389,12 @@ class DrawView(View):
         # reuse "read image info" command from ctxmenuhandler
         init_url = None
         try:
-            attachment = self.message.attachments[0]
+            attachments = []
+            for attachment in self.message.attachments:
+                attachments.append(attachment.url)
             if self.input_tuple[12]:
                 init_url = self.input_tuple[12].url
-            embed = await ctxmenuhandler.parse_image_info(init_url, attachment.url, "button")
+            embed = await ctxmenuhandler.parse_image_info(init_url, attachments, "button")
             await interaction.response.send_message(embed=embed, ephemeral=True)
         except Exception as e:
             print('The clipboard button broke: ' + str(e))
@@ -441,3 +443,41 @@ class DeleteView(View):
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.\n"
                                             "You can react with ❌ to delete the image.", ephemeral=True)
+
+class IdentifyView(View):
+    def __init__(self, input_tuple):
+        super().__init__(timeout=None)
+        self.input_tuple = input_tuple
+
+    @discord.ui.button(
+        custom_id="button_prev",
+        emoji="◀️",
+        disabled=True)
+    async def prev(self, button, interaction):
+        try:
+            if self.input_tuple[2]-1 >= 0:
+                self.input_tuple = (self.input_tuple[0],self.input_tuple[1],self.input_tuple[2]-1)
+                embed = await ctxmenuhandler.parse_image_info(self.input_tuple[0], self.input_tuple[1], 'button', self.input_tuple[2])
+                embed.title+=" ("+str(self.input_tuple[2]+1)+"/"+str(len(self.input_tuple[1]))+")"
+                button.disabled = self.input_tuple[2]-1 < 0
+                self.children[1].disabled = self.input_tuple[2]+1 >= len(self.input_tuple[1])
+                await interaction.response.edit_message(embed=embed, view=self)
+        except(Exception,):
+            await interaction.response.edit_message(view=None)
+            await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
+
+    @discord.ui.button(
+        custom_id="button_next",
+        emoji="▶️")
+    async def next(self, button, interaction):
+        try:
+            if self.input_tuple[2]+1 < len(self.input_tuple[1]):
+                self.input_tuple = (self.input_tuple[0],self.input_tuple[1],self.input_tuple[2]+1)
+                embed = await ctxmenuhandler.parse_image_info(self.input_tuple[0], self.input_tuple[1], 'button', self.input_tuple[2])
+                embed.title+=" ("+str(self.input_tuple[2]+1)+"/"+str(len(self.input_tuple[1]))+")"
+                button.disabled = self.input_tuple[2]+1 >= len(self.input_tuple[1])
+                self.children[0].disabled = self.input_tuple[2]-1 < 0
+                await interaction.response.edit_message(embed=embed, view=self)
+        except(Exception,):
+            await interaction.response.edit_message(view=None)
+            await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
