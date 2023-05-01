@@ -480,27 +480,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 with io.BytesIO() as buffer:
                     image = Image.open(io.BytesIO(base64.b64decode(i)))
 
-                    # add stealth pnginfo
-                    image.putalpha(255)
-                    pixels = image.load()
-                    str_parameters = png_response.json().get("info")
-                    signature_str = 'stealth_pnginfo'
-                    binary_signature = ''.join(format(byte, '08b') for byte in signature_str.encode('utf-8'))
-                    binary_param = ''.join(format(byte, '08b') for byte in str_parameters.encode('utf-8'))
-                    param_len = len(binary_param)
-                    binary_param_len = format(param_len, '032b')
-                    binary_data = binary_signature + binary_param_len + binary_param
-                    index = 0
-                    for x in range(queue_object.width):
-                        for y in range(queue_object.height):
-                            if index < len(binary_data):
-                                r, g, b, a = pixels[x, y]
-                                a = (a & ~1) | int(binary_data[index])
-                                pixels[x, y] = (r, g, b, a)
-                                index += 1
-                            else:
-                                break
-
                     image.save(buffer, 'PNG', pnginfo=metadata)
                     buffer.seek(0)
 
