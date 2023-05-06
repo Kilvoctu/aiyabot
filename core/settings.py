@@ -316,11 +316,10 @@ def authenticate_user():
     if global_var.api_auth:
         s.auth = (global_var.api_user, global_var.api_pass)
 
-    # do a check to see if --gradio-auth is set
+    # do a check if authentication is needed
     if global_var.gradio_auth is None:
         r = s.get(global_var.url + '/sdapi/v1/cmd-flags')
-        response_data = r.json()
-        if response_data['gradio_auth']:
+        if r.status_code == 403:
             global_var.gradio_auth = True
         else:
             global_var.gradio_auth = False
