@@ -24,6 +24,7 @@ self.load_extension('core.stablecog')
 self.load_extension('core.upscalecog')
 self.load_extension('core.identifycog')
 self.load_extension('core.infocog')
+self.load_extension('core.batchcog')
 
 
 # stats slash command

@@ -323,7 +323,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if clip_skip != settings.read(channel)['clip_skip']:
             reply_adds += f'\nCLIP skip: ``{clip_skip}``'
             
-        epoch_time = int(time.time()) 
+        epoch_time = int(time.time())
 
         # set up tuple of parameters to pass into the Discord view
         input_tuple = (
@@ -453,17 +453,21 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 num_grids = math.ceil(image_count / 25)
                 grid_count = 25 if num_grids > 1 else image_count
                 last_grid_count = image_count % 25
+                if num_grids > 1 and image_count % 25 == 0:
+                    last_grid_count = 25
 
                 if aspect_ratio <= 1:
                     grid_cols = int(math.ceil(math.sqrt(grid_count)))
                     grid_rows = math.ceil(grid_count / grid_cols)
-                    last_grid_cols = int(math.ceil(math.sqrt(last_grid_count)))
-                    last_grid_rows = math.ceil(last_grid_count / last_grid_cols)
+                    if last_grid_count > 0:
+                        last_grid_cols = int(math.ceil(math.sqrt(last_grid_count)))
+                        last_grid_rows = math.ceil(last_grid_count / last_grid_cols)
                 else:
                     grid_rows = int(math.ceil(math.sqrt(grid_count)))
                     grid_cols = math.ceil(grid_count / grid_rows)
-                    last_grid_rows = int(math.ceil(math.sqrt(last_grid_count)))
-                    last_grid_cols = math.ceil(last_grid_count / last_grid_rows)
+                    if last_grid_count > 0:
+                        last_grid_rows = int(math.ceil(math.sqrt(last_grid_count)))
+                        last_grid_cols = math.ceil(last_grid_count / last_grid_rows)
 
                 for i in range(num_grids):
                     if i == num_grids:
@@ -476,12 +480,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                         width = last_grid_cols * queue_object.width
                         height = last_grid_rows * queue_object.height
                     image = Image.new('RGB', (width, height))
-                    print(f"width: {width}, height: {height}")
                     grids.append(image)
-                
-                print(f"num_grids: {num_grids}, grid_cols: {grid_cols}, grid_rows: {grid_rows}, last_grid_cols: {last_grid_cols}, last_grid_rows: {last_grid_rows}")
 
-            
             for i in image_data:
                 count += 1
                 image = Image.open(io.BytesIO(base64.b64decode(i)))
@@ -542,18 +542,25 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                         grid_y *= queue_object.height
 
                     grids[current_grid].paste(grid_image[0], (grid_x, grid_y))
-                    print(f"grid_index: {grid_index}, current_grid: {current_grid}, grid_x: {grid_x}, grid_y: {grid_y}")
                     grid_index += 1
 
                 
                 current_grid = 0
                 for grid in grids:
-                    filename=f'{queue_object.seed}-{current_grid}.png'
-                    if current_grid == 0:
-                        content = f'<@{queue_object.ctx.author.id}>, {message}'
+                    if current_grid < num_grids -1:
+                        id_start = current_grid * grid_count + 1
+                        id_end = id_start + grid_count - 1
                     else:
-                        content = f'> for {queue_object.ctx.author.name}'
+                        id_start = current_grid * grid_count + 1
+                        id_end = id_start + last_grid_count - 1
+                    filename=f'{queue_object.seed}-{current_grid}.png'
                     file = add_metadata_to_image(grid,images[current_grid * 25][2], filename)
+                    if current_grid == 0:
+                        content = f'<@{queue_object.ctx.author.id}>, {message}\n Batch ID: {epoch_time}-{queue_object.seed}\n Image IDs: {id_start}-{id_end}'
+                    else:
+                        content = f'> for {queue_object.ctx.author.name}, use /batch to retrieve.\n Batch ID: {epoch_time}-{queue_object.seed}\n Image IDs: {id_start}-{id_end}'
+                        view = None
+                        
                     current_grid += 1
                     # post discord message
                     queuehandler.process_post(
@@ -585,28 +592,6 @@ def setup(bot):
 
 def add_metadata_to_image(image, str_parameters, filename):
     with io.BytesIO() as buffer:
-        # add fully opaque alpha channel
-        image.putalpha(255)
-
-        # encode metadata into image
-        pixels = image.load()
-        signature_str = 'stealth_pnginfo'
-        binary_signature = ''.join(format(byte, '08b') for byte in signature_str.encode('utf-8'))
-        binary_param = ''.join(format(byte, '08b') for byte in str_parameters.encode('utf-8'))
-        param_len = len(binary_param)
-        binary_param_len = format(param_len, '032b')
-        binary_data = binary_signature + binary_param_len + binary_param
-        index = 0
-        for x in range(image.width):
-            for y in range(image.height):
-                if index < len(binary_data):
-                    r, g, b, a = pixels[x, y]
-                    a = (a & ~1) | int(binary_data[index])
-                    pixels[x, y] = (r, g, b, a)
-                    index += 1
-                else:
-                    break
-
         # setup metadata
         metadata = PngImagePlugin.PngInfo()
         metadata.add_text("parameters", str_parameters)

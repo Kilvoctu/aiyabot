@@ -118,11 +118,6 @@ class UpscaleCog(commands.Cog):
                 await ctx.send_response('I need an image to upscale!', ephemeral=True)
                 has_image = False
 
-        # pull the name from the image
-        disassembled = urlparse(init_image.url)
-        filename, file_ext = splitext(basename(disassembled.path))
-        self.file_name = filename
-
         # formatting aiya initial reply
         reply_adds = ''
         if upscaler_2:
@@ -169,9 +164,22 @@ class UpscaleCog(commands.Cog):
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.UpscaleObject):
         try:
             start_time = time.time()
+            image_url = queue_object.init_image
 
+            if image_url.startswith('file://'):
+                # If image_url starts with file://, open the file locally and read its contents
+                with open(image_url[7:], 'rb') as f:
+                    image = base64.b64encode(f.read()).decode('utf-8')
+            else:
+                # If image_url doesn't start with file://, use requests to get the image data
+                image = base64.b64encode(requests.get(image_url, stream=True).content).decode('utf-8')
+
+            # pull the name from the image
+            disassembled = urlparse(image_url)
+            filename, file_ext = splitext(basename(disassembled.path))
+            self.file_name = filename
+            
             # construct a payload
-            image = base64.b64encode(requests.get(queue_object.init_image.url, stream=True).content).decode('utf-8')
             payload = {
                 "upscaling_resize": queue_object.resize,
                 "upscaler_1": queue_object.upscaler_1,
