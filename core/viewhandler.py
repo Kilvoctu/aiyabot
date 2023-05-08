@@ -409,14 +409,11 @@ class DrawView(View):
                     buttons_free = False
             if buttons_free:
                 # check if we are dealing with a batch or a single image.
-                print(f'Batch size: {self.input_tuple[13]}')
                 batch = self.input_tuple[13]
-                if batch[0] != 1 and batch[1] != 1:
+                if batch[0] != 1 or batch[1] != 1:
                     await interaction.response.send_message("Use the drop down menu to upscale batch images!", ephemeral=True) # tell user to use dropdown for upscaling
                 else:
                     init_image = self.message.attachments[0]
-                    print(f'{init_image}')
-                
                     ctx = self.input_tuple[0]
                     channel = '% s' % ctx.channel.id
                     settings.check(channel)

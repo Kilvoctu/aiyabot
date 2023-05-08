@@ -166,16 +166,17 @@ class UpscaleCog(commands.Cog):
             start_time = time.time()
             image_url = queue_object.init_image
 
-            if image_url.startswith('file://'):
+            if isinstance(image_url, str) and image_url.startswith('file://'):
                 # If image_url starts with file://, open the file locally and read its contents
+                disassembled = urlparse(image_url)
                 with open(image_url[7:], 'rb') as f:
                     image = base64.b64encode(f.read()).decode('utf-8')
             else:
                 # If image_url doesn't start with file://, use requests to get the image data
-                image = base64.b64encode(requests.get(image_url, stream=True).content).decode('utf-8')
+                disassembled = urlparse(image_url.url)
+                image = base64.b64encode(requests.get(image_url.url, stream=True).content).decode('utf-8')
 
             # pull the name from the image
-            disassembled = urlparse(image_url)
             filename, file_ext = splitext(basename(disassembled.path))
             self.file_name = filename
             
