@@ -530,7 +530,7 @@ class DownloadMenu(discord.ui.Select):
                 if files:
                     blocks = [files[i:i+10] for i in range(0, len(files), 10)]
                     for block in blocks:
-                        await interaction.response(f'<@{interaction.author.id}>, Here are the batch files you requested', files=block, view=DeleteView(self.input_tuple))
+                        await interaction.response(f'<@{interaction.user.id}>, Here are the batch files you requested', files=block, view=DeleteView(self.input_tuple))
             else:
                 await interaction.response.send_message("You can't download other people's images!", ephemeral=True)
         
