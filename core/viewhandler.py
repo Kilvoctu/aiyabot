@@ -528,7 +528,7 @@ class DownloadMenu(discord.ui.Select):
                     files.append(file)
                 
                 if files:
-                    await interaction.response.send_message(f'<@{interaction.user.id}>, please wait I am fetching your requested images', files=block, view=DeleteView(self.input_tuple))
+                    await interaction.response.send_message(f'<@{interaction.user.id}>, please wait I am fetching your requested images', view=DeleteView(self.input_tuple))
                     blocks = [files[i:i+10] for i in range(0, len(files), 10)]
                     for block in blocks:
                         await interaction.followup.send(f'<@{interaction.user.id}>, Here are the batch files you requested', files=block, view=DeleteView(self.input_tuple))
