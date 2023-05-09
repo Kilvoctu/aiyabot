@@ -558,7 +558,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     if current_grid == 0:
                         content = f'<@{queue_object.ctx.author.id}>, {message}\n Batch ID: {epoch_time}-{queue_object.seed}\n Image IDs: {id_start}-{id_end}'
                     else:
-                        content = f'> for {queue_object.ctx.author.name}, use /batch to retrieve.\n Batch ID: {epoch_time}-{queue_object.seed}\n Image IDs: {id_start}-{id_end}'
+                        content = f'> for {queue_object.ctx.author.name}, use /info or context menu to retrieve.\n Batch ID: {epoch_time}-{queue_object.seed}\n Image IDs: {id_start}-{id_end}'
                         view = None
                         
                     current_grid += 1
