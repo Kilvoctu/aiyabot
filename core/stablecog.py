@@ -477,7 +477,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     if i == num_grids:
                         continue
                     
-                    if i < num_grids - 1:
+                    if i < num_grids - 1 or last_grid_count == 0:
                         width = grid_cols * queue_object.width
                         height = grid_rows * queue_object.height
                     else: 
