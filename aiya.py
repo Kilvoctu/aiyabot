@@ -47,6 +47,11 @@ async def quick_upscale(ctx, message: discord.Message):
     await ctxmenuhandler.quick_upscale(self, ctx, message)
 
 
+@self.message_command(name=f"Download Batch")
+async def batch_download(ctx, message: discord.Message):
+    await ctxmenuhandler.batch_download(ctx, message)
+
+
 @self.event
 async def on_ready():
     self.logger.info(f'Logged in as {self.user.name} ({self.user.id})')

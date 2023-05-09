@@ -322,11 +322,14 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             reply_adds += f'\nFace restoration: ``{facefix}``'
         if clip_skip != settings.read(channel)['clip_skip']:
             reply_adds += f'\nCLIP skip: ``{clip_skip}``'
+            
+        epoch_time = int(time.time())
 
         # set up tuple of parameters to pass into the Discord view
         input_tuple = (
             ctx, simple_prompt, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler, seed, strength,
-            init_image, batch, styles, facefix, highres_fix, clip_skip, extra_net)
+            init_image, batch, styles, facefix, highres_fix, clip_skip, extra_net, epoch_time)
+        
         view = viewhandler.DrawView(input_tuple)
         # setup the queue
         user_queue_limit = settings.queue_check(ctx.author)
@@ -433,10 +436,52 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             # create safe/sanitized filename
             keep_chars = (' ', '.', '_')
             file_name = "".join(c for c in queue_object.simple_prompt if c.isalnum() or c in keep_chars).rstrip()
+            epoch_time = queue_object.epoch_time
 
             # save local copy of image and prepare PIL images
             image_data = response_data['images']
             count = 0
+            image_count = len(image_data)
+            batch = False
+
+            # setup batch params
+            if queue_object.batch[0] > 1 or queue_object.batch[1] > 1:
+                batch = True
+                grids = []
+                images = []
+                aspect_ratio = queue_object.width / queue_object.height
+                num_grids = math.ceil(image_count / 25)
+                grid_count = 25 if num_grids > 1 else image_count
+                last_grid_count = image_count % 25
+                if num_grids > 1 and image_count % 25 == 0:
+                    last_grid_count = 25
+
+                if aspect_ratio <= 1:
+                    grid_cols = int(math.ceil(math.sqrt(grid_count)))
+                    grid_rows = math.ceil(grid_count / grid_cols)
+                    if last_grid_count > 0:
+                        last_grid_cols = int(math.ceil(math.sqrt(last_grid_count)))
+                        last_grid_rows = math.ceil(last_grid_count / last_grid_cols)
+                else:
+                    grid_rows = int(math.ceil(math.sqrt(grid_count)))
+                    grid_cols = math.ceil(grid_count / grid_rows)
+                    if last_grid_count > 0:
+                        last_grid_rows = int(math.ceil(math.sqrt(last_grid_count)))
+                        last_grid_cols = math.ceil(last_grid_count / last_grid_rows)
+
+                for i in range(num_grids):
+                    if i == num_grids:
+                        continue
+                    
+                    if i < num_grids - 1 or last_grid_count == 0:
+                        width = grid_cols * queue_object.width
+                        height = grid_rows * queue_object.height
+                    else: 
+                        width = last_grid_cols * queue_object.width
+                        height = last_grid_rows * queue_object.height
+                    image = Image.new('RGB', (width, height))
+                    grids.append(image)
+
             for i in image_data:
                 count += 1
                 image = Image.open(io.BytesIO(base64.b64decode(i)))
@@ -449,50 +494,86 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
                 metadata = PngImagePlugin.PngInfo()
                 metadata.add_text("parameters", png_response.json().get("info"))
+                str_parameters = png_response.json().get("info")
 
-                epoch_time = int(time.time())
-                file_path = f'{settings.global_var.dir}/{epoch_time}-{queue_object.seed}-{file_name[0:120]}-{count}.png'
-                if settings.global_var.save_outputs == 'True':
+                file_path = f'{settings.global_var.dir}/{epoch_time}-{queue_object.seed}-{count}.png'
+
+                # if we are using a batch we need to save the files to disk
+                if settings.global_var.save_outputs == 'True' or batch == True:
                     image.save(file_path, pnginfo=metadata)
                     print(f'Saved image: {file_path}')
 
+                if batch == True:
+                    image_data = (image, file_path, str_parameters)
+                    images.append(image_data)
+                    
                 settings.stats_count(1)
 
-                # set up discord message
-                content = f'> for {queue_object.ctx.author.name}'
-                image_count = len(image_data)
-                noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
-                draw_time = '{0:.3f}'.format(end_time - start_time)
-                message = f'my {noun_descriptor} of ``{queue_object.simple_prompt}`` took me ``{draw_time}`` seconds!'
-
-                view = queue_object.view
-                if count == 1:
-                    content = f'<@{queue_object.ctx.author.id}>, {message}'
-                # only enable buttons on last image in batch
-                if len(image_data) > 1:
-                    if count == 1:
-                        content = f'<@{queue_object.ctx.author.id}>, {message}\n' \
-                                  f'*Please use the context menu for drawings without buttons.*'
-                    if count != len(image_data):
-                        view = None
-
-                # post to discord
-                with io.BytesIO() as buffer:
-                    image = Image.open(io.BytesIO(base64.b64decode(i)))
-
-                    image.save(buffer, 'PNG', pnginfo=metadata)
-                    buffer.seek(0)
-
-                    file = discord.File(fp=buffer, filename=f'{queue_object.seed}-{count}.png')
-                    queuehandler.process_post(
-                        self, queuehandler.PostObject(
-                            self, queue_object.ctx, content=content, file=file, embed='', view=view))
                 # increment seed for view when using batch
                 if count != len(image_data):
                     batch_seed = list(queue_object.view.input_tuple)
                     batch_seed[10] += 1
                     new_tuple = tuple(batch_seed)
                     queue_object.view.input_tuple = new_tuple
+
+            # set up discord message
+            content = f'> for {queue_object.ctx.author.name}'
+            noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
+            draw_time = '{0:.3f}'.format(end_time - start_time)
+            message = f'my {noun_descriptor} of ``{queue_object.simple_prompt}`` took me ``{draw_time}`` seconds!'
+
+            view = queue_object.view
+
+            if batch == True:
+                current_grid = 0
+                grid_index = 0
+                for grid_image in images:
+                    if grid_index >= grid_count:
+                        grid_index = 0
+                        current_grid += 1
+
+                    if current_grid < num_grids - 1 or last_grid_count == 0:
+                        grid_y, grid_x = divmod(grid_index, grid_cols)
+                        grid_x *= queue_object.width
+                        grid_y *= queue_object.height
+                    else:
+                        grid_y, grid_x = divmod(grid_index, last_grid_cols)
+                        grid_x *= queue_object.width
+                        grid_y *= queue_object.height
+
+                    grids[current_grid].paste(grid_image[0], (grid_x, grid_y))
+                    grid_index += 1
+
+                
+                current_grid = 0
+                for grid in grids:
+                    if current_grid < num_grids -1 or last_grid_count == 0:
+                        id_start = current_grid * grid_count + 1
+                        id_end = id_start + grid_count - 1
+                    else:
+                        id_start = current_grid * grid_count + 1
+                        id_end = id_start + last_grid_count - 1
+                    filename=f'{queue_object.seed}-{current_grid}.png'
+                    file = add_metadata_to_image(grid,images[current_grid * 25][2], filename)
+                    if current_grid == 0:
+                        content = f'<@{queue_object.ctx.author.id}>, {message}\n Batch ID: {epoch_time}-{queue_object.seed}\n Image IDs: {id_start}-{id_end}'
+                    else:
+                        content = f'> for {queue_object.ctx.author.name}, use /info or context menu to retrieve.\n Batch ID: {epoch_time}-{queue_object.seed}\n Image IDs: {id_start}-{id_end}'
+                        view = None
+                        
+                    current_grid += 1
+                    # post discord message
+                    queuehandler.process_post(
+                        self, queuehandler.PostObject(
+                            self, queue_object.ctx, content=content, file=file, embed='', view=view))
+            
+            else:
+                content = f'<@{queue_object.ctx.author.id}>, {message}'
+                filename=f'{queue_object.seed}-{count}.png'
+                file = add_metadata_to_image(image,str_parameters, filename)
+                queuehandler.process_post(
+                    self, queuehandler.PostObject(
+                        self, queue_object.ctx, content=content, file=file, embed='', view=view))
 
         except KeyError as e:
             embed = discord.Embed(title='txt2img failed', description=f'An invalid parameter was found!\n{e}',
@@ -508,3 +589,17 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
 def setup(bot):
     bot.add_cog(StableCog(bot))
+
+def add_metadata_to_image(image, str_parameters, filename):
+    with io.BytesIO() as buffer:
+        # setup metadata
+        metadata = PngImagePlugin.PngInfo()
+        metadata.add_text("parameters", str_parameters)
+        # save image to buffer
+        image.save(buffer, 'PNG', pnginfo=metadata)
+
+        # reset buffer to beginning and return as bytes
+        buffer.seek(0)
+        file = discord.File(fp=buffer, filename=filename)
+
+    return file

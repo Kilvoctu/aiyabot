@@ -1,6 +1,7 @@
 import discord
 import random
 import re
+import os
 from discord.ui import InputText, Modal, View
 
 from core import ctxmenuhandler
@@ -8,6 +9,7 @@ from core import infocog
 from core import queuehandler
 from core import settings
 from core import stablecog
+from core import upscalecog
 
 '''
 The input_tuple index reference
@@ -30,10 +32,11 @@ input_tuple[0] = ctx
 [16] = highres_fix
 [17] = clip_skip
 [18] = extra_net
+[19] = epoch_time
 '''
 tuple_names = ['ctx', 'simple_prompt', 'prompt', 'negative_prompt', 'data_model', 'steps', 'width', 'height',
                'guidance_scale', 'sampler', 'seed', 'strength', 'init_image', 'batch', 'styles', 'facefix',
-               'highres_fix', 'clip_skip', 'extra_net']
+               'highres_fix', 'clip_skip', 'extra_net', 'epoch_time']
 
 
 # the modal that is used for the 🖋 button
@@ -303,6 +306,16 @@ class DrawView(View):
     def __init__(self, input_tuple):
         super().__init__(timeout=None)
         self.input_tuple = input_tuple
+        if isinstance(self.input_tuple, tuple): # only check batch if we are actually a real view
+            batch = input_tuple[13]
+            batch_count = batch[0] * batch[1]
+            if batch_count > 1:
+                download_menu = DownloadMenu(input_tuple[19], input_tuple[10], batch_count, input_tuple)
+                download_menu.callback = download_menu.callback
+                self.add_item(download_menu)
+                upscale_menu = UpscaleMenu(input_tuple[19], input_tuple[10], batch_count, input_tuple)
+                upscale_menu.callback = upscale_menu.callback
+                self.add_item(upscale_menu)
 
     # the 🖋 button will allow a new prompt and keep same parameters for everything else
     @discord.ui.button(
@@ -380,6 +393,56 @@ class DrawView(View):
             button.disabled = True
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
+    
+    # the ⬆️ button will upscale the selected image
+    @discord.ui.button(
+        custom_id="button_upscale",
+        emoji="⬆️")
+    async def button_upscale(self, button, interaction):
+        buttons_free = True
+        try:
+            # check if the output is from the person who requested it
+            if settings.global_var.restrict_buttons == 'True':
+                if interaction.user.id != self.input_tuple[0].author.id:
+                    buttons_free = False
+            if buttons_free:
+                # check if we are dealing with a batch or a single image.
+                batch = self.input_tuple[13]
+                if batch[0] != 1 or batch[1] != 1:
+                    await interaction.response.send_message("Use the drop down menu to upscale batch images!", ephemeral=True) # tell user to use dropdown for upscaling
+                else:
+                    init_image = self.message.attachments[0]
+                    ctx = self.input_tuple[0]
+                    channel = '% s' % ctx.channel.id
+                    settings.check(channel)
+                    upscaler_1 = settings.read(channel)['upscaler_1']
+                    upscale_tuple = (ctx, '2.0', init_image, upscaler_1, "None", '0.5', '0.0', '0.0', False) # Create defaults for upscale. If desired we can add options to the per channel upscale settings for this.
+
+                    print(f'Upscaling -- {interaction.user.name}#{interaction.user.discriminator}')
+
+                    # set up the draw dream and do queue code again for lack of a more elegant solution
+                    draw_dream = upscalecog.UpscaleCog(self)
+                    user_queue_limit = settings.queue_check(interaction.user)
+                    if queuehandler.GlobalQueue.dream_thread.is_alive():
+                        if user_queue_limit == "Stop":
+                            await interaction.response.send_message(content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.", ephemeral=True)
+                        else:
+                            queuehandler.GlobalQueue.queue.append(queuehandler.UpscaleObject(upscalecog.UpscaleCog(self), *upscale_tuple, DeleteView(upscale_tuple)))
+                    else:
+                        await queuehandler.process_dream(draw_dream, queuehandler.UpscaleObject(upscalecog.UpscaleCog(self), *upscale_tuple, DeleteView(upscale_tuple)))
+
+                    if user_queue_limit != "Stop":
+                        await interaction.response.send_message(
+                            f'<@{interaction.user.id}>, {settings.messages()}\nQueue: '
+                            f'``{len(queuehandler.GlobalQueue.queue)}`` - Upscaling')
+            else:
+                await interaction.response.send_message("You can't use other people's ⬆️!", ephemeral=True)
+        except Exception as e:
+            print('The upscale button broke: ' + str(e))
+            # if interaction fails, assume it's because aiya restarted (breaks buttons)
+            button.disabled = True
+            await interaction.response.edit_message(view=self)
+            await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
 
     # the 📋 button will let you review the parameters of the generation
     @discord.ui.button(
@@ -419,8 +482,7 @@ class DrawView(View):
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.\n"
                                             "You can react with ❌ to delete the image.", ephemeral=True)
-
-
+            
 class DeleteView(View):
     def __init__(self, input_tuple):
         super().__init__(timeout=None)
@@ -441,3 +503,91 @@ class DeleteView(View):
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.\n"
                                             "You can react with ❌ to delete the image.", ephemeral=True)
+            
+class DownloadMenu(discord.ui.Select):
+    def __init__(self, epoch_time, seed, batch_count, input_tuple):
+        self.input_tuple = input_tuple
+        batch_count = min(batch_count, 25)
+        max_values = min(batch_count, 25)
+        filename = [f"{epoch_time}-{seed}-{i}.png" for i in range(1, batch_count+1)]
+        input_options = [(f, str(i)) for i, f in enumerate(filename, start=1)]
+        options = [discord.SelectOption(label=option[1], value=option[0], description=option[0]) for option in input_options]
+        super().__init__(custom_id="download_menu", placeholder='Choose images to download...', min_values=1, max_values=max_values, options=options)
+    
+    async def callback(self, interaction: discord.Interaction):
+        try: 
+            buttons_free = True
+            if settings.global_var.restrict_buttons == 'True':
+                if interaction.user.id != self.input_tuple[0].author.id:
+                    buttons_free = False
+            if buttons_free:
+                files = []
+                for value in self.values:
+                    image_path = f'{settings.global_var.dir}/{value}'
+                    file = discord.File(image_path, f'{value}')
+                    files.append(file)
+                
+                if files:
+                    await interaction.response.send_message(f'<@{interaction.user.id}>, please wait I am fetching your requested images', view=None)
+                    blocks = [files[i:i+10] for i in range(0, len(files), 10)]
+                    for block in blocks:
+                        await interaction.followup.send(f'<@{interaction.user.id}>, Here are the batch files you requested', files=block, view=DeleteView(self.input_tuple))
+            else:
+                await interaction.response.send_message("You can't download other people's images!", ephemeral=True)
+        
+        except Exception as e:
+            print('The download menu broke: ' + str(e))
+            self.disabled = True
+            await interaction.response.edit_message(view=self.view)
+            await interaction.followup.send("I may have been restarted. This button no longer works.\n", ephemeral=True)
+        
+class UpscaleMenu(discord.ui.Select):
+    def __init__(self, epoch_time, seed, batch_count, input_tuple):
+        self.input_tuple = input_tuple
+        batch_count = min(batch_count, 25)
+        filename = [f"{epoch_time}-{seed}-{i}.png" for i in range(1, batch_count+1)]
+        input_options = [(f, str(i)) for i, f in enumerate(filename, start=1)]
+        options = [discord.SelectOption(label=option[1], value=option[0], description=option[0]) for option in input_options]
+        super().__init__(custom_id="upscale_menu", placeholder='Choose images to upscale...', min_values=1, max_values=1, options=options)
+    
+    async def callback(self, interaction: discord.Interaction):
+        try: 
+            buttons_free = True
+            if settings.global_var.restrict_buttons == 'True':
+                if interaction.user.id != self.input_tuple[0].author.id:
+                    buttons_free = False
+            if buttons_free:
+                partial_path = f'{settings.global_var.dir}/{self.values[0]}'
+                full_path = os.path.join(os.getcwd(), partial_path)
+                init_image = 'file://' + full_path
+                ctx = self.input_tuple[0]
+                channel = '% s' % ctx.channel.id
+                settings.check(channel)
+                upscaler_1 = settings.read(channel)['upscaler_1']
+                upscale_tuple = (ctx, '2.0', init_image, upscaler_1, "None", '0.5', '0.0', '0.0', False) # Create defaults for upscale. If desired we can add options to the per channel upscale settings for this.
+
+                print(f'Upscaling -- {interaction.user.name}#{interaction.user.discriminator}')
+
+                # set up the draw dream and do queue code again for lack of a more elegant solution
+                draw_dream = upscalecog.UpscaleCog(self)
+                user_queue_limit = settings.queue_check(interaction.user)
+                if queuehandler.GlobalQueue.dream_thread.is_alive():
+                    if user_queue_limit == "Stop":
+                        await interaction.response.send_message(content=f"Please wait! You're past your queue limit of {settings.global_var.queue_limit}.", ephemeral=True)
+                    else:
+                        queuehandler.GlobalQueue.queue.append(queuehandler.UpscaleObject(upscalecog.UpscaleCog(self), *upscale_tuple, DeleteView(upscale_tuple)))
+                else:
+                    await queuehandler.process_dream(draw_dream, queuehandler.UpscaleObject(upscalecog.UpscaleCog(self), *upscale_tuple, DeleteView(upscale_tuple)))
+
+                if user_queue_limit != "Stop":
+                    await interaction.response.send_message(
+                        f'<@{interaction.user.id}>, {settings.messages()}\nQueue: '
+                        f'``{len(queuehandler.GlobalQueue.queue)}`` - Upscaling')
+            else:
+                await interaction.response.send_message("You can't upscale other people's images!", ephemeral=True)
+        
+        except Exception as e:
+            print('The upscale menu broke: ' + str(e))
+            self.disabled = True
+            await interaction.response.edit_message(view=self.view)
+            await interaction.followup.send("I may have been restarted. This button no longer works.\n", ephemeral=True)
