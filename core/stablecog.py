@@ -536,7 +536,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                         grid_index = 0
                         current_grid += 1
 
-                    if current_grid < num_grids - 1:
+                    if current_grid < num_grids - 1 or last_grid_count == 0:
                         grid_y, grid_x = divmod(grid_index, grid_cols)
                         grid_x *= queue_object.width
                         grid_y *= queue_object.height
@@ -551,7 +551,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 
                 current_grid = 0
                 for grid in grids:
-                    if current_grid < num_grids -1:
+                    if current_grid < num_grids -1 or last_grid_count == 0:
                         id_start = current_grid * grid_count + 1
                         id_end = id_start + grid_count - 1
                     else:
