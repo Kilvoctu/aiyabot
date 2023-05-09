@@ -106,14 +106,20 @@ Note the following environment variables work with the docker image:
 
 ## Credits
 
+#### Foundation
 AIYA only exists thanks to these awesome people:
 - AUTOMATIC1111, and all the contributors to the Web UI repo.
   - https://github.com/AUTOMATIC1111/stable-diffusion-webui
 - harubaru, my entryway into Stable Diffusion (with Waifu Diffusion) and foundation for the AIYA Discord bot.
   - https://github.com/harubaru/waifu-diffusion
   - https://github.com/harubaru/discord-stable-diffusion
+
+#### Great Contributors
+These people played a large role in AIYA's development in some way:
+- solareon, for developing a more sensible way to display and interact with batches of images.
+- danstis, for dockerizing AIYA.
+- ashen-sensored, for developing a workaround for Discord removing PNG info to image uploads. *edit* Discord is no longer doing this at the moment, but credit is still due.
+  - https://github.com/ashen-sensored/sd_webui_stealth_pnginfo 
 - gingivere0, for PayloadFormatter class for the original API. Without that, I'd have given up from the start. Also has a great Discord bot as a no-slash-command alternative.
   - https://github.com/gingivere0/dalebot
-- ashen-sensored, for developing a workaround for Discord removing PNG info to image uploads.
-  - https://github.com/ashen-sensored/sd_webui_stealth_pnginfo 
 - You, for using AIYA and contributing with PRs, bug reports, feedback, and more!
