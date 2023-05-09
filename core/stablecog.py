@@ -463,15 +463,13 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 if aspect_ratio <= 1:
                     grid_cols = int(math.ceil(math.sqrt(grid_count)))
                     grid_rows = math.ceil(grid_count / grid_cols)
-                    if last_grid_count > 0:
-                        last_grid_cols = int(math.ceil(math.sqrt(last_grid_count)))
-                        last_grid_rows = math.ceil(last_grid_count / last_grid_cols)
+                    last_grid_cols = int(math.ceil(math.sqrt(last_grid_count)))
+                    last_grid_rows = math.ceil(last_grid_count / last_grid_cols)
                 else:
                     grid_rows = int(math.ceil(math.sqrt(grid_count)))
                     grid_cols = math.ceil(grid_count / grid_rows)
-                    if last_grid_count > 0:
-                        last_grid_rows = int(math.ceil(math.sqrt(last_grid_count)))
-                        last_grid_cols = math.ceil(last_grid_count / last_grid_rows)
+                    last_grid_rows = int(math.ceil(math.sqrt(last_grid_count)))
+                    last_grid_cols = math.ceil(last_grid_count / last_grid_rows)
 
                 for i in range(num_grids):
                     if i == num_grids:
