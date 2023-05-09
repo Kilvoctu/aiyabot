@@ -1,10 +1,13 @@
 import discord
 import math
 import os
+from discord import option
 from discord.ext import commands
 from discord.ui import View
+from typing import Optional
 
 from core import settings
+from core import viewhandler
 
 
 class InfoView(View):
@@ -295,6 +298,9 @@ class InfoView(View):
         embed_tips4.add_field(name="\u200B", value="\u200B")
         embed_tips4.add_field(name="📋",
                               value="The clipboard provides the information used to make the image, and even provides the command for copying!")
+        embed_tips4.add_field(name="⬆️",
+                              value="The up arrow allows you to quickly upscale a single image!")
+        embed_tips4.add_field(name="\u200B", value="\u200B")
         embed_tips4.add_field(name="❌",
                               value="The button used to delete any unwanted outputs. If this button isn't working, you can add a ❌ reaction instead.")
         embed_tips4.add_field(name="\u200B", value="\u200B")
@@ -304,18 +310,25 @@ class InfoView(View):
                                                 "To use the commands, right-click (or tap and hold) any message then find me under 'Apps'.\n"
                                                 "\nThe context menu is useful if you need to interact with images when the buttons are missing or broken, or even interacting with images not created by me.",
                                     colour=settings.global_var.embed_color)
+        
+        embed_tips6 = discord.Embed(title="Batches",
+                                    description="Batches are handled slightly differently depending on how many are generated.\n"
+                                    "The first 25 images of a batch contain dropdown menus that allow you to download or upscale images within the batch based on their id number.\n"
+                                    "Images after the first 25 can be accessed through a context menu option that will download all the images from the bot, you can also specify the batch_id and image_id under the /info command to download a portion of the images.\n"
+                                    "The batch_id is found above each batch grid as well as the image_ids that make up that grid. You can specify image_ids as a comma separated list like this 1,2,3 or with ranges such as 1,2,5-10 etc. Then I will upload each image individually to allow you to save, upscale, or remix as needed.",
+                                    color=settings.global_var.embed_color)
         # For those who fork AIYA, feel free to edit or add to this per your needs,
         # but please don't just delete me from credits and claim my work as yours.
         url = 'https://github.com/Kilvoctu/aiyabot'
         thumb = 'https://raw.githubusercontent.com/Kilvoctu/kilvoctu.github.io/master/pics/previewthumb.png'
         wiki = 'https://github.com/Kilvoctu/aiyabot/wiki#using-aiya'
-        embed_tips6 = discord.Embed(title="Extra Information",
+        embed_tips7 = discord.Embed(title="Extra Information",
                                     description=f"For more detailed documentation, check out the [wiki]({wiki}) in my [home]({url})!\n\n"
                                                 f"Also, feel free to report bugs or leave feedback! I'm open-source Python Discord bot AIYA, developed by *Kilvoctu#1238*, maintained with care."
                                                 f"\n\nPlease enjoy making AI art with me~!",
                                     colour=settings.global_var.embed_color)
-        embed_tips6.set_thumbnail(url=thumb)
-        embed_tips6.set_footer(text='Have a lovely day!', icon_url=thumb)
+        embed_tips7.set_thumbnail(url=thumb)
+        embed_tips7.set_footer(text='Have a lovely day!', icon_url=thumb)
 
         self.page = 0
         self.contents = [
@@ -324,7 +337,8 @@ class InfoView(View):
             embed_tips3,
             embed_tips4,
             embed_tips5,
-            embed_tips6
+            embed_tips6,
+            embed_tips7,
         ]
 
         await interaction.response.edit_message(view=self, embed=self.contents[0])
@@ -358,15 +372,67 @@ class InfoCog(commands.Cog):
     async def on_ready(self):
         self.bot.add_view(InfoView())
 
-    @commands.slash_command(name="info", description="Lots of useful information!")
-    async def info(self, ctx):
-        first_embed = discord.Embed(title='Select a button!',
-                                    description='You can check lists of any extra content I have loaded!'
-                                                '\nAlso check documentation for usage information!',
-                                    colour=settings.global_var.embed_color)
-        first_embed.set_footer(text='Use ◀️ and ▶️ to change pages when available')
+    @commands.slash_command(name="info", description="Lots of useful information or download batch images!")
+    @option(
+        'batch_id',
+        str,
+        description='The batch-id to download images from',
+        required=False,
+    )
+    @option(
+        'image_id',
+        str,
+        description='The id of images to be retrieved. Specified as a comma delimited list like 1,2,3 or 1,2-5,6 etc.',
+        required=False,
+    )
+    async def info(self, ctx, batch_id: Optional[str] = None, image_id: Optional[str] = None):
+        if not batch_id and not image_id:
+            first_embed = discord.Embed(title='Select a button!',
+                                        description='You can check lists of any extra content I have loaded!'
+                                                    '\nAlso check documentation for usage information!',
+                                        colour=settings.global_var.embed_color)
+            first_embed.set_footer(text='Use ◀️ and ▶️ to change pages when available')
 
-        await ctx.respond(embed=first_embed, view=InfoView(), ephemeral=True)
+            await ctx.respond(embed=first_embed, view=InfoView(), ephemeral=True)
+        else:
+            if not batch_id:
+                await ctx.respond("Please provide `batch_id`.")
+                return
+
+            if not image_id:
+                await ctx.respond("Please provide `image_id`.")
+                return
+
+            # Parse image IDs as a list of integers
+            image_ids = []
+            for id in image_id.split(','):
+                if '-' in id:
+                    start, end = map(int, id.split('-'))
+                    image_ids.extend(range(start, end+1))
+                else:
+                    image_ids.append(int(id))
+
+            # Find files corresponding to each image ID
+            files = []
+            for id_num in image_ids:
+                image_path = f'{settings.global_var.dir}/{batch_id}-{id_num}.png'
+                try:
+                    file = discord.File(image_path, f'{batch_id}-{id_num}.png')
+                    files.append(file)
+                except FileNotFoundError:
+                    pass  # Skip over missing files
+
+            # Set up tuple of parameters to pass into the Discord view
+            input_tuple = (ctx, batch_id, image_id)
+            view = viewhandler.DeleteView(input_tuple)
+
+            # Send the files as attachments
+            if files:
+                blocks = [files[i:i+10] for i in range(0, len(files), 10)]
+                for block in blocks:
+                    await ctx.respond(f'<@{ctx.author.id}>, Here are the batch files you requested', files=block, view=view)
+            else:
+                await ctx.respond(f'<@{ctx.author.id}>, The requested image ids were not found.')
 
 
 def setup(bot):

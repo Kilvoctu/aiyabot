@@ -269,3 +269,48 @@ async def quick_upscale(self, ctx, message: discord.Message):
         await ctx.send_response(
             f'<@{ctx.author.id}>, upscaling {message}by ``{resize}``x using ``{upscaler_1}``!\n'
             f'Queue: ``{len(queuehandler.GlobalQueue.queue)}``', delete_after=45.0)
+        
+async def batch_download(ctx, message: discord.Message):
+    # look for batch information in message
+    all_content = message.content
+
+    batch_id_pattern = r"Batch ID: \d+-\d+"
+    image_ids_pattern = r"Image IDs: \d+-\d+"
+    
+    batch_id = re.search(batch_id_pattern, all_content).group(0).split(": ")[1]
+    image_id = re.search(image_ids_pattern, all_content).group(0).split(": ")[1]
+    
+    if not batch_id and not image_id:
+        await ctx.respond(content="No batches were found", ephemeral=True)
+        return
+    
+    image_ids = []
+    for id in image_id.split(','):
+        if '-' in id:
+            start, end = map(int, id.split('-'))
+            image_ids.extend(range(start, end+1))
+        else:
+            image_ids.append(int(id))
+
+    # Find files corresponding to each image ID
+    files = []
+    for id_num in image_ids:
+        image_path = f'{settings.global_var.dir}/{batch_id}-{id_num}.png'
+        try:
+            file = discord.File(image_path, f'{batch_id}-{id_num}.png')
+            files.append(file)
+        except FileNotFoundError:
+            pass  # Skip over missing files
+
+    # Set up tuple of parameters to pass into the Discord view
+    input_tuple = (ctx, batch_id, image_id)
+    view = viewhandler.DeleteView(input_tuple)
+
+    # Send the files as attachments
+    if files:
+        blocks = [files[i:i+10] for i in range(0, len(files), 10)]
+        for block in blocks:
+            await ctx.respond(f'<@{ctx.author.id}>, Here are the batch files you requested', files=block, view=view)
+    else:
+        await ctx.respond(f'<@{ctx.author.id}>, The requested image ids were not found.')
+
