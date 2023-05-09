@@ -33,12 +33,10 @@ input_tuple[0] = ctx
 [17] = clip_skip
 [18] = extra_net
 [19] = epoch_time
-[20] = current_grid
-[21] = grid_size
 '''
 tuple_names = ['ctx', 'simple_prompt', 'prompt', 'negative_prompt', 'data_model', 'steps', 'width', 'height',
                'guidance_scale', 'sampler', 'seed', 'strength', 'init_image', 'batch', 'styles', 'facefix',
-               'highres_fix', 'clip_skip', 'extra_net', 'epoch_time', 'current_grid', 'grid_size']
+               'highres_fix', 'clip_skip', 'extra_net', 'epoch_time']
 
 
 # the modal that is used for the 🖋 button
@@ -510,7 +508,7 @@ class DownloadMenu(discord.ui.Select):
     def __init__(self, epoch_time, seed, batch_count, input_tuple):
         self.input_tuple = input_tuple
         batch_count = min(batch_count, 25)
-        max_values = min(batch_count, 10)
+        max_values = min(batch_count, 25)
         filename = [f"{epoch_time}-{seed}-{i}.png" for i in range(1, batch_count+1)]
         input_options = [(f, str(i)) for i, f in enumerate(filename, start=1)]
         options = [discord.SelectOption(label=option[1], value=option[0], description=option[0]) for option in input_options]
@@ -528,8 +526,12 @@ class DownloadMenu(discord.ui.Select):
                     image_path = f'{settings.global_var.dir}/{value}'
                     file = discord.File(image_path, f'{value}')
                     files.append(file)
-                await interaction.response.send_message(
-                        f'<@{interaction.user.id}>, Here is your files for downloading', files=files, view=DeleteView(self.input_tuple))
+                
+                if files:
+                    await interaction.response.send_message(f'<@{interaction.user.id}>, please wait I am fetching your requested images', view=None)
+                    blocks = [files[i:i+10] for i in range(0, len(files), 10)]
+                    for block in blocks:
+                        await interaction.followup.send(f'<@{interaction.user.id}>, Here are the batch files you requested', files=block, view=DeleteView(self.input_tuple))
             else:
                 await interaction.response.send_message("You can't download other people's images!", ephemeral=True)
         
