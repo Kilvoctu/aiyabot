@@ -419,7 +419,8 @@ def files_check():
     with open(f'{path}messages.csv', encoding='UTF-8') as csv_file:
         message_data = list(csv.reader(csv_file, delimiter='|'))
         for row in message_data:
-            global_var.wait_message.append(row[0])
+            if row:  # This checks if row is not empty
+                global_var.wait_message.append(row[0])
     global_var.wait_message_count = len(global_var.wait_message) - 1
 
     # creating files if they don't exist
