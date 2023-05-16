@@ -56,7 +56,7 @@ To generate an image from text, use the /draw command and include your prompt as
 ## Setup requirements
 
 - Set up [AUTOMATIC1111's Stable Diffusion AI Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui).
-  - AIYA is currently tested on commit `72cd27a13587c9579942577e9e3880778be195f6` of the Web UI.
+  - AIYA is currently tested on commit `89f9faa63388756314e8a1d96cf86bf5e0663045` of the Web UI.
 - Run the Web UI as local host with API (`COMMANDLINE_ARGS= --api`).
 - Clone this repo.
 - Create a file in your cloned repo called ".env", formatted like so:
