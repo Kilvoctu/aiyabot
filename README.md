@@ -10,6 +10,11 @@ To generate an image from text, use the /draw command and include your prompt as
 
 <img src=https://raw.githubusercontent.com/Kilvoctu/kilvoctu.github.io/master/pics/preview2.png>
 
+To generate a prompt from a couple of words, use the /generate command and include your text as the query.
+
+![image](https://github.com/wizz13150/aiyabot/assets/22177081/20c34f36-1b7d-412b-8e53-4e4b25562167)
+
+
 ### Currently supported options
 
 - negative prompts
@@ -36,6 +41,7 @@ To generate an image from text, use the /draw command and include your prompt as
 - /identify command - create a caption for your image.
 - /generate command - generate a prompt from text, using https://huggingface.co/Gustavosta/MagicPrompt-Stable-Diffusion
 - /stats command - shows how many /draw commands have been used.
+- /queue command - shows the size of each queue.
 - /info command - basic usage guide, other info, and download batch images.
 - /upscale command - resize your image.
 - buttons - certain outputs will contain buttons.
