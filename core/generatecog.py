@@ -9,9 +9,7 @@ from transformers import pipeline
 from typing import Optional
 
 from core import queuehandler
-from core import viewhandler
 from core import settings
-from core.queuehandler import GlobalQueue, GenerateObject
 
 
 class GenerateCog(commands.Cog):
@@ -22,14 +20,10 @@ class GenerateCog(commands.Cog):
         model = GPT2LMHeadModel.from_pretrained(self.model_path, pad_token_id=tokenizer.eos_token_id)
         self.pipe = pipeline('text-generation', model=model, tokenizer=tokenizer, max_length=100)
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        self.bot.add_view(viewhandler.DeleteView(self))
-
     @commands.slash_command(name='generate', description='Generates a prompt from text', guild_only=True)
     @option(
         'Text',
-        discord.Attachment,
+        str,
         description='Your text to produce the prompt.',
         required=True,
     )
@@ -38,18 +32,18 @@ class GenerateCog(commands.Cog):
 
         # set up the queue
         if queuehandler.GlobalQueue.dream_thread.is_alive():
-            queuehandler.GlobalQueue.queue.append(queuehandler.GenerateObject(self, ctx, prompt, viewhandler.DeleteView(self)))
+            queuehandler.GlobalQueue.queue.append(queuehandler.GenerateObject(self, ctx, prompt))
         else:
-            await queuehandler.process_dream(self, queuehandler.GenerateObject(self, ctx, prompt, viewhandler.DeleteView(self)))
+            await queuehandler.process_dream(self, queuehandler.GenerateObject(self, ctx, prompt))
         
-        await ctx.send_response(f"<@{ctx.author.id}>, I'm generating the text!", delete_after=45.0)
+        await ctx.send_response(f"<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - Your text: ``{prompt}``")
 
     def post(self, event_loop: AbstractEventLoop, post_queue_object: queuehandler.PostObject):
         event_loop.create_task(
             post_queue_object.ctx.channel.send(
                 content=post_queue_object.content,
                 embed=post_queue_object.embed,
-                view=post_queue_object.view
+                view=None
             )
         )
         if queuehandler.GlobalQueue.post_queue:
@@ -67,7 +61,7 @@ class GenerateCog(commands.Cog):
             # post to discord
             queuehandler.process_post(
                 self, queuehandler.PostObject(
-                    self, queue_object.ctx, content=f'<@{queue_object.ctx.author.id}>', file='', embed=embed, view=queue_object.view))
+                    self, queue_object.ctx, content=f'<@{queue_object.ctx.author.id}>', file='', embed=embed, view=None))
 
         except Exception as e:
             embed = discord.Embed(title='Generation failed', description=f'{e}\n{traceback.print_exc()}', color=0x00ff00)
