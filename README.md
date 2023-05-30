@@ -34,6 +34,7 @@ To generate an image from text, use the /draw command and include your prompt as
   - also can set maximum steps limit and max batch count limit
   - refresh (update AIYA's options with any changes from Web UI)
 - /identify command - create a caption for your image.
+- /generate command - generate a prompt from text, using https://huggingface.co/Gustavosta/MagicPrompt-Stable-Diffusion
 - /stats command - shows how many /draw commands have been used.
 - /info command - basic usage guide, other info, and download batch images.
 - /upscale command - resize your image.
