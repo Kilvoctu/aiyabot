@@ -31,12 +31,12 @@ class GenerateCog(commands.Cog):
                             prompt: Optional[str]):
 
         # set up the queue
-        if queuehandler.GlobalQueue.dream_thread.is_alive():
-            queuehandler.GlobalQueue.queue.append(queuehandler.GenerateObject(self, ctx, prompt))
+        if queuehandler.GlobalQueue.generate_thread.is_alive():
+            queuehandler.GlobalQueue.generate_queue.append(queuehandler.GenerateObject(self, ctx, prompt))
         else:
-            await queuehandler.process_dream(self, queuehandler.GenerateObject(self, ctx, prompt))
-        
-        await ctx.send_response(f"<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - Your text: ``{prompt}``")
+            await queuehandler.process_generate(self, queuehandler.GenerateObject(self, ctx, prompt))
+
+        await ctx.send_response(f"<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.generate_queue)}`` - Your text: ``{prompt}``")
 
     def post(self, event_loop: AbstractEventLoop, post_queue_object: queuehandler.PostObject):
         event_loop.create_task(
@@ -68,7 +68,9 @@ class GenerateCog(commands.Cog):
             event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
 
         # check each queue for any remaining tasks
-        queuehandler.process_queue()
+        if queuehandler.GlobalQueue.generate_queue:
+            event_loop.create_task(queuehandler.process_generate(self, queuehandler.GlobalQueue.generate_queue.pop(0)))
+
 
 def setup(bot):
     bot.add_cog(GenerateCog(bot))

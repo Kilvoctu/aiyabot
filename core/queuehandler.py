@@ -81,11 +81,20 @@ class PostObject:
 class GlobalQueue:
     dream_thread = Thread()
     post_event_loop = asyncio.get_event_loop()
-    queue: list[DrawObject | UpscaleObject | IdentifyObject | GenerateObject] = []
-
+    queue: list[DrawObject | UpscaleObject | IdentifyObject] = []
+    # new generate queue and thread
+    generate_queue: list[GenerateObject] = []
+    generate_thread = Thread()
+    
     post_thread = Thread()
     event_loop = asyncio.get_event_loop()
     post_queue: list[PostObject] = []
+    
+    def get_queue_sizes():
+        return {
+            "General Queue": len(GlobalQueue.queue),
+            "/Generate Queue": len(GlobalQueue.generate_queue)
+        }
 
 
 def process_queue():
@@ -97,10 +106,13 @@ def process_queue():
         start(GlobalQueue.queue)
 
 
-async def process_dream(self, queue_object: DrawObject | UpscaleObject | IdentifyObject | GenerateObject):
+async def process_dream(self, queue_object: DrawObject | UpscaleObject | IdentifyObject):
     GlobalQueue.dream_thread = Thread(target=self.dream, args=(GlobalQueue.event_loop, queue_object))
     GlobalQueue.dream_thread.start()
 
+async def process_generate(self, queue_object: GenerateObject):
+    GlobalQueue.generate_thread = Thread(target=self.dream, args=(GlobalQueue.event_loop, queue_object))
+    GlobalQueue.generate_thread.start()
 
 def process_post(self, queue_object: PostObject):
     if GlobalQueue.post_thread.is_alive():
