@@ -198,10 +198,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         if batch is None:
             batch = settings.read(channel)['batch']
 
-        # Add per channel n_prefix
-        if settings.read(channel)['n_prefix'] != "":
-            negative_prompt = settings.read(channel)['n_prefix'] + ' ' + negative_prompt
-
         # if a model is not selected, do nothing
         model_name = 'Default'
         if data_model is None:
@@ -562,9 +558,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     if current_grid == 0:
                         content = f'<@{queue_object.ctx.author.id}>, {message}\n Batch ID: {epoch_time}-{queue_object.seed}\n Image IDs: {id_start}-{id_end}'
                     else:
-
                         content = f'> for {queue_object.ctx.author.name}, use /info or context menu to retrieve.\n Batch ID: {epoch_time}-{queue_object.seed}\n Image IDs: {id_start}-{id_end}'
-
                         view = None
                         
                     current_grid += 1

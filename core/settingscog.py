@@ -74,12 +74,6 @@ class SettingsCog(commands.Cog):
         required=False,
     )
     @option(
-        'n_prefix',
-        str,
-        description='Set default negative prompt prefix for the channel',
-        required=False,
-    )
-    @option(
         'data_model',
         str,
         description='Set default data model for image generation',
@@ -204,7 +198,6 @@ class SettingsCog(commands.Cog):
     async def settings_handler(self, ctx,
                                current_settings: Optional[bool] = True,
                                n_prompt: Optional[str] = None,
-                               n_prefix: Optional[str] = None,
                                data_model: Optional[str] = None,
                                steps: Optional[int] = None,
                                max_steps: Optional[int] = 1,
@@ -230,7 +223,7 @@ class SettingsCog(commands.Cog):
         embed = discord.Embed(title="Channel Defaults Summary", description="")
         embed.set_footer(text=f'Channel id: {channel}')
         embed.colour = settings.global_var.embed_color
-        current, new, new_n_prompt, new_n_prefix = '', '', '', ''
+        current, new, new_n_prompt = '', '', ''
         dummy_prompt, lora_multi, hyper_multi = '', 0.85, 0.85
         set_new = False
 
@@ -238,8 +231,6 @@ class SettingsCog(commands.Cog):
             cur_set = settings.read(channel)
             for key, value in cur_set.items():
                 if key == 'negative_prompt':
-                    pass
-                elif key == 'n_prefix':
                     pass
                 else:
                     if value == '':
@@ -253,14 +244,6 @@ class SettingsCog(commands.Cog):
             elif len(cur_n_prompt) > 1024:
                 cur_n_prompt = f'{cur_n_prompt[:1010]}....'
             embed.add_field(name=f'Current negative prompt', value=f'``{cur_n_prompt}``', inline=True)
-            # put negative prompt prefix on a new field for hosts who have large negative prefixes
-            cur_n_prefix = f'{cur_set["n_prefix"]}'
-            if cur_n_prefix == '':
-                cur_n_prefix = ' '
-            elif len(cur_n_prefix) > 1024:
-                cur_n_prefix = f'{cur_n_prefix[:1010]}....'
-            embed.add_field(name=f'Current negative prefix', value=f'``{cur_n_prefix}``', inline=True)
-
 
         # run function to update global variables
         if refresh:
@@ -285,15 +268,6 @@ class SettingsCog(commands.Cog):
             elif len(new_n_prompt) > 1024:
                 new_n_prompt = f'{new_n_prompt[:1010]}....'
             settings.update(channel, 'negative_prompt', n_prompt)
-
-        if n_prefix is not None:
-            new_n_prefix = f'{n_prefix}'
-            if n_prefix == 'reset':
-                n_prefix = ''
-                new_n_prefix = ' '
-            elif len(new_n_prefix) > 1024:
-                new_n_prefix = f'{new_n_prefix[:1010]}....'
-            settings.update(channel, 'n_prefix', n_prefix)
 
         if data_model is not None:
             settings.update(channel, 'data_model', data_model)
@@ -429,8 +403,6 @@ class SettingsCog(commands.Cog):
             embed.add_field(name=f'New defaults', value=new, inline=False)
         if new_n_prompt:
             embed.add_field(name=f'New default negative prompt', value=f'``{new_n_prompt}``', inline=False)
-        if new_n_prefix:
-            embed.add_field(name=f'New default negative prefix', value=f'``{new_n_prefix}``', inline=False)
 
         await ctx.send_response(embed=embed, ephemeral=True)
 

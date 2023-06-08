@@ -63,7 +63,6 @@ negative_prompt_prefix = []
 
 # the fallback channel defaults template for AIYA if nothing is set
 negative_prompt = ""
-n_prefix = ""
 data_model = ""
 steps = 30
 max_steps = 50
@@ -258,7 +257,6 @@ def config_auth(config):
 
 def generate_template(template_pop, config):
     template_pop['negative_prompt'] = config['negative_prompt']
-    template_pop['n_prefix'] = config['n_prefix']
     template_pop['data_model'] = config['data_model']
     template_pop['steps'] = config['steps']
     template_pop['max_steps'] = config['max_steps']
