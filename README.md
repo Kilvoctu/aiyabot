@@ -41,7 +41,9 @@ To generate a prompt from a couple of words, use the /generate command and inclu
 - /identify command - create a caption for your image.
 - /generate command - generate a prompt from text, using https://huggingface.co/Gustavosta/MagicPrompt-Stable-Diffusion
 - /stats command - shows how many /draw commands have been used.
+
 - /queue command - shows the size of each queue.
+
 - /info command - basic usage guide, other info, and download batch images.
 - /upscale command - resize your image.
 - buttons - certain outputs will contain buttons.
