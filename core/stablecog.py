@@ -1,3 +1,5 @@
+import asyncio
+from asyncio import run_coroutine_threadsafe
 import base64
 import discord
 import io
@@ -15,6 +17,7 @@ from core import queuehandler
 from core import viewhandler
 from core import settings
 from core import settingscog
+from core.queuehandler import GlobalQueue
 
 
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
@@ -167,8 +170,9 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             clip_skip: Optional[int] = None,
                             strength: Optional[str] = None,
                             init_image: Optional[discord.Attachment] = None,
-                            init_url: Optional[str],
-                            batch: Optional[str] = None):
+                            init_url: Optional[str] = None,
+                            batch: Optional[str] = None,
+                            called_from_button=False):
 
         # update defaults with any new defaults from settingscog
         channel = '% s' % ctx.channel.id
@@ -340,8 +344,18 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 queuehandler.GlobalQueue.queue.append(queuehandler.DrawObject(self, *input_tuple, view))
         else:
             await queuehandler.process_dream(self, queuehandler.DrawObject(self, *input_tuple, view))
-        if user_queue_limit != "Stop":
-            await ctx.send_response(f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{simple_prompt}``\nSteps: ``{steps}``{reply_adds}')
+
+        message_to_send = f'<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}`` - ``{simple_prompt}``\nSteps: ``{steps}``{reply_adds}'
+
+        # check if webui is online
+        webui_is_offline = settings.check_webui_running(settings.global_var)
+        if webui_is_offline:
+            message_to_send += "\nNote: The model is currently offline. Your request won't be lost, it will be processed when it's back online !"
+
+        if called_from_button:
+            await ctx.send_followup(message_to_send)
+        else:
+            await ctx.send_response(message_to_send)
 
     # the function to queue Discord posts
     def post(self, event_loop: queuehandler.GlobalQueue.post_event_loop, post_queue_object: queuehandler.PostObject):
@@ -357,6 +371,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
     # generate the image
     def dream(self, event_loop: queuehandler.GlobalQueue.event_loop, queue_object: queuehandler.DrawObject):
+        
+        # Start progression message
+        run_coroutine_threadsafe(GlobalQueue.update_progress_message(queue_object), event_loop)
+        
         try:
             start_time = time.time()
 
@@ -516,6 +534,9 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     new_tuple = tuple(batch_seed)
                     queue_object.view.input_tuple = new_tuple
 
+            # Progression flag, job done
+            queue_object.is_done = True
+            
             # set up discord message
             content = f'> for {queue_object.ctx.author.name}'
             noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
@@ -584,7 +605,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                                   color=settings.global_var.embed_color)
             event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
         # check each queue for any remaining tasks
-        queuehandler.process_queue()
+        GlobalQueue.process_queue()
 
 
 def setup(bot):
