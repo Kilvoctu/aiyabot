@@ -60,10 +60,12 @@ class IdentifyObject:
 
 # the queue object for generate
 class GenerateObject:
-    def __init__(self, cog, ctx, prompt):
+    def __init__(self, cog, ctx, prompt, num_prompts, max_length):
         self.cog = cog
         self.ctx = ctx
         self.prompt = prompt
+        self.num_prompts = num_prompts
+        self.max_length = max_length
         
 
 # the queue object for posting to Discord
@@ -111,7 +113,7 @@ async def process_dream(self, queue_object: DrawObject | UpscaleObject | Identif
     GlobalQueue.dream_thread.start()
 
 async def process_generate(self, queue_object: GenerateObject):
-    GlobalQueue.generate_thread = Thread(target=self.dream, args=(GlobalQueue.event_loop, queue_object))
+    GlobalQueue.generate_thread = Thread(target=self.dream, args=(GlobalQueue.event_loop, queue_object, queue_object.num_prompts, queue_object.max_length))
     GlobalQueue.generate_thread.start()
 
 def process_post(self, queue_object: PostObject):
