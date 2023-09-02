@@ -105,6 +105,12 @@ class GlobalQueue:
         ctx = queue_object.ctx
         prompt = queue_object.prompt
         
+        # check for an existing progression message, if yes delete the previous one
+        async for old_msg in ctx.channel.history(limit=10):
+            if old_msg.embeds:
+                if old_msg.embeds[0].title == "Running Job Progress":
+                    await old_msg.delete()
+        
         # send first message to discord, Initialization
         embed = discord.Embed(title="Initialization...", color=discord.Color.blue())
         progress_msg = await ctx.send(embed=embed)
@@ -129,6 +135,15 @@ class GlobalQueue:
                         job = "Batch 1 out of 1"
                     elif job.startswith("task"):
                         job = "Job running locally by the owner"
+
+                    # check for walking-dead function
+                    if progress == 0:
+                        null_counter += 1
+                    else:
+                        null_counter = 0
+                    if null_counter >= 12:
+                        await progress_msg.delete()
+                        return
                     
                     # check recent messages and Spam the bottom, like pinned
                     latest_message = await ctx.channel.history(limit=1).flatten()
