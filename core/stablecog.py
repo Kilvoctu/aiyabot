@@ -1,5 +1,3 @@
-import asyncio
-from asyncio import run_coroutine_threadsafe
 import base64
 import discord
 import io
@@ -371,10 +369,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
     # generate the image
     def dream(self, event_loop: queuehandler.GlobalQueue.event_loop, queue_object: queuehandler.DrawObject):
-        
-        # Start progression message
-        run_coroutine_threadsafe(GlobalQueue.update_progress_message(queue_object), event_loop)
-        
         try:
             start_time = time.time()
 
@@ -534,9 +528,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     new_tuple = tuple(batch_seed)
                     queue_object.view.input_tuple = new_tuple
 
-            # Progression flag, job done
-            queue_object.is_done = True
-            
             # set up discord message
             content = f'> for {queue_object.ctx.author.name}'
             noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
