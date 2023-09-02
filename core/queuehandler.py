@@ -1,4 +1,7 @@
+import aiohttp
 import asyncio
+import discord
+import random
 from threading import Thread
 
 
@@ -56,7 +59,7 @@ class IdentifyObject:
         self.init_image = init_image
         self.phrasing = phrasing
         self.view = view
-        
+
 
 # the queue object for generate
 class GenerateObject:
@@ -64,7 +67,7 @@ class GenerateObject:
         self.cog = cog
         self.ctx = ctx
         self.prompt = prompt
-        
+
 
 # the queue object for posting to Discord
 class PostObject:
@@ -82,7 +85,8 @@ class GlobalQueue:
     dream_thread = Thread()
     post_event_loop = asyncio.get_event_loop()
     queue: list[DrawObject | UpscaleObject | IdentifyObject] = []
-    # new generate queue and thread
+    
+    # new generate Queue
     generate_queue: list[GenerateObject] = []
     generate_thread = Thread()
     
@@ -95,15 +99,62 @@ class GlobalQueue:
             "General Queue": len(GlobalQueue.queue),
             "/Generate Queue": len(GlobalQueue.generate_queue)
         }
+        
+    @staticmethod
+    async def update_progress_message(queue_object):
+        ctx = queue_object.ctx
+        prompt = queue_object.prompt
+        
+        # send first message to discord, Initialization
+        embed = discord.Embed(title="Initialization...", color=discord.Color.blue())
+        progress_msg = await ctx.send(embed=embed)
+        
+        # progress loop
+        null_counter = 0
+        while not queue_object.is_done:
+            async with aiohttp.ClientSession() as session:
+                async with session.get("http://127.0.0.1:7860/sdapi/v1/progress?skip_current_image=false") as response:
+                    data = await response.json()
+                    
+                    progress = round(data["progress"] * 100)
+                    eta_relative = round(data["eta_relative"])
+                    short_prompt = queue_object.prompt[:125] + "..." if len(prompt) > 125 else prompt
+                    job = data['state']['job']
+                    sampling_step = data['state']['sampling_step']
+                    sampling_steps = data['state']['sampling_steps']
+                    queue_size = len(GlobalQueue.queue)
+                    
+                    # adjust job output
+                    if job == "scripts_txt2img":
+                        job = "Batch 1 out of 1"
+                    elif job.startswith("task"):
+                        job = "Job running locally by the owner"
+                    
+                    # check recent messages and Spam the bottom, like pinned
+                    latest_message = await ctx.channel.history(limit=1).flatten()
+                    latest_message = latest_message[0] if latest_message else None
+                    
+                    if latest_message and latest_message.id != progress_msg.id:
+                        await progress_msg.delete()
+                        progress_msg = await ctx.send(embed=embed)
+                    
+                    # message update
+                    random_color = discord.Color.from_rgb(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+                    embed = discord.Embed(title=f"Running Job Progress", description=f"**Prompt**: {short_prompt}\n**Progress**: {progress}%\n**Remaining**: {eta_relative} seconds\n**Current Step**: {sampling_step}/{sampling_steps}  -  {job}\n**Queued Jobs:**: {queue_size}", color=random_color)
+                    await progress_msg.edit(embed=embed)
+                    
+                    await asyncio.sleep(0.5)
+                    
+        # done, delete
+        await progress_msg.delete()
 
+    def process_queue():
+        def start(target_queue: list[DrawObject | UpscaleObject | IdentifyObject | GenerateObject]):
+            queue_object = target_queue.pop(0)
+            queue_object.cog.dream(GlobalQueue.event_loop, queue_object)
 
-def process_queue():
-    def start(target_queue: list[DrawObject | UpscaleObject | IdentifyObject | GenerateObject]):
-        queue_object = target_queue.pop(0)
-        queue_object.cog.dream(GlobalQueue.event_loop, queue_object)
-
-    if GlobalQueue.queue:
-        start(GlobalQueue.queue)
+        if GlobalQueue.queue:
+            start(GlobalQueue.queue)
 
 
 async def process_dream(self, queue_object: DrawObject | UpscaleObject | IdentifyObject):
