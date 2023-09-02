@@ -32,6 +32,7 @@ class DrawObject:
         self.extra_net = extra_net
         self.epoch_time = epoch_time
         self.view = view
+        self.is_done = False
 
 
 # the queue object for extras - upscale
