@@ -17,6 +17,7 @@ from core import queuehandler
 from core import viewhandler
 from core import settings
 from core import settingscog
+from core.queuehandler import GlobalQueue
 
 
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
