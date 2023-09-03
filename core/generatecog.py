@@ -20,14 +20,38 @@ class PromptButton(Button):
 
     async def callback(self, interaction):
         try:
+            await interaction.response.defer()  # Différer la réponse
             prompt_index = int(self.custom_id.split("_")[1])
             prompt = self.parent_view.prompts[prompt_index]
-            await interaction.response.defer()
             await self.parent_view.stable_cog.dream_handler(self.parent_view.ctx, prompt=prompt, called_from_button=True)
+            await interaction.edit_original_response(view=self.parent_view)  # Éditer le message original
         except Exception as e:
             print(f'The draw button broke: {str(e)}')
             self.disabled = True
-            await interaction.response.edit_message(view=self.parent_view)
+            await interaction.edit_original_response(view=self.parent_view)
+            await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
+
+
+class RerollButton(Button):
+    def __init__(self, parent_view):
+        super().__init__(label="Reroll", custom_id="reroll", emoji="🔁")
+        self.parent_view = parent_view
+
+    async def callback(self, interaction):
+        try:
+            await interaction.response.defer()  # Différer la réponse
+            await self.parent_view.generate_cog.generate_handler(
+                self.parent_view.ctx, 
+                prompt=self.parent_view.prompt,
+                num_prompts=self.parent_view.num_prompts,
+                max_length=self.parent_view.max_length,
+                called_from_reroll=True
+            )
+            await interaction.edit_original_response(view=self.parent_view)  # Éditer le message original
+        except Exception as e:
+            print(f'Reroll button broke: {str(e)}')
+            self.disabled = True
+            await interaction.edit_original_response(view=self.parent_view)
             await interaction.followup.send("I may have been restarted. This button no longer works.", ephemeral=True)
 
 
@@ -39,7 +63,6 @@ class DeleteButton(Button):
     async def callback(self, interaction):
         try:
             await self.parent_view.message.delete()
-            await interaction.response.defer()
         except Exception as e:
             print(f'The delete button broke: {str(e)}')
             self.disabled = True
@@ -48,15 +71,21 @@ class DeleteButton(Button):
 
 
 class GenerateView(View):
-    def __init__(self, prompts, stable_cog, ctx, message):
+    def __init__(self, prompts, stable_cog, generate_cog, ctx, message, prompt, num_prompts, max_length):
         super().__init__(timeout=None)
         self.stable_cog = stable_cog
+        self.generate_cog = generate_cog
         self.ctx = ctx
         self.prompts = prompts
         self.message = message
+        self.prompt = prompt
+        self.num_prompts = num_prompts
+        self.max_length = max_length
         for i, prompt in enumerate(prompts):
             button = PromptButton(label=f"Draw n°{i+1}", prompt_index=i, parent_view=self)
             self.add_item(button)
+        reroll_button = RerollButton(parent_view=self)
+        self.add_item(reroll_button)
         delete_button = DeleteButton(parent_view=self)
         self.add_item(delete_button)
 
@@ -94,9 +123,9 @@ class GenerateCog(commands.Cog):
     async def generate_handler(self, ctx: discord.ApplicationContext, *,
                             prompt: Optional[str],
                             num_prompts: Optional[int]=1,
-                            max_length: Optional[int]=75):
+                            max_length: Optional[int]=75,
+                            called_from_reroll: Optional[bool]=False):
 
-        # console log
         print(f"/Generate request for {num_prompts} prompt(s) of {max_length} tokens. Text: {prompt}")
         
         # sanity check
@@ -114,7 +143,10 @@ class GenerateCog(commands.Cog):
         else:
             await queuehandler.process_generate(self, queuehandler.GenerateObject(self, ctx, prompt, num_prompts, max_length))
 
-        await ctx.send_response(f"<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.generate_queue)}`` - Your text: ``{prompt}``\nNumber of prompts: ``{num_prompts}`` - Max length: ``{max_length}``")
+        if called_from_reroll:
+            await ctx.send_followup(f"<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.generate_queue)}`` - Your text: ``{prompt}``\nNumber of prompts: ``{num_prompts}`` - Max length: ``{max_length}``")
+        else:
+            await ctx.send_response(f"<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.generate_queue)}`` - Your text: ``{prompt}``\nNumber of prompts: ``{num_prompts}`` - Max length: ``{max_length}``")
         
     def post(self, event_loop: AbstractEventLoop, post_queue_object: queuehandler.PostObject):
         event_loop.create_task(
@@ -136,8 +168,8 @@ class GenerateCog(commands.Cog):
                 generated_text = res[0]['generated_text']
                 prompts.append(generated_text)
 
-            # Schedule the task to create the view and send the message
-            event_loop.create_task(self.send_with_view(prompts, queue_object.ctx))
+            # schedule the task to create the view and send the message
+            event_loop.create_task(self.send_with_view(prompts, queue_object.ctx, queue_object.prompt, num_prompts, max_length))
 
         except Exception as e:
             embed = discord.Embed(title='Generation failed', description=f'{e}\n{traceback.print_exc()}', color=0x00ff00)
@@ -147,7 +179,7 @@ class GenerateCog(commands.Cog):
         if queuehandler.GlobalQueue.generate_queue:
             event_loop.create_task(queuehandler.process_generate(self, queuehandler.GlobalQueue.generate_queue.pop(0)))
     
-    async def send_with_view(self, prompts, ctx):
+    async def send_with_view(self, prompts, ctx, prompt, num_prompts, max_length):
         stable_cog = self.bot.get_cog('Stable Diffusion')
         
         # create embed
@@ -159,7 +191,7 @@ class GenerateCog(commands.Cog):
         message = await ctx.send(content=f'<@{ctx.author.id}>', embed=embed)
 
         # create view
-        view = GenerateView(prompts, stable_cog, ctx, message)
+        view = GenerateView(prompts, stable_cog, self, ctx, message, prompt, num_prompts, max_length)
         await message.edit(view=view)
 
 
