@@ -12,6 +12,7 @@ from core import ctxmenuhandler
 from core import queuehandler
 from core import viewhandler
 from core import settings
+from core.queuehandler import GlobalQueue
 
 
 class IdentifyCog(commands.Cog):
@@ -138,7 +139,7 @@ class IdentifyCog(commands.Cog):
                                   color=settings.global_var.embed_color)
             event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
         # check each queue for any remaining tasks
-        queuehandler.process_queue()
+        GlobalQueue.process_queue()
 
 
 def setup(bot):
