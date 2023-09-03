@@ -49,7 +49,7 @@ class DeleteButton(Button):
 
 class GenerateView(View):
     def __init__(self, prompts, stable_cog, ctx, message):
-        super().__init__()
+        super().__init__(timeout=None)
         self.stable_cog = stable_cog
         self.ctx = ctx
         self.prompts = prompts
