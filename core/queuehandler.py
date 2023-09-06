@@ -100,7 +100,31 @@ class GlobalQueue:
             "General Queue": len(GlobalQueue.queue),
             "/Generate Queue": len(GlobalQueue.generate_queue)
         }
+    
+    @staticmethod
+    def create_progress_bar(progress, total_batches=1, length=20, empty_char='□', filled_char='■', batch_char='▨', filled_batch_char='▣'):
+        filled_length = int(length * progress // 100)
+     
+        # mark batches
+        batch_marker_positions = set(int(length * i // total_batches) for i in range(1, total_batches))
         
+        bar = []
+     
+        for i in range(length):
+            # not more than available slots
+            if i < filled_length:
+                if i in batch_marker_positions:
+                    bar.append(filled_batch_char)
+                else:
+                    bar.append(filled_char)
+            else:
+                if i in batch_marker_positions:
+                    bar.append(batch_char)
+                else:
+                    bar.append(empty_char)
+     
+        return f"`[{''.join(bar)}]`"
+
     @staticmethod
     async def update_progress_message(queue_object):
         ctx = queue_object.ctx
@@ -111,7 +135,7 @@ class GlobalQueue:
             if old_msg.embeds:
                 if old_msg.embeds[0].title == "Running Job Progress":
                     await old_msg.delete()
-        
+                    
         # send first message to discord, Initialization
         embed = discord.Embed(title="Initialization...", color=discord.Color.blue())
         progress_msg = await ctx.send(embed=embed)
@@ -124,9 +148,18 @@ class GlobalQueue:
                     data = await response.json()
                     
                     progress = round(data["progress"] * 100)
-                    eta_relative = round(data["eta_relative"])
-                    short_prompt = queue_object.prompt[:125] + "..." if len(prompt) > 125 else prompt
                     job = data['state']['job']
+                    
+                    # parsing the 'job' string to get the current and total number of batches
+                    match = re.search(r'Batch (\d+) out of (\d+)', job)
+                    if match:
+                        current_batch, total_batches = map(int, match.groups())
+                    else:
+                        current_batch, total_batches = 1, 1
+                    
+                    progress_bar = GlobalQueue.create_progress_bar(progress, total_batches=total_batches)                    
+                    eta_relative = round(data["eta_relative"])
+                    short_prompt = queue_object.prompt[:125] + "..." if len(prompt) > 125 else prompt                    
                     sampling_step = data['state']['sampling_step']
                     sampling_steps = data['state']['sampling_steps']
                     queue_size = len(GlobalQueue.queue)
@@ -136,15 +169,6 @@ class GlobalQueue:
                         job = "Batch 1 out of 1"
                     elif job.startswith("task"):
                         job = "Job running locally by the owner"
-
-                    # check for walking-dead function
-                    if progress == 0:
-                        null_counter += 1
-                    else:
-                        null_counter = 0
-                    if null_counter >= 12:
-                        await progress_msg.delete()
-                        return
                     
                     # check recent messages and Spam the bottom, like pinned
                     latest_message = await ctx.channel.history(limit=1).flatten()
@@ -156,7 +180,9 @@ class GlobalQueue:
                     
                     # message update
                     random_color = discord.Color.from_rgb(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-                    embed = discord.Embed(title=f"Running Job Progress", description=f"**Prompt**: {short_prompt}\n**Progress**: {progress}%\n**Remaining**: {eta_relative} seconds\n**Current Step**: {sampling_step}/{sampling_steps}  -  {job}\n**Queued Jobs:**: {queue_size}", color=random_color)
+                    embed = discord.Embed(title=f"──── Running Job Progression ────", 
+                                          description=f"**Prompt**: {short_prompt}\n📊 {progress_bar} {progress}%\n⏳ **Remaining**: {eta_relative} seconds\n🔍 **Current Step**: {sampling_step}/{sampling_steps}  -  {job}\n👥 **Queued Jobs**: {queue_size}", 
+                                          color=random_color)
                     await progress_msg.edit(embed=embed)
                     
                     await asyncio.sleep(0.5)
@@ -178,7 +204,7 @@ async def process_dream(self, queue_object: DrawObject | UpscaleObject | Identif
     GlobalQueue.dream_thread.start()
 
 async def process_generate(self, queue_object: GenerateObject):
-    GlobalQueue.generate_thread = Thread(target=self.dream, args=(GlobalQueue.event_loop, queue_object))
+    GlobalQueue.generate_thread = Thread(target=self.dream, args=(GlobalQueue.event_loop, queue_object, queue_object.num_prompts, queue_object.max_length, queue_object.temperature, queue_object.top_k, queue_object.repetition_penalty))
     GlobalQueue.generate_thread.start()
 
 def process_post(self, queue_object: PostObject):
