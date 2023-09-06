@@ -2,22 +2,29 @@ import asyncio
 import discord
 import os
 import sys
-from core import ctxmenuhandler
-from core import settings
+from core import ctxmenuhandler, settings
 from core.logging import get_logger
 from dotenv import load_dotenv
+from discord.ext import commands
+
 from core.queuehandler import GlobalQueue
+from core.generatecog import GenerateView
+from core.metacog import MetaView
 
+# Initialize logging
+logger = get_logger(__name__)
 
-# start up initialization stuff
-self = discord.Bot()
+# Initialize the bot
 intents = discord.Intents.default()
 intents.members = True
-load_dotenv()
-self.logger = get_logger(__name__)
+intents.message_content = True
+self = commands.Bot(command_prefix=commands.when_mentioned_or("!"), intents=intents)
 
-# load extensions
-# check files and global variables
+# Initialize some startup stuff
+load_dotenv()
+logger = get_logger(__name__)
+
+# Load extensions
 settings.startup_check()
 settings.files_check()
 
@@ -27,6 +34,20 @@ self.load_extension('core.upscalecog')
 self.load_extension('core.identifycog')
 self.load_extension('core.infocog')
 self.load_extension('core.generatecog')
+self.load_extension('core.metacog')
+
+
+@self.event
+async def on_ready():
+    logger.info(f'Logged in as {self.user.name} ({self.user.id})')
+    await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='drawing tutorials.'))
+    
+    # Add persistent views
+    self.add_view(GenerateView([], None, None, None, None, "", 1, 75, 0.9, 8, 1.2))
+    self.add_view(MetaView(''))
+
+    for guild in self.guilds:
+        print(f"I'm active in {guild.id} a.k.a {guild}!")
 
 # stats slash command
 @self.slash_command(name='stats', description='How many images have I generated?')
@@ -62,14 +83,6 @@ async def batch_download(ctx, message: discord.Message):
     await ctxmenuhandler.batch_download(ctx, message)
 
 
-@self.event
-async def on_ready():
-    self.logger.info(f'Logged in as {self.user.name} ({self.user.id})')
-    await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='drawing tutorials.'))
-    for guild in self.guilds:
-        print(f"I'm active in {guild.id} a.k.a {guild}!")
-
-
 # fallback feature to delete generations if aiya has been restarted
 @self.event
 async def on_raw_reaction_add(ctx):
@@ -100,13 +113,13 @@ async def shutdown(bot):
 try:
     self.run(os.getenv('TOKEN'))
 except KeyboardInterrupt:
-    self.logger.info('Keyboard interrupt received. Exiting.')
-    asyncio.run(shutdown(self))
+    logger.info('Keyboard interrupt received. Exiting.')
+    asyncio.run(self.close())
 except SystemExit:
-    self.logger.info('System exit received. Exiting.')
-    asyncio.run(shutdown(self))
+    logger.info('System exit received. Exiting.')
+    asyncio.run(self.close())
 except Exception as e:
-    self.logger.error(e)
-    asyncio.run(shutdown(self))
+    logger.error(e)
+    asyncio.run(self.close())
 finally:
     sys.exit(0)
