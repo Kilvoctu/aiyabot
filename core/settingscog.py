@@ -19,6 +19,10 @@ class SettingsCog(commands.Cog):
         ]
 
     # do for any other lists that may exceed 25 values
+    def sampler_autocomplete(self: discord.AutocompleteContext):
+        return [
+            sampler for sampler in settings.global_var.sampler_names
+        ]
     def style_autocomplete(self: discord.AutocompleteContext):
         return [
             style for style in settings.global_var.style_names
@@ -121,7 +125,7 @@ class SettingsCog(commands.Cog):
         str,
         description='Set default sampler for the channel',
         required=False,
-        choices=settings.global_var.sampler_names,
+        autocomplete=discord.utils.basic_autocomplete(sampler_autocomplete),
     )
     @option(
         'styles',
