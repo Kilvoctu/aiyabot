@@ -86,7 +86,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         str,
         description='The sampler to use for generation.',
         required=False,
-        choices=settings.global_var.sampler_names,
+        autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.sampler_autocomplete),
     )
     @option(
         'seed',
