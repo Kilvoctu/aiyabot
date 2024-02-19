@@ -1,4 +1,6 @@
 import base64
+import contextlib
+import threading
 import discord
 import io
 import math
@@ -15,7 +17,45 @@ from core import queuehandler
 from core import viewhandler
 from core import settings
 from core import settingscog
+from threading import Thread
 
+async def update_progress(event_loop, status_message_task, s, queue_object, tries):
+    status_message = status_message_task.result()
+    try:
+        progress_data = s.get(url=f'{settings.global_var.url}/sdapi/v1/progress').json()
+
+        if progress_data["current_image"] is None and tries <= 10:
+            time.sleep(1)
+            event_loop.create_task(update_progress(event_loop, status_message_task, s, queue_object, tries + 1))
+            return
+
+        if progress_data["current_image"] is None and tries > 10:
+            return
+
+        image = Image.open(io.BytesIO(base64.b64decode(progress_data["current_image"])))
+
+        with contextlib.ExitStack() as stack:
+            buffer = stack.enter_context(io.BytesIO())
+            image.save(buffer, 'PNG')
+            buffer.seek(0)
+            file = discord.File(fp=buffer, filename=f'{queue_object.seed}.png')
+
+        ips = round((int(queue_object.steps) - progress_data["state"]["sampling_step"]) / progress_data["eta_relative"], 2)
+
+        view = viewhandler.ProgressView()
+
+        await status_message.edit(
+            content=f'**Author**: {queue_object.ctx.author.id} ({queue_object.ctx.author.name})\n'
+                    f'**Prompt**: `{queue_object.prompt}`\n**Progress**: {round(progress_data.get("progress") * 100, 2)}% '
+                    f'\n{progress_data.get("state").get("sampling_step")}/{queue_object.steps} iterations, '
+                    f'~{ips} it/s'
+                    f'\n**ETA**: {round(progress_data.get("eta_relative"), 2)} seconds',
+            files=[file], view=view)
+    except Exception as e:
+        print('Something goes wrong...', str(e))
+
+    time.sleep(1)
+    event_loop.create_task(update_progress(event_loop, status_message_task, s, queue_object, tries))
 
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
     ctx_parse = discord.ApplicationContext
@@ -359,6 +399,23 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     def dream(self, event_loop: queuehandler.GlobalQueue.event_loop, queue_object: queuehandler.DrawObject):
         try:
             start_time = time.time()
+            
+            status_message_task = event_loop.create_task(queue_object.ctx.channel.send(
+                f'**Автор**: {queue_object.ctx.author.id} ({queue_object.ctx.author.name})\n'
+                f'**Описание**: `{queue_object.prompt}`\n**Прогресс**: Инициализация...'
+                f'\n0/{queue_object.steps} итеракций, 0.00 итеракций в секунду'
+                f'\n**Осталось**: Инициализация...'))
+
+            def worker():
+                event_loop.create_task(update_progress(event_loop, status_message_task, s, queue_object, 0))
+                return
+
+            status_thread = threading.Thread(target=worker)
+
+            def start_thread(*args):
+                status_thread.start()
+
+            status_message_task.add_done_callback(start_thread)  
 
             # construct a payload for data model, then the normal payload
             model_payload = {
@@ -517,6 +574,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     queue_object.view.input_tuple = new_tuple
 
             # set up discord message
+            def post_dream():
+                event_loop.create_task(status_message_task.result().delete())
+            Thread(target=post_dream, daemon=True).start() 
+            
             content = f'> for {queue_object.ctx.author.name}'
             noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
             draw_time = '{0:.3f}'.format(end_time - start_time)
@@ -583,10 +644,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             embed = discord.Embed(title='txt2img failed', description=f'{e}\n{traceback.print_exc()}',
                                   color=settings.global_var.embed_color)
             event_loop.create_task(queue_object.ctx.channel.send(embed=embed))
+
         # check each queue for any remaining tasks
         queuehandler.process_queue()
-
-
+            
 def setup(bot):
     bot.add_cog(StableCog(bot))
 
