@@ -17,6 +17,7 @@ To generate a prompt from a couple of words, use the /generate command and inclu
 
 ### Currently supported options
 
+- live preview
 - negative prompts
 - swap model/checkpoint (_[see wiki](https://github.com/Kilvoctu/aiyabot/wiki/Model-swapping)_)
 - sampling steps
@@ -49,7 +50,8 @@ To generate a prompt from a couple of words, use the /generate command and inclu
   - 🎲 - randomize seed, then generate a new image with same parameters.
   - 📋 - view the generated image's information.
   - ⬆️ - upscale the generated image with defaults. Batch grids require use of the drop downs
-  - ❌ - deletes the generated image.
+  - ❌ - deletes the generated image. In Live preview this button interrupts generation process
+  - ➡️ - skips the current image generation in live preview and go to next batch (if there's more than 1)
 - dropdown menus - batch images produce two drop down menus for the first 25 images.
   - The first menu prompts the bot to send only the images that you select at single images
   - The second menu prompts the bot to upscale the selected image from the batch.
