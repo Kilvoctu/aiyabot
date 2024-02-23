@@ -401,10 +401,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             start_time = time.time()
             
             status_message_task = event_loop.create_task(queue_object.ctx.channel.send(
-                f'**Автор**: {queue_object.ctx.author.id} ({queue_object.ctx.author.name})\n'
-                f'**Описание**: `{queue_object.prompt}`\n**Прогресс**: Инициализация...'
-                f'\n0/{queue_object.steps} итеракций, 0.00 итеракций в секунду'
-                f'\n**Осталось**: Инициализация...'))
+                f'**Author**: {queue_object.ctx.author.id} ({queue_object.ctx.author.name})\n'
+                f'**Prompt**: `{queue_object.prompt}`\n**Progress**: initialization...'
+                f'\n0/{queue_object.steps} iteractions, 0.00 it/s'
+                f'\n**Relative ETA**: initialization...'))
 
             def worker():
                 event_loop.create_task(update_progress(event_loop, status_message_task, s, queue_object, 0))
