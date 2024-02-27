@@ -10,9 +10,8 @@ ENV TOKEN="" \
 
 WORKDIR /app
 
-# Install dependencies
+# Copy requirements
 COPY ./requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
 
 # Pull in the source code
 COPY ./resources /default/resources
