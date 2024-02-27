@@ -1,0 +1,12 @@
+.env
+resources/*.json
+resources/config.toml
+resources/models.csv
+resources/stats.txt
+outputs
+!outputs/.keep
+.idea
+venv
+venvnew
+core/MagicPrompt-SD
+.github
