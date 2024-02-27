@@ -25,7 +25,7 @@ async def update_progress(event_loop, status_message_task, s, queue_object, trie
         progress_data = s.get(url=f'{settings.global_var.url}/sdapi/v1/progress').json()
 
         if progress_data["current_image"] is None and tries <= 10:
-            time.sleep(1)
+            time.sleep(3)
             event_loop.create_task(update_progress(event_loop, status_message_task, s, queue_object, tries + 1))
             return
 
