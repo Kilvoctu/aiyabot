@@ -10,7 +10,16 @@ if python -m pip show -q py-cord ; then
 else
   printf '****************\nInstalling requirements, this may take some time!\n****************\n'
 fi
-pip install -r requirements.txt
+
+USE_GEN="${USE_GENERATE:=true}"
+
+if [ "$USE_GEN" = "true" ]; then
+  pip install -r requirements.txt
+else
+  pip install -r requirements_no_generate.txt
+fi
+
+#pip install -r requirements.txt
 
 printf '****************\nRequirements satisfied!\n****************\n'
 

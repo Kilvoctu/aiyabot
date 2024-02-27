@@ -94,6 +94,7 @@ Note the following environment variables work with the docker image:
 - `APIPASS` - API password if required for your Web UI instance.
 - `USER` - Username if required for your Web UI instance.
 - `PASS` - Password if required for your Web UI instance.
+- `USE_GENERATE` - Set whether the `/generate` command is enabled as well as if required package (`torch nvidia transformers`) are installed
 
 ### Docker compose
 
@@ -109,7 +110,7 @@ Note the following environment variables work with the docker image:
 - Ensure AIYA has `bot` and `application.commands` scopes when inviting to your Discord server, and intents are enabled.
 - As /settings can be abused, consider reviewing who can access the command. This can be done through Apps -> Integrations in your Server Settings. Read more about /settings [here.](https://github.com/Kilvoctu/aiyabot/wiki/settings-command)
 - AIYA uses Web UI's legacy high-res fix method. To ensure this works correctly, in your Web UI settings, enable this option: `For hires fix, use width/height sliders to set final resolution rather than first pass`
-
+- For systems with less memory/cpu, or if the `/generate` command is not needed, it can be disabled by setting the environmental variable `USE_GENERATE=false` for docker/cli.
 
 ## Credits
 

@@ -20,5 +20,7 @@ COPY . /app
 
 RUN chmod +x /app/docker-entrypoint.sh
 
+ENV USE_GENERATE=true
+
 # Run the bot
 ENTRYPOINT [ "/app/docker-entrypoint.sh" ]

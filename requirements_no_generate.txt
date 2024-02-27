@@ -1,0 +1,6 @@
+py-cord
+python-dotenv
+requests
+Pillow
+tomlkit
+urlextract
