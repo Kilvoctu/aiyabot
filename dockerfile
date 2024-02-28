@@ -1,4 +1,4 @@
-FROM python:3.11
+FROM python:3.12
 
 ENV TOKEN="" \
 	URL="http://127.0.0.1:7860" \
