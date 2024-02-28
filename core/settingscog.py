@@ -1,7 +1,7 @@
 import discord
 from discord import option
 from discord.ext import commands
-from typing import Optional
+from typing import Optional, List, Union
 
 from core import settings
 
@@ -199,6 +199,24 @@ class SettingsCog(commands.Cog):
         description='Use to update global lists (models, styles, embeddings, etc.)',
         required=False,
     )
+    @option(
+        'spoiler',
+        bool,
+        description='Mark images as spoilers (when not specified in /draw)',
+        required=False,
+    )
+    @option(
+        'spoiler_role',
+        discord.Role,
+        description='Force images from users in this role as spoilers',
+        required=False,
+    )
+    @option(
+        'remove_spoiler_role',
+        bool,
+        description='Remove assigned spoiler role',
+        required=False,
+    )
     async def settings_handler(self, ctx,
                                current_settings: Optional[bool] = True,
                                n_prompt: Optional[str] = None,
@@ -218,7 +236,11 @@ class SettingsCog(commands.Cog):
                                batch: Optional[str] = None,
                                max_batch: Optional[str] = None,
                                upscaler_1: Optional[str] = None,
-                               refresh: Optional[bool] = False):
+                               refresh: Optional[bool] = False,
+                               spoiler: Optional[bool] = None,
+                               spoiler_role: Optional[discord.Role] = None,
+                               remove_spoiler_role: Optional[bool] = None
+                               ):
         # get the channel id and check if a settings file exists
         channel = '% s' % ctx.channel.id
         settings.check(channel)
@@ -236,6 +258,8 @@ class SettingsCog(commands.Cog):
             for key, value in cur_set.items():
                 if key == 'negative_prompt':
                     pass
+                elif key == 'spoiler_role' and value is not None:
+                    current += f'\n{key} - <@&{value}>'
                 else:
                     if value == '':
                         value = ' '
@@ -401,6 +425,19 @@ class SettingsCog(commands.Cog):
             else:
                 settings.update(channel, 'batch', f'{batch[0]},{batch[1]}')
                 new += f'\nbatch (count,size): ``{batch[0]},{batch[1]}``'
+            set_new = True
+
+        if spoiler is not None:
+            settings.update(channel, 'spoiler', spoiler)
+            new += f'\nDefault Spoiler: ``{spoiler}``'
+            set_new = True
+        if remove_spoiler_role is not None and remove_spoiler_role:
+            settings.update(channel, 'spoiler_role', None)
+            new += '\nRemoved Spoiler Role'
+            set_new = True
+        elif spoiler_role is not None:
+            settings.update(channel, 'spoiler_role', str(spoiler_role.id))
+            new += f'\n Spoiler Role: <@&{spoiler_role.id}>'
             set_new = True
 
         if set_new:
