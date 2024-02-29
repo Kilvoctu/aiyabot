@@ -1,7 +1,7 @@
 import discord
 from discord import option
 from discord.ext import commands
-from typing import Optional, List, Union
+from typing import Optional
 
 from core import settings
 
@@ -23,6 +23,7 @@ class SettingsCog(commands.Cog):
         return [
             sampler for sampler in settings.global_var.sampler_names
         ]
+
     def style_autocomplete(self: discord.AutocompleteContext):
         return [
             style for style in settings.global_var.style_names
@@ -52,17 +53,6 @@ class SettingsCog(commands.Cog):
         return [
             hires for hires in settings.global_var.hires_upscaler_names
         ]
-
-    # do autocomplete here to handle when max_size exceeds discord limits
-    def size_autocomplete(self: discord.AutocompleteContext):
-        return [
-            size for size in settings.global_var.size_range_exceed
-        ]
-
-    if len(settings.global_var.size_range) == 0:
-        size_auto = discord.utils.basic_autocomplete(size_autocomplete)
-    else:
-        size_auto = None
 
     @commands.slash_command(name='settings', description='Review and change channel defaults', guild_only=True)
     @option(
@@ -103,16 +93,12 @@ class SettingsCog(commands.Cog):
         int,
         description='Set default width for the channel',
         required=False,
-        autocomplete=size_auto,
-        choices=settings.global_var.size_range
     )
     @option(
         'height',
         int,
         description='Set default height for the channel',
         required=False,
-        autocomplete=size_auto,
-        choices=settings.global_var.size_range
     )
     @option(
         'guidance_scale',
@@ -312,11 +298,13 @@ class SettingsCog(commands.Cog):
             set_new = True
 
         if width is not None:
+            width = settings.dimensions_validator(width)
             settings.update(channel, 'width', width)
             new += f'\nWidth: ``"{width}"``'
             set_new = True
 
         if height is not None:
+            height = settings.dimensions_validator(height)
             settings.update(channel, 'height', height)
             new += f'\nHeight: ``"{height}"``'
             set_new = True

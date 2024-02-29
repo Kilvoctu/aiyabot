@@ -23,11 +23,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
     def __init__(self, bot):
         self.bot = bot
 
-    if len(settings.global_var.size_range) == 0:
-        size_auto = discord.utils.basic_autocomplete(settingscog.SettingsCog.size_autocomplete)
-    else:
-        size_auto = None
-
     @commands.Cog.listener()
     async def on_ready(self):
         self.bot.add_view(viewhandler.DrawView(self))
@@ -64,16 +59,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         int,
         description='Width of the generated image.',
         required=False,
-        autocomplete=size_auto,
-        choices=settings.global_var.size_range
     )
     @option(
         'height',
         int,
         description='Height of the generated image.',
         required=False,
-        autocomplete=size_auto,
-        choices=settings.global_var.size_range
     )
     @option(
         'guidance_scale',
@@ -264,6 +255,9 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 init_image = requests.get(init_url)
             except(Exception,):
                 await ctx.send_response('URL image not found!\nI will do my best without it!')
+
+        width = settings.dimensions_validator(width)
+        height = settings.dimensions_validator(height)
 
         # verify values and format aiya initial reply
         reply_adds = ''

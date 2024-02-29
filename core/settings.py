@@ -102,7 +102,7 @@ class GlobalVar:
     api_user: Optional[str] = None
     api_pass: Optional[str] = None
     model_info = {}
-    size_range = range(512, 2112, 8)
+    max_size = 0
     size_range_exceed = None
     sampler_names = []
     style_names = {}
@@ -212,6 +212,12 @@ def extra_net_defaults(prompt, channel):
     if lora != 'None' and lora not in prompt:
         prompt += f' <lora:{lora}:{lora_multi}>'
     return prompt
+
+
+def dimensions_validator(size):
+    size = size if size >= 64 else 64
+    size = global_var.max_size if size > global_var.max_size else size
+    return round(size / 8) * 8
 
 
 def queue_check(author_compare):
@@ -500,16 +506,12 @@ def populate_global_vars():
     global_var.queue_limit = config['queue_limit']
     global_var.batch_buttons = config['batch_buttons']
     global_var.restrict_buttons = config['restrict_buttons']
+    global_var.max_size = config['max_size']
     global_var.quick_upscale_resize = config['quick_upscale_resize']
     global_var.prompt_ban_list = [x for x in config['prompt_ban_list']]
     global_var.prompt_ignore_list = [x for x in config['prompt_ignore_list']]
     global_var.display_ignored_words = config['display_ignored_words']
     global_var.negative_prompt_prefix = [x for x in config['negative_prompt_prefix']]
-    # slash command doesn't update this dynamically. Changes to size need a restart.
-    global_var.size_range = range(512, config['max_size'] + 8, 8)
-    if len(global_var.size_range) > 25:
-        global_var.size_range_exceed = [x for x in global_var.size_range]
-        global_var.size_range = []
 
     # create persistent session since we'll need to do a few API calls
     s = authenticate_user()
