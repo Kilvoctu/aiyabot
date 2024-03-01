@@ -305,7 +305,7 @@ class DrawView(View):
     def __init__(self, input_tuple):
         super().__init__(timeout=None)
         self.input_tuple = input_tuple
-        if isinstance(self.input_tuple, tuple): # only check batch if we are actually a real view
+        if isinstance(self.input_tuple, tuple):  # only check batch if we are actually a real view
             batch = input_tuple[13]
             batch_count = batch[0] * batch[1]
             if batch_count > 1:
@@ -408,14 +408,14 @@ class DrawView(View):
                 # check if we are dealing with a batch or a single image.
                 batch = self.input_tuple[13]
                 if batch[0] != 1 or batch[1] != 1:
-                    await interaction.response.send_message("Use the drop down menu to upscale batch images!", ephemeral=True) # tell user to use dropdown for upscaling
+                    await interaction.response.send_message("Use the drop down menu to upscale batch images!", ephemeral=True)  # tell user to use dropdown for upscaling
                 else:
                     init_image = self.message.attachments[0]
                     ctx = self.input_tuple[0]
                     channel = '% s' % ctx.channel.id
                     settings.check(channel)
                     upscaler_1 = settings.read(channel)['upscaler_1']
-                    upscale_tuple = (ctx, '2.0', init_image, upscaler_1, "None", '0.5', '0.0', '0.0', False) # Create defaults for upscale. If desired we can add options to the per channel upscale settings for this.
+                    upscale_tuple = (ctx, '2.0', init_image, upscaler_1, "None", '0.5', '0.0', '0.0', False)  # Create defaults for upscale. If desired we can add options to the per channel upscale settings for this.
 
                     print(f'Upscaling -- {interaction.user.name}#{interaction.user.discriminator}')
 
@@ -481,7 +481,8 @@ class DrawView(View):
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.\n"
                                             "You can react with ❌ to delete the image.", ephemeral=True)
-            
+
+
 class DeleteView(View):
     def __init__(self, input_tuple):
         super().__init__(timeout=None)
@@ -502,7 +503,8 @@ class DeleteView(View):
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.\n"
                                             "You can react with ❌ to delete the image.", ephemeral=True)
-            
+
+
 class DownloadMenu(discord.ui.Select):
     def __init__(self, epoch_time, seed, batch_count, input_tuple):
         self.input_tuple = input_tuple
@@ -539,7 +541,8 @@ class DownloadMenu(discord.ui.Select):
             self.disabled = True
             await interaction.response.edit_message(view=self.view)
             await interaction.followup.send("I may have been restarted. This button no longer works.\n", ephemeral=True)
-        
+
+
 class UpscaleMenu(discord.ui.Select):
     def __init__(self, epoch_time, seed, batch_count, input_tuple):
         self.input_tuple = input_tuple
@@ -563,7 +566,7 @@ class UpscaleMenu(discord.ui.Select):
                 channel = '% s' % ctx.channel.id
                 settings.check(channel)
                 upscaler_1 = settings.read(channel)['upscaler_1']
-                upscale_tuple = (ctx, '2.0', init_image, upscaler_1, "None", '0.5', '0.0', '0.0', False) # Create defaults for upscale. If desired we can add options to the per channel upscale settings for this.
+                upscale_tuple = (ctx, '2.0', init_image, upscaler_1, "None", '0.5', '0.0', '0.0', False)  # Create defaults for upscale. If desired we can add options to the per channel upscale settings for this.
 
                 print(f'Upscaling -- {interaction.user.name}#{interaction.user.discriminator}')
 

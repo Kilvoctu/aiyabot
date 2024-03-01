@@ -2,7 +2,7 @@ import asyncio
 from threading import Thread
 
 
-# the queue object for txt2image and img2img
+# the queue object for txt2img and img2img
 class DrawObject:
     def __init__(self, cog, ctx, simple_prompt, prompt, negative_prompt, data_model, steps, width, height,
                  guidance_scale, sampler, seed, strength, init_image, batch, styles, facefix, highres_fix,
@@ -90,12 +90,13 @@ class GlobalQueue:
     post_thread = Thread()
     event_loop = asyncio.get_event_loop()
     post_queue: list[PostObject] = []
-    
-    def get_queue_sizes():
-        return {
-            "General Queue": len(GlobalQueue.queue),
-            "/Generate Queue": len(GlobalQueue.generate_queue)
-        }
+
+
+def get_queue_sizes():
+    the_queues = f'General Queue: {len(GlobalQueue.queue)}'
+    # add a conditional later to omit this if USE_GENERATE is false
+    the_queues += f'\n/Generate Queue: {len(GlobalQueue.generate_queue)}'
+    return the_queues
 
 
 def process_queue():
@@ -111,9 +112,11 @@ async def process_dream(self, queue_object: DrawObject | UpscaleObject | Identif
     GlobalQueue.dream_thread = Thread(target=self.dream, args=(GlobalQueue.event_loop, queue_object))
     GlobalQueue.dream_thread.start()
 
+
 async def process_generate(self, queue_object: GenerateObject):
     GlobalQueue.generate_thread = Thread(target=self.dream, args=(GlobalQueue.event_loop, queue_object))
     GlobalQueue.generate_thread.start()
+
 
 def process_post(self, queue_object: PostObject):
     if GlobalQueue.post_thread.is_alive():

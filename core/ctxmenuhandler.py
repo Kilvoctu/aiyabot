@@ -269,7 +269,8 @@ async def quick_upscale(self, ctx, message: discord.Message):
         await ctx.send_response(
             f'<@{ctx.author.id}>, upscaling {message}by ``{resize}``x using ``{upscaler_1}``!\n'
             f'Queue: ``{len(queuehandler.GlobalQueue.queue)}``', delete_after=45.0)
-        
+
+
 async def batch_download(ctx, message: discord.Message):
     # look for batch information in message
     all_content = message.content
@@ -313,4 +314,3 @@ async def batch_download(ctx, message: discord.Message):
             await ctx.respond(f'<@{ctx.author.id}>, Here are the batch files you requested', files=block, view=view)
     else:
         await ctx.respond(f'<@{ctx.author.id}>, The requested image ids were not found.')
-
