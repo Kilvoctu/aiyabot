@@ -162,7 +162,7 @@ class DrawModal(Modal):
                     pen[6] = settings.dimensions_validator(int(line.split(':', 1)[1]))
                 except(Exception,):
                     invalid_input = True
-                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` height is no good!",
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` width is no good!",
                                         value=f'Make sure you enter a number between '
                                               f'64 and {settings.global_var.max_size}, divisible by 8.',
                                         inline=False)
