@@ -32,7 +32,7 @@ async def update_progress(event_loop, status_message_task, s, queue_object, trie
                 if any_job:
                     if tries_since_no_job >= 2:
                         return
-                    time.sleep(3)
+                    time.sleep(settings.global_var.preview_update_interval)
                     event_loop.create_task(
                         update_progress(event_loop, status_message_task, s, queue_object, tries + 1, any_job, tries_since_no_job + 1))
                     return
@@ -40,12 +40,12 @@ async def update_progress(event_loop, status_message_task, s, queue_object, trie
                     # escape hatch
                     if tries > 10:
                         return
-                    time.sleep(3)
+                    time.sleep(settings.global_var.preview_update_interval)
                     event_loop.create_task(
                         update_progress(event_loop, status_message_task, s, queue_object, tries + 1, any_job, tries_since_no_job))
                     return
             else:
-                time.sleep(3)
+                time.sleep(settings.global_var.preview_update_interval)
                 event_loop.create_task(
                     update_progress(event_loop, status_message_task, s, queue_object, tries + 1, any_job, 0))
                 return
