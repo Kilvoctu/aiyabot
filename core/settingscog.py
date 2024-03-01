@@ -23,6 +23,7 @@ class SettingsCog(commands.Cog):
         return [
             sampler for sampler in settings.global_var.sampler_names
         ]
+
     def style_autocomplete(self: discord.AutocompleteContext):
         return [
             style for style in settings.global_var.style_names
@@ -52,17 +53,6 @@ class SettingsCog(commands.Cog):
         return [
             hires for hires in settings.global_var.hires_upscaler_names
         ]
-
-    # do autocomplete here to handle when max_size exceeds discord limits
-    def size_autocomplete(self: discord.AutocompleteContext):
-        return [
-            size for size in settings.global_var.size_range_exceed
-        ]
-
-    if len(settings.global_var.size_range) == 0:
-        size_auto = discord.utils.basic_autocomplete(size_autocomplete)
-    else:
-        size_auto = None
 
     @commands.slash_command(name='settings', description='Review and change channel defaults', guild_only=True)
     @option(
@@ -103,16 +93,12 @@ class SettingsCog(commands.Cog):
         int,
         description='Set default width for the channel',
         required=False,
-        autocomplete=size_auto,
-        choices=settings.global_var.size_range
     )
     @option(
         'height',
         int,
         description='Set default height for the channel',
         required=False,
-        autocomplete=size_auto,
-        choices=settings.global_var.size_range
     )
     @option(
         'guidance_scale',
@@ -199,6 +185,24 @@ class SettingsCog(commands.Cog):
         description='Use to update global lists (models, styles, embeddings, etc.)',
         required=False,
     )
+    @option(
+        'spoiler',
+        bool,
+        description='Mark images as spoilers (when not specified in /draw)',
+        required=False,
+    )
+    @option(
+        'spoiler_role',
+        discord.Role,
+        description='Force images from users in this role as spoilers',
+        required=False,
+    )
+    @option(
+        'remove_spoiler_role',
+        bool,
+        description='Remove assigned spoiler role',
+        required=False,
+    )
     async def settings_handler(self, ctx,
                                current_settings: Optional[bool] = True,
                                n_prompt: Optional[str] = None,
@@ -218,7 +222,11 @@ class SettingsCog(commands.Cog):
                                batch: Optional[str] = None,
                                max_batch: Optional[str] = None,
                                upscaler_1: Optional[str] = None,
-                               refresh: Optional[bool] = False):
+                               refresh: Optional[bool] = False,
+                               spoiler: Optional[bool] = None,
+                               spoiler_role: Optional[discord.Role] = None,
+                               remove_spoiler_role: Optional[bool] = None
+                               ):
         # get the channel id and check if a settings file exists
         channel = '% s' % ctx.channel.id
         settings.check(channel)
@@ -236,6 +244,8 @@ class SettingsCog(commands.Cog):
             for key, value in cur_set.items():
                 if key == 'negative_prompt':
                     pass
+                elif key == 'spoiler_role' and value is not None:
+                    current += f'\n{key} - <@&{value}>'
                 else:
                     if value == '':
                         value = ' '
@@ -288,11 +298,13 @@ class SettingsCog(commands.Cog):
             set_new = True
 
         if width is not None:
+            width = settings.dimensions_validator(width)
             settings.update(channel, 'width', width)
             new += f'\nWidth: ``"{width}"``'
             set_new = True
 
         if height is not None:
+            height = settings.dimensions_validator(height)
             settings.update(channel, 'height', height)
             new += f'\nHeight: ``"{height}"``'
             set_new = True
@@ -401,6 +413,19 @@ class SettingsCog(commands.Cog):
             else:
                 settings.update(channel, 'batch', f'{batch[0]},{batch[1]}')
                 new += f'\nbatch (count,size): ``{batch[0]},{batch[1]}``'
+            set_new = True
+
+        if spoiler is not None:
+            settings.update(channel, 'spoiler', spoiler)
+            new += f'\nDefault Spoiler: ``{spoiler}``'
+            set_new = True
+        if remove_spoiler_role is not None and remove_spoiler_role:
+            settings.update(channel, 'spoiler_role', None)
+            new += '\nRemoved Spoiler Role'
+            set_new = True
+        elif spoiler_role is not None:
+            settings.update(channel, 'spoiler_role', str(spoiler_role.id))
+            new += f'\n Spoiler Role: <@&{spoiler_role.id}>'
             set_new = True
 
         if set_new:

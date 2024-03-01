@@ -6,7 +6,8 @@ from core import ctxmenuhandler
 from core import settings
 from core.logging import get_logger
 from dotenv import load_dotenv
-from core.queuehandler import GlobalQueue
+
+from core import queuehandler
 
 
 # start up initialization stuff
@@ -26,7 +27,15 @@ self.load_extension('core.stablecog')
 self.load_extension('core.upscalecog')
 self.load_extension('core.identifycog')
 self.load_extension('core.infocog')
-self.load_extension('core.generatecog')
+
+use_generate = os.getenv("USE_GENERATE", 'True')
+enable_generate = use_generate.lower() in ('true', '1', 't')
+if enable_generate:
+    print(f"/generate command is ENABLED due to USE_GENERATE={use_generate}")
+    self.load_extension('core.generatecog')
+else:
+    print(f"/generate command is DISABLED due to USE_GENERATE={use_generate}")
+
 
 # stats slash command
 @self.slash_command(name='stats', description='How many images have I generated?')
@@ -37,14 +46,16 @@ async def stats(ctx):
                           color=settings.global_var.embed_color)
     await ctx.respond(embed=embed)
 
+
 # queue slash command
 @self.slash_command(name='queue', description='Check the size of each queue')
 async def queue(ctx):
-    queue_sizes = GlobalQueue.get_queue_sizes()
-    description = '\n'.join([f'{name}: {size}' for name, size in queue_sizes.items()])
+    queue_sizes = queuehandler.get_queue_sizes()
+    description = queue_sizes
     embed = discord.Embed(title='Queue Sizes', description=description, 
                           color=settings.global_var.embed_color)
     await ctx.respond(embed=embed)
+
 
 # context menu commands
 @self.message_command(name="Get Image Info")

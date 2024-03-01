@@ -33,11 +33,12 @@ input_tuple[0] = ctx
 [16] = highres_fix
 [17] = clip_skip
 [18] = extra_net
-[19] = epoch_time
+[19] = spoiler
+[20] = epoch_time
 '''
 tuple_names = ['ctx', 'simple_prompt', 'prompt', 'negative_prompt', 'data_model', 'steps', 'width', 'height',
                'guidance_scale', 'sampler', 'seed', 'strength', 'init_image', 'batch', 'styles', 'facefix',
-               'highres_fix', 'clip_skip', 'extra_net', 'epoch_time']
+               'highres_fix', 'clip_skip', 'extra_net', 'spoiler', 'epoch_time']
 
 
 # the modal that is used for the 🖋 button
@@ -127,11 +128,6 @@ class DrawModal(Modal):
             if pen[18] in pen[2]:
                 net_multi = re.search(f'{pen[18]}:(.*)>', pen[2]).group(1)
 
-        if settings.global_var.size_range:
-            max_size = settings.global_var.size_range
-        else:
-            max_size = settings.global_var.size_range_exceed
-
         # iterate through extended edit for any changes
         for line in self.children[3].value.split('\n'):
             if 'data_model:' in line:
@@ -164,19 +160,22 @@ class DrawModal(Modal):
                                         value=f"Keep steps between `0` and `{max_steps}`.", inline=False)
             if 'width:' in line:
                 try:
-                    pen[6] = [x for x in max_size if x == int(line.split(':', 1)[1])][0]
+                    pen[6] = settings.dimensions_validator(int(line.split(':', 1)[1]))
                 except(Exception,):
                     invalid_input = True
-                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` width is no good! These widths I can do.",
-                                        value=', '.join(['`%s`' % x for x in max_size]),
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` width is no good!",
+                                        value=f'Make sure you enter a number between '
+                                              f'64 and {settings.global_var.max_size}, divisible by 8.',
                                         inline=False)
+
             if 'height:' in line:
                 try:
-                    pen[7] = [x for x in max_size if x == int(line.split(':', 1)[1])][0]
+                    pen[7] = settings.dimensions_validator(int(line.split(':', 1)[1]))
                 except(Exception,):
                     invalid_input = True
-                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` height is no good! These heights I can do.",
-                                        value=', '.join(['`%s`' % x for x in max_size]),
+                    embed_err.add_field(name=f"`{line.split(':', 1)[1]}` height is no good!",
+                                        value=f'Make sure you enter a number between '
+                                              f'64 and {settings.global_var.max_size}, divisible by 8.',
                                         inline=False)
             if 'guidance_scale:' in line:
                 try:
@@ -347,7 +346,7 @@ class DrawView(View):
     def __init__(self, input_tuple):
         super().__init__(timeout=None)
         self.input_tuple = input_tuple
-        if isinstance(self.input_tuple, tuple): # only check batch if we are actually a real view
+        if isinstance(self.input_tuple, tuple):  # only check batch if we are actually a real view
             batch = input_tuple[13]
             batch_count = batch[0] * batch[1]
             if batch_count > 1:
@@ -450,14 +449,14 @@ class DrawView(View):
                 # check if we are dealing with a batch or a single image.
                 batch = self.input_tuple[13]
                 if batch[0] != 1 or batch[1] != 1:
-                    await interaction.response.send_message("Use the drop down menu to upscale batch images!", ephemeral=True) # tell user to use dropdown for upscaling
+                    await interaction.response.send_message("Use the drop down menu to upscale batch images!", ephemeral=True)  # tell user to use dropdown for upscaling
                 else:
                     init_image = self.message.attachments[0]
                     ctx = self.input_tuple[0]
                     channel = '% s' % ctx.channel.id
                     settings.check(channel)
                     upscaler_1 = settings.read(channel)['upscaler_1']
-                    upscale_tuple = (ctx, '2.0', init_image, upscaler_1, "None", '0.5', '0.0', '0.0', False) # Create defaults for upscale. If desired we can add options to the per channel upscale settings for this.
+                    upscale_tuple = (ctx, '2.0', init_image, upscaler_1, "None", '0.5', '0.0', '0.0', False)  # Create defaults for upscale. If desired we can add options to the per channel upscale settings for this.
 
                     print(f'Upscaling -- {interaction.user.name}#{interaction.user.discriminator}')
 
@@ -523,7 +522,8 @@ class DrawView(View):
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.\n"
                                             "You can react with ❌ to delete the image.", ephemeral=True)
-            
+
+
 class DeleteView(View):
     def __init__(self, input_tuple):
         super().__init__(timeout=None)
@@ -544,7 +544,8 @@ class DeleteView(View):
             await interaction.response.edit_message(view=self)
             await interaction.followup.send("I may have been restarted. This button no longer works.\n"
                                             "You can react with ❌ to delete the image.", ephemeral=True)
-            
+
+
 class DownloadMenu(discord.ui.Select):
     def __init__(self, epoch_time, seed, batch_count, input_tuple):
         self.input_tuple = input_tuple
@@ -581,7 +582,8 @@ class DownloadMenu(discord.ui.Select):
             self.disabled = True
             await interaction.response.edit_message(view=self.view)
             await interaction.followup.send("I may have been restarted. This button no longer works.\n", ephemeral=True)
-        
+
+
 class UpscaleMenu(discord.ui.Select):
     def __init__(self, epoch_time, seed, batch_count, input_tuple):
         self.input_tuple = input_tuple
@@ -605,7 +607,7 @@ class UpscaleMenu(discord.ui.Select):
                 channel = '% s' % ctx.channel.id
                 settings.check(channel)
                 upscaler_1 = settings.read(channel)['upscaler_1']
-                upscale_tuple = (ctx, '2.0', init_image, upscaler_1, "None", '0.5', '0.0', '0.0', False) # Create defaults for upscale. If desired we can add options to the per channel upscale settings for this.
+                upscale_tuple = (ctx, '2.0', init_image, upscaler_1, "None", '0.5', '0.0', '0.0', False)  # Create defaults for upscale. If desired we can add options to the per channel upscale settings for this.
 
                 print(f'Upscaling -- {interaction.user.name}#{interaction.user.discriminator}')
 

@@ -1,4 +1,4 @@
-FROM python:3.12
+FROM python:3.11
 
 ENV TOKEN="" \
 	URL="http://127.0.0.1:7860" \
@@ -10,9 +10,8 @@ ENV TOKEN="" \
 
 WORKDIR /app
 
-# Install dependencies
+# Copy requirements
 COPY ./requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
 
 # Pull in the source code
 COPY ./resources /default/resources
@@ -20,6 +19,8 @@ COPY ./outputs /default/outputs
 COPY . /app
 
 RUN chmod +x /app/docker-entrypoint.sh
+
+ENV USE_GENERATE=true
 
 # Run the bot
 ENTRYPOINT [ "/app/docker-entrypoint.sh" ]

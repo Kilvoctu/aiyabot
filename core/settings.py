@@ -44,8 +44,8 @@ batch_buttons = "False"
 # Whether or not buttons are restricted to user who requested image ("True"/"False")
 restrict_buttons = "True"
 
-# The maximum value allowed for width/height (keep as multiple of 64)
-max_size = 1024
+# The maximum value allowed for width/height (keep as multiple of 8)
+max_size = 2048
 
 # The resize amount when using context menu Quick Upscale
 quick_upscale_resize = 2.0
@@ -82,6 +82,9 @@ strength = "0.75"
 batch = "1,1"
 max_batch = "1,1"
 upscaler_1 = "ESRGAN_4x"
+spoiler = false
+# role ID (not name)
+spoiler_role = ""
 """
 
 
@@ -99,7 +102,7 @@ class GlobalVar:
     api_user: Optional[str] = None
     api_pass: Optional[str] = None
     model_info = {}
-    size_range = range(192, 1088, 64)
+    max_size = 0
     size_range_exceed = None
     sampler_names = []
     style_names = {}
@@ -120,6 +123,8 @@ class GlobalVar:
     prompt_ignore_list = []
     display_ignored_words = "False"
     negative_prompt_prefix = []
+    spoiler = False
+    spoiler_role = None
 
 
 global_var = GlobalVar()
@@ -209,6 +214,12 @@ def extra_net_defaults(prompt, channel):
     return prompt
 
 
+def dimensions_validator(size):
+    size = size if size >= 64 else 64
+    size = global_var.max_size if size > global_var.max_size else size
+    return round(size / 8) * 8
+
+
 def queue_check(author_compare):
     user_queue = 0
     for queue_object in queuehandler.GlobalQueue.queue:
@@ -276,6 +287,8 @@ def generate_template(template_pop, config):
     template_pop['batch'] = config['batch']
     template_pop['max_batch'] = config['max_batch']
     template_pop['upscaler_1'] = config['upscaler_1']
+    template_pop['spoiler'] = config['spoiler']
+    template_pop['spoiler_role'] = config['spoiler_role']
     return template_pop
 
 
@@ -299,6 +312,12 @@ def read(channel_id):
                 pass
             with open(path + channel_id + '.json', 'w') as configfile2:
                 json.dump(settings, configfile2, indent=1)
+
+        if settings['spoiler_role'] is not None:
+            if str(settings['spoiler_role']).strip() == '':
+                settings['spoiler_role'] = None
+            else:
+                settings['spoiler_role'] = str(settings['spoiler_role'])
 
     return settings
 
@@ -487,16 +506,12 @@ def populate_global_vars():
     global_var.queue_limit = config['queue_limit']
     global_var.batch_buttons = config['batch_buttons']
     global_var.restrict_buttons = config['restrict_buttons']
+    global_var.max_size = config['max_size']
     global_var.quick_upscale_resize = config['quick_upscale_resize']
     global_var.prompt_ban_list = [x for x in config['prompt_ban_list']]
     global_var.prompt_ignore_list = [x for x in config['prompt_ignore_list']]
     global_var.display_ignored_words = config['display_ignored_words']
     global_var.negative_prompt_prefix = [x for x in config['negative_prompt_prefix']]
-    # slash command doesn't update this dynamically. Changes to size need a restart.
-    global_var.size_range = range(192, config['max_size'] + 64, 64)
-    if len(global_var.size_range) > 25:
-        global_var.size_range_exceed = [x for x in global_var.size_range]
-        global_var.size_range = []
 
     # create persistent session since we'll need to do a few API calls
     s = authenticate_user()
