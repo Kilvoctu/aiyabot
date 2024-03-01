@@ -19,36 +19,86 @@ from core import settings
 from core import settingscog
 from threading import Thread
 
-async def update_progress(event_loop, status_message_task, s, queue_object, tries):
+debug_progress = False
+
+
+async def update_progress(event_loop, status_message_task, s, queue_object, tries=0, any_job=False, tries_since_no_progress=0, last_file=None):
     status_message = status_message_task.result()
     try:
         progress_data = s.get(url=f'{settings.global_var.url}/sdapi/v1/progress').json()
+        job_name = progress_data.get('state').get('job')
+        if debug_progress:
+            step = progress_data.get("state").get("sampling_step")
+            has_last_file = last_file is not None
+            print(f'Job: {job_name} | Step: {step} | Tries: {tries} | Any Job: {any_job} | Tries Since No Job: {tries_since_no_progress} | Last File: {has_last_file}')
 
-        if progress_data["current_image"] is None and tries <= 10:
-            time.sleep(3)
-            event_loop.create_task(update_progress(event_loop, status_message_task, s, queue_object, tries + 1))
-            return
+        if job_name != '':
+            any_job = True
 
-        if progress_data["current_image"] is None and tries > 10:
-            return
+        if job_name == '':
+            if any_job:
+                if tries_since_no_progress >= 2:
+                    if debug_progress:
+                        print('Exiting progress, no job in last 2 tries')
+                    return
 
-        image = Image.open(io.BytesIO(base64.b64decode(progress_data["current_image"])))
+                if debug_progress:
+                    print(f'No job in try,sleeping for {settings.global_var.preview_update_interval}')
+                time.sleep(settings.global_var.preview_update_interval)
+                event_loop.create_task(
+                    update_progress(event_loop, status_message_task, s, queue_object, tries + 1, any_job, tries_since_no_progress + 1, last_file))
+                return
+            else:
+                # escape hatch
+                if tries > 10:
+                    if debug_progress:
+                        print('escape hatch exit')
+                    return
 
-        with contextlib.ExitStack() as stack:
-            buffer = stack.enter_context(io.BytesIO())
-            image.save(buffer, 'PNG')
-            buffer.seek(0)
-            filename=f'{queue_object.seed}.png'
-            if queue_object.spoiler:
-                filename=f'SPOILER_{queue_object.seed}.png'
-            fp=buffer
-            file = discord.File(fp, filename)
+                if debug_progress:
+                    print(f'Have not seen a job yet, sleeping for {settings.global_var.preview_update_interval}')
+                time.sleep(settings.global_var.preview_update_interval)
+                event_loop.create_task(
+                    update_progress(event_loop, status_message_task, s, queue_object, tries + 1, any_job, tries_since_no_progress, last_file))
+                return
+
+        file = None
+        if progress_data["current_image"] is not None:
+            if debug_progress:
+                print('updating progress => Preview image in progress data')
+            image = Image.open(io.BytesIO(base64.b64decode(progress_data["current_image"])))
+
+            with contextlib.ExitStack() as stack:
+                buffer = stack.enter_context(io.BytesIO())
+                image.save(buffer, 'PNG')
+                buffer.seek(0)
+                filename = f'{queue_object.seed}.png'
+                if queue_object.spoiler:
+                    filename = f'SPOILER_{queue_object.seed}.png'
+                fp = buffer
+                file = discord.File(fp, filename)
+                last_file = {
+                    'name': filename,
+                    'buffer': fp
+                }
+        elif last_file is not None:
+            if debug_progress:
+                print('updating progress => No preview image in progress data, but had last_file')
+            last_file['buffer'].seek(0)
+            file = discord.File(last_file['buffer'], last_file['name'])
+        elif debug_progress:
+            print('updating progress => No preview or last_image')
 
         ips = '?'
         if progress_data["eta_relative"] != 0:
-            ips = round((int(queue_object.steps) - progress_data["state"]["sampling_step"]) / progress_data["eta_relative"], 2)
+            ips = round(
+                (int(queue_object.steps) - progress_data["state"]["sampling_step"]) / progress_data["eta_relative"], 2)
 
         view = viewhandler.ProgressView()
+
+        files = []
+        if file is not None:
+            files = [file]
 
         await status_message.edit(
             content=f'**Author**: {queue_object.ctx.author.id} ({queue_object.ctx.author.name})\n'
@@ -56,12 +106,22 @@ async def update_progress(event_loop, status_message_task, s, queue_object, trie
                     f'\n{progress_data.get("state").get("sampling_step")}/{queue_object.steps} iterations, '
                     f'~{ips} it/s'
                     f'\n**ETA**: {round(progress_data.get("eta_relative"), 2)} seconds',
-            files=[file], view=view)
+            files=files, view=view)
     except Exception as e:
         print('Something goes wrong...', str(e))
+        if tries_since_no_progress >= 3:
+            print('Exiting progress due too many tries without progress')
+            return
+        time.sleep(settings.global_var.preview_update_interval)
+        event_loop.create_task(
+            update_progress(event_loop, status_message_task, s, queue_object, tries + 1, any_job, tries_since_no_progress + 1, last_file))
+        return
 
-    time.sleep(1)
-    event_loop.create_task(update_progress(event_loop, status_message_task, s, queue_object, tries))
+    if debug_progress:
+        print(f'sleeping for {settings.global_var.preview_update_interval}')
+    time.sleep(settings.global_var.preview_update_interval)
+    event_loop.create_task(
+        update_progress(event_loop, status_message_task, s, queue_object, tries + 1, any_job, 0, last_file))
 
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
     ctx_parse = discord.ApplicationContext
@@ -435,7 +495,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 f'\n**Relative ETA**: initialization...'))
 
             def worker():
-                event_loop.create_task(update_progress(event_loop, status_message_task, s, queue_object, 0))
+                event_loop.create_task(update_progress(event_loop, status_message_task, s, queue_object))
                 return
 
             status_thread = threading.Thread(target=worker)
