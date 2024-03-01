@@ -19,18 +19,36 @@ from core import settings
 from core import settingscog
 from threading import Thread
 
-async def update_progress(event_loop, status_message_task, s, queue_object, tries):
+async def update_progress(event_loop, status_message_task, s, queue_object, tries, any_job, tries_since_no_job):
     status_message = status_message_task.result()
     try:
         progress_data = s.get(url=f'{settings.global_var.url}/sdapi/v1/progress').json()
+        job_name = progress_data.get('state').get('job')
+        if job_name != '':
+            any_job = True
 
-        if progress_data["current_image"] is None and tries <= 10:
-            time.sleep(3)
-            event_loop.create_task(update_progress(event_loop, status_message_task, s, queue_object, tries + 1))
-            return
-
-        if progress_data["current_image"] is None and tries > 10:
-            return
+        if progress_data["current_image"] is None:
+            if job_name == '':
+                if any_job:
+                    if tries_since_no_job >= 2:
+                        return
+                    time.sleep(settings.global_var.preview_update_interval)
+                    event_loop.create_task(
+                        update_progress(event_loop, status_message_task, s, queue_object, tries + 1, any_job, tries_since_no_job + 1))
+                    return
+                else:
+                    # escape hatch
+                    if tries > 10:
+                        return
+                    time.sleep(settings.global_var.preview_update_interval)
+                    event_loop.create_task(
+                        update_progress(event_loop, status_message_task, s, queue_object, tries + 1, any_job, tries_since_no_job))
+                    return
+            else:
+                time.sleep(settings.global_var.preview_update_interval)
+                event_loop.create_task(
+                    update_progress(event_loop, status_message_task, s, queue_object, tries + 1, any_job, 0))
+                return
 
         image = Image.open(io.BytesIO(base64.b64decode(progress_data["current_image"])))
 
@@ -38,15 +56,15 @@ async def update_progress(event_loop, status_message_task, s, queue_object, trie
             buffer = stack.enter_context(io.BytesIO())
             image.save(buffer, 'PNG')
             buffer.seek(0)
-            filename=f'{queue_object.seed}.png'
+            filename = f'{queue_object.seed}.png'
             if queue_object.spoiler:
-                filename=f'SPOILER_{queue_object.seed}.png'
-            fp=buffer
+                filename = f'SPOILER_{queue_object.seed}.png'
+            fp = buffer
             file = discord.File(fp, filename)
-
         ips = '?'
         if progress_data["eta_relative"] != 0:
-            ips = round((int(queue_object.steps) - progress_data["state"]["sampling_step"]) / progress_data["eta_relative"], 2)
+            ips = round(
+                (int(queue_object.steps) - progress_data["state"]["sampling_step"]) / progress_data["eta_relative"], 2)
 
         view = viewhandler.ProgressView()
 
@@ -61,7 +79,9 @@ async def update_progress(event_loop, status_message_task, s, queue_object, trie
         print('Something goes wrong...', str(e))
 
     time.sleep(1)
-    event_loop.create_task(update_progress(event_loop, status_message_task, s, queue_object, tries))
+
+    event_loop.create_task(
+        update_progress(event_loop, status_message_task, s, queue_object, tries + 1, any_job, 0))
 
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
     ctx_parse = discord.ApplicationContext
@@ -435,7 +455,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 f'\n**Relative ETA**: initialization...'))
 
             def worker():
-                event_loop.create_task(update_progress(event_loop, status_message_task, s, queue_object, 0))
+                event_loop.create_task(update_progress(event_loop, status_message_task, s, queue_object, 0, False, 0))
                 return
 
             status_thread = threading.Thread(target=worker)
