@@ -7,6 +7,7 @@ import requests
 import time
 import tomlkit
 from typing import Optional
+from . import constants
 
 from core import queuehandler
 
@@ -87,7 +88,6 @@ spoiler = false
 spoiler_role = ""
 """
 
-
 # initialize global variables here
 class GlobalVar:
     url = ""
@@ -125,6 +125,7 @@ class GlobalVar:
     negative_prompt_prefix = []
     spoiler = False
     spoiler_role = None
+    backend = constants.BACKEND_WEBUI
 
 
 global_var = GlobalVar()
@@ -337,11 +338,15 @@ def authenticate_user():
 
     # do a check to see if --gradio-auth is set
     if global_var.gradio_auth is None:
+        global_var.gradio_auth = False
+
         r = s.get(global_var.url + '/sdapi/v1/cmd-flags')
-        if r.status_code == 401:
+        response_data = r.json()
+        if global_var.backend == constants.BACKEND_WEBUI and response_data['gradio_auth']:
             global_var.gradio_auth = True
-        else:
-            global_var.gradio_auth = False
+        # sdnext
+        elif global_var.backend == constants.BACKEND_SDNEXT and response_data['auth']:
+            global_var.gradio_auth = True
 
     if global_var.gradio_auth:
         login_payload = {
@@ -512,6 +517,18 @@ def populate_global_vars():
     global_var.prompt_ignore_list = [x for x in config['prompt_ignore_list']]
     global_var.display_ignored_words = config['display_ignored_words']
     global_var.negative_prompt_prefix = [x for x in config['negative_prompt_prefix']]
+    global_var.backend = config.get('backend')
+    if config.get('backend') is None:
+        # get backend type
+        try:
+            version_response = requests.get(global_var.url + '/sdapi/v1/version')
+            version_json = version_response.json()
+            if version_json['app'] == 'sd.next':
+                global_var.backend = constants.BACKEND_SDNEXT
+        except Exception as e:
+            # probably doesn't exist, just ignore
+            print('Could not get /sdapi/v1/version endpoint but that is expected if its not SD.Next...', str(e))
+            global_var.backend = constants.BACKEND_WEBUI
 
     # create persistent session since we'll need to do a few API calls
     s = authenticate_user()
@@ -566,9 +583,12 @@ def populate_global_vars():
             for model in r.json():
                 norm_csv_path = os.path.normpath(row[1])
                 norm_api_path = os.path.normpath(model['filename'])
+                name = model.get('name')
+                if name is None:
+                    name = model.get('model_name')
                 if norm_csv_path.split(os.sep)[-1] == norm_api_path.split(os.sep)[-1] \
-                        or norm_csv_path.replace(os.sep, '_') == model['model_name']:
-                    global_var.model_info[row[0]] = model['title'], model['model_name'], model['hash'], row[2]
+                        or norm_csv_path.replace(os.sep, '_') == name:
+                    global_var.model_info[row[0]] = model['title'], name, model['hash'], row[2]
                     break
     # add "Default" if models.csv is on default, or if no model matches are found
     if not global_var.model_info:
