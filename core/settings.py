@@ -573,6 +573,14 @@ def populate_global_vars():
         global_var.hyper_names.append(s5['name'])
     for s6 in r6.json():
         global_var.upscaler_names.append(s6['name'])
+
+    try:
+        r7 = s.get(global_var.url + "/sdapi/v1/loras")
+        for s7 in r7.json():
+            global_var.lora_names.append(s7['alias'])
+    except Exception as e:
+        print('Error fetching lora endpoint but this may be normal for older webui versions', str(e))
+
     if 'SwinIR_4x' in global_var.upscaler_names:
         template['upscaler_1'] = 'SwinIR_4x'
 
@@ -606,7 +614,8 @@ def populate_global_vars():
         for c in old_config['components']:
             try:
                 if c['props']:
-                    if c['props']['elem_id'] == 'setting_sd_lora':
+                    # maintaining compatibility with older webui versions
+                    if c['props']['elem_id'] == 'setting_sd_lora' and len(global_var.lora_names) == 0:
                         global_var.lora_names = c['props']['choices']
                     if c['props']['elem_id'] == 'txt2img_hr_upscaler':
                         global_var.hires_upscaler_names = c['props']['choices']
