@@ -34,10 +34,11 @@ input_tuple[0] = ctx
 [18] = extra_net
 [19] = spoiler
 [20] = epoch_time
+[21] = full_quality_vae
 '''
 tuple_names = ['ctx', 'simple_prompt', 'prompt', 'negative_prompt', 'data_model', 'steps', 'width', 'height',
                'guidance_scale', 'sampler', 'seed', 'strength', 'init_image', 'batch', 'styles', 'facefix',
-               'highres_fix', 'clip_skip', 'extra_net', 'spoiler', 'epoch_time']
+               'highres_fix', 'clip_skip', 'extra_net', 'spoiler', 'epoch_time', 'full_quality_vae']
 
 
 # the modal that is used for the 🖋 button

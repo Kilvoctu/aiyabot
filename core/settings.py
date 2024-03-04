@@ -86,6 +86,9 @@ upscaler_1 = "ESRGAN_4x"
 spoiler = false
 # role ID (not name)
 spoiler_role = ""
+
+### SD.Next specific settings ###
+full_quality_vae = true
 """
 
 # initialize global variables here
@@ -107,6 +110,7 @@ class GlobalVar:
     sampler_names = []
     style_names = {}
     facefix_models = []
+    full_quality_vae = True
     embeddings_1 = []
     embeddings_2 = []
     hyper_names = []
@@ -279,6 +283,7 @@ def generate_template(template_pop, config):
     template_pop['style'] = config['style']
     template_pop['facefix'] = config['facefix']
     template_pop['highres_fix'] = config['highres_fix']
+    template_pop['full_quality_vae'] = config['full_quality_vae']
     template_pop['clip_skip'] = config['clip_skip']
     template_pop['hypernet'] = config['hypernet']
     template_pop['hyper_multi'] = config['hyper_multi']

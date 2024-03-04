@@ -33,6 +33,7 @@ To generate a prompt from a couple of words, use the /generate command and inclu
 - denoising strength
 - batch count
 - compatibility with [SD.Next](https://github.com/vladmandic/automatic)
+  - "Full quality" VAE toggle
 
 #### Bonus features
 
