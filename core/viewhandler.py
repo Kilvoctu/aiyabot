@@ -309,10 +309,10 @@ class DrawView(View):
             batch = input_tuple[13]
             batch_count = batch[0] * batch[1]
             if batch_count > 1:
-                download_menu = DownloadMenu(input_tuple[19], input_tuple[10], batch_count, input_tuple)
+                download_menu = DownloadMenu(input_tuple[20], input_tuple[10], batch_count, input_tuple)
                 download_menu.callback = download_menu.callback
                 self.add_item(download_menu)
-                upscale_menu = UpscaleMenu(input_tuple[19], input_tuple[10], batch_count, input_tuple)
+                upscale_menu = UpscaleMenu(input_tuple[20], input_tuple[10], batch_count, input_tuple)
                 upscale_menu.callback = upscale_menu.callback
                 self.add_item(upscale_menu)
 
