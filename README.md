@@ -32,6 +32,7 @@ To generate a prompt from a couple of words, use the /generate command and inclu
 - img2img
 - denoising strength
 - batch count
+- compatibility with [SD.Next](https://github.com/vladmandic/automatic)
 
 #### Bonus features
 
@@ -65,8 +66,9 @@ To generate a prompt from a couple of words, use the /generate command and inclu
 
 ## Setup requirements
 
-- Set up [AUTOMATIC1111's Stable Diffusion AI Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui).
+- Set up [AUTOMATIC1111's Stable Diffusion AI Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) OR [SD.Next](https://github.com/vladmandic/automatic)
   - AIYA is currently tested on commit `20ae71faa8ef035c31aa3a410b707d792c8203a3` of the Web UI.
+  - For SD.Next currently tested on master branch at [2024-03-01](https://github.com/vladmandic/automatic/blob/master/CHANGELOG.md#update-for-2024-03-01) (`325ed10a04775c49c36fc3308559507a4a82271b`)
 - Run the Web UI as local host with API (`COMMANDLINE_ARGS= --api`).
 - Clone this repo.
 - Create a file in your cloned repo called ".env", formatted like so:
@@ -121,6 +123,8 @@ Note the following environment variables work with the docker image:
 AIYA only exists thanks to these awesome people:
 - AUTOMATIC1111, and all the contributors to the Web UI repo.
   - https://github.com/AUTOMATIC1111/stable-diffusion-webui
+- vladmandic and all SD.Next contributors
+  - https://github.com/vladmandic/automatic
 - harubaru, my entryway into Stable Diffusion (with Waifu Diffusion) and foundation for the AIYA Discord bot.
   - https://github.com/harubaru/waifu-diffusion
   - https://github.com/harubaru/discord-stable-diffusion
