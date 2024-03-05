@@ -539,7 +539,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     queue_object.view.input_tuple = new_tuple
 
             # set up discord message
-            content = f'> for {queue_object.ctx.author.name}'
+            try:
+                user_id = queue_object.ctx.author.id
+            except(Exception,):
+                user_id = queue_object.ctx.user.id
             noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
             draw_time = '{0:.3f}'.format(end_time - start_time)
             message = f'my {noun_descriptor} of ``{queue_object.simple_prompt}`` took me ``{draw_time}`` seconds!'
@@ -579,10 +582,10 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                         filename = f'SPOILER_{queue_object.seed}-{count}.png'
                     file = add_metadata_to_image(grid, images[current_grid * 25][2], filename)
                     if current_grid == 0:
-                        content = f'<@{queue_object.ctx.author.id}>, {message}\n ' \
+                        content = f'<@{user_id}>, {message}\n ' \
                                   f'Batch ID: {epoch_time}-{queue_object.seed}\n Image IDs: {id_start}-{id_end}'
                     else:
-                        content = f'> for {queue_object.ctx.author.name}, ' \
+                        content = f'> for {user_id}, ' \
                                   f'use /info or context menu to retrieve.\n ' \
                                   f'Batch ID: {epoch_time}-{queue_object.seed}\n Image IDs: {id_start}-{id_end}'
                         view = None
@@ -594,7 +597,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             self, queue_object.ctx, content=content, file=file, embed='', view=view))
 
             else:
-                content = f'<@{queue_object.ctx.author.id}>, {message}'
+                content = f'<@{user_id}>, {message}'
                 filename = f'{queue_object.seed}-{count}.png'
                 if queue_object.spoiler:
                     filename = f'SPOILER_{queue_object.seed}-{count}.png'
