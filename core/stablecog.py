@@ -488,22 +488,26 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         try:
             start_time = time.time()
 
-            status_message_task = event_loop.create_task(queue_object.ctx.channel.send(
-                f'**Author**: {queue_object.ctx.author.id} ({queue_object.ctx.author.name})\n'
-                f'**Prompt**: `{queue_object.prompt}`\n**Progress**: initialization...'
-                f'\n0/{queue_object.steps} iteractions, 0.00 it/s'
-                f'\n**Relative ETA**: initialization...'))
+            channel = '% s' % queue_object.ctx.channel.id
+            live_preview = settings.read(channel)['live_preview']
 
-            def worker():
-                event_loop.create_task(update_progress(event_loop, status_message_task, s, queue_object))
-                return
+            if live_preview:
+                status_message_task = event_loop.create_task(queue_object.ctx.channel.send(
+                    f'**Author**: {queue_object.ctx.author.id} ({queue_object.ctx.author.name})\n'
+                    f'**Prompt**: `{queue_object.prompt}`\n**Progress**: initialization...'
+                    f'\n0/{queue_object.steps} iteractions, 0.00 it/s'
+                    f'\n**Relative ETA**: initialization...'))
 
-            status_thread = threading.Thread(target=worker)
+                def worker():
+                    event_loop.create_task(update_progress(event_loop, status_message_task, s, queue_object))
+                    return
 
-            def start_thread(*args):
-                status_thread.start()
+                status_thread = threading.Thread(target=worker)
 
-            status_message_task.add_done_callback(start_thread)
+                def start_thread(*args):
+                    status_thread.start()
+
+                status_message_task.add_done_callback(start_thread)
 
             # construct a payload for data model, then the normal payload
             model_payload = {
@@ -662,15 +666,15 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     queue_object.view.input_tuple = new_tuple
 
             # set up discord message
-            def post_dream():
-                event_loop.create_task(status_message_task.result().delete())
-            Thread(target=post_dream, daemon=True).start()
+            if live_preview:
+                def post_dream():
+                    event_loop.create_task(status_message_task.result().delete())
+                Thread(target=post_dream, daemon=True).start()
 
             try:
                 user_id = queue_object.ctx.author.id
             except(Exception,):
                 user_id = queue_object.ctx.user.id
-            content = f'> for {queue_object.ctx.author.name}'
             noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
             draw_time = '{0:.3f}'.format(end_time - start_time)
             message = f'my {noun_descriptor} of ``{queue_object.simple_prompt}`` took me ``{draw_time}`` seconds!'
