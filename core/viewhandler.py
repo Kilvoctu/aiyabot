@@ -269,6 +269,7 @@ class DrawModal(Modal):
                 pen[13] = [1, 1]
 
             # the updated tuple to send to queue
+            pen[0] = interaction
             prompt_tuple = tuple(pen)
             draw_dream = stablecog.StableCog(self)
 
@@ -290,7 +291,7 @@ class DrawModal(Modal):
                 elif str(pen[18]) != str(self.input_tuple[18]):
                     prompt_output += f'\nNew extra network: ``{pen[18]}``'
 
-            print(f'Redraw -- {interaction.user.name}#{interaction.user.discriminator} -- Prompt: {pen[1]}')
+            print(f'Redraw -- {interaction.user.name} -- Prompt: {pen[1]}')
 
             # check queue again, but now we know user is not in queue
             if queuehandler.GlobalQueue.dream_thread.is_alive():
@@ -360,13 +361,14 @@ class DrawView(View):
             if buttons_free:
                 # update the tuple with a new seed
                 new_seed = list(self.input_tuple)
+                new_seed[0] = interaction
                 new_seed[10] = random.randint(0, 0xFFFFFFFF)
                 # set batch to 1
                 if settings.global_var.batch_buttons == "False":
                     new_seed[13] = [1, 1]
                 seed_tuple = tuple(new_seed)
 
-                print(f'Reroll -- {interaction.user.name}#{interaction.user.discriminator} -- Prompt: {seed_tuple[1]}')
+                print(f'Reroll -- {interaction.user.name} -- Prompt: {seed_tuple[1]}')
 
                 # set up the draw dream and do queue code again for lack of a more elegant solution
                 draw_dream = stablecog.StableCog(self)
@@ -411,13 +413,13 @@ class DrawView(View):
                     await interaction.response.send_message("Use the drop down menu to upscale batch images!", ephemeral=True)  # tell user to use dropdown for upscaling
                 else:
                     init_image = self.message.attachments[0]
-                    ctx = self.input_tuple[0]
+                    ctx = interaction
                     channel = '% s' % ctx.channel.id
                     settings.check(channel)
                     upscaler_1 = settings.read(channel)['upscaler_1']
                     upscale_tuple = (ctx, '2.0', init_image, upscaler_1, "None", '0.5', '0.0', '0.0', False)  # Create defaults for upscale. If desired we can add options to the per channel upscale settings for this.
 
-                    print(f'Upscaling -- {interaction.user.name}#{interaction.user.discriminator}')
+                    print(f'Upscaling -- {interaction.user.name}')
 
                     # set up the draw dream and do queue code again for lack of a more elegant solution
                     draw_dream = upscalecog.UpscaleCog(self)
@@ -568,7 +570,7 @@ class UpscaleMenu(discord.ui.Select):
                 upscaler_1 = settings.read(channel)['upscaler_1']
                 upscale_tuple = (ctx, '2.0', init_image, upscaler_1, "None", '0.5', '0.0', '0.0', False)  # Create defaults for upscale. If desired we can add options to the per channel upscale settings for this.
 
-                print(f'Upscaling -- {interaction.user.name}#{interaction.user.discriminator}')
+                print(f'Upscaling -- {interaction.user.name}')
 
                 # set up the draw dream and do queue code again for lack of a more elegant solution
                 draw_dream = upscalecog.UpscaleCog(self)
