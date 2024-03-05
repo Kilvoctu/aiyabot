@@ -337,7 +337,7 @@ def authenticate_user():
 
     # do a check to see if --gradio-auth is set
     if global_var.gradio_auth is None:
-        r = s.get(global_var.url + '/sdapi/v1/cmd-flags')
+        r = s.get(global_var.url + '/config')
         if r.status_code == 401:
             global_var.gradio_auth = True
         else:
