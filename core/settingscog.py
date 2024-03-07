@@ -203,6 +203,12 @@ class SettingsCog(commands.Cog):
         description='Remove assigned spoiler role',
         required=False,
     )
+    @option(
+        'live_preview',
+        bool,
+        description='Enable/Disable live previews in this channel',
+        required=False,
+    )
     async def settings_handler(self, ctx,
                                current_settings: Optional[bool] = True,
                                n_prompt: Optional[str] = None,
@@ -225,7 +231,8 @@ class SettingsCog(commands.Cog):
                                refresh: Optional[bool] = False,
                                spoiler: Optional[bool] = None,
                                spoiler_role: Optional[discord.Role] = None,
-                               remove_spoiler_role: Optional[bool] = None
+                               remove_spoiler_role: Optional[bool] = None,
+                               live_preview: Optional[bool] = None
                                ):
         # get the channel id and check if a settings file exists
         channel = '% s' % ctx.channel.id
@@ -426,6 +433,11 @@ class SettingsCog(commands.Cog):
         elif spoiler_role is not None:
             settings.update(channel, 'spoiler_role', str(spoiler_role.id))
             new += f'\n Spoiler Role: <@&{spoiler_role.id}>'
+            set_new = True
+
+        if live_preview is not None:
+            settings.update(channel, 'live_preview', live_preview)
+            new += f'\nLive Preview: ``{live_preview}``'
             set_new = True
 
         if set_new:

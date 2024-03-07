@@ -59,6 +59,8 @@ prompt_ignore_list = []
 display_ignored_words = "False"
 # These words will be added to the beginning of the negative prompt
 negative_prompt_prefix = []
+# the time, in seconds, between when AIYA checks for generation progress from SD -- can be a float
+live_preview_update_interval = 3
 
 
 # the fallback channel defaults template for AIYA if nothing is set
@@ -85,6 +87,7 @@ upscaler_1 = "ESRGAN_4x"
 spoiler = false
 # role ID (not name)
 spoiler_role = ""
+live_preview = true
 """
 
 
@@ -125,6 +128,7 @@ class GlobalVar:
     negative_prompt_prefix = []
     spoiler = False
     spoiler_role = None
+    preview_update_interval = 3
 
 
 global_var = GlobalVar()
@@ -289,6 +293,7 @@ def generate_template(template_pop, config):
     template_pop['upscaler_1'] = config['upscaler_1']
     template_pop['spoiler'] = config['spoiler']
     template_pop['spoiler_role'] = config['spoiler_role']
+    template_pop['live_preview'] = config['live_preview']
     return template_pop
 
 
@@ -512,6 +517,8 @@ def populate_global_vars():
     global_var.prompt_ignore_list = [x for x in config['prompt_ignore_list']]
     global_var.display_ignored_words = config['display_ignored_words']
     global_var.negative_prompt_prefix = [x for x in config['negative_prompt_prefix']]
+    if config['live_preview_update_interval'] is not None:
+        global_var.preview_update_interval = float(config['live_preview_update_interval'])
 
     # create persistent session since we'll need to do a few API calls
     s = authenticate_user()
