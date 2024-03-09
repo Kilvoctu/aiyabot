@@ -24,6 +24,7 @@ debug_progress = False
 
 async def update_progress(event_loop, status_message_task, s, queue_object, tries=0, any_job=False, tries_since_no_progress=0, last_file=None):
     status_message = status_message_task.result()
+    user_id, user_name = settings.fuzzy_get_id_name(queue_object.ctx)
     try:
         progress_data = s.get(url=f'{settings.global_var.url}/sdapi/v1/progress').json()
         job_name = progress_data.get('state').get('job')
@@ -101,7 +102,7 @@ async def update_progress(event_loop, status_message_task, s, queue_object, trie
             files = [file]
 
         await status_message.edit(
-            content=f'**Author**: {queue_object.ctx.author.id} ({queue_object.ctx.author.name})\n'
+            content=f'**Author**: {user_id} ({user_name})\n'
                     f'**Prompt**: `{queue_object.prompt}`\n**Progress**: {round(progress_data.get("progress") * 100, 2)}% '
                     f'\n{progress_data.get("state").get("sampling_step")}/{queue_object.steps} iterations, '
                     f'~{ips} it/s'
@@ -489,12 +490,13 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         try:
             start_time = time.time()
 
+            user_id, user_name = settings.fuzzy_get_id_name(queue_object.ctx)
             channel = '% s' % queue_object.ctx.channel.id
             live_preview = settings.read(channel)['live_preview']
 
             if live_preview:
                 status_message_task = event_loop.create_task(queue_object.ctx.channel.send(
-                    f'**Author**: {queue_object.ctx.author.id} ({queue_object.ctx.author.name})\n'
+                    f'**Author**: {user_id} ({user_name})\n'
                     f'**Prompt**: `{queue_object.prompt}`\n**Progress**: initialization...'
                     f'\n0/{queue_object.steps} iteractions, 0.00 it/s'
                     f'\n**Relative ETA**: initialization...'))
@@ -671,10 +673,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     event_loop.create_task(status_message_task.result().delete())
                 Thread(target=post_dream, daemon=True).start()
 
-            try:
-                user_id = queue_object.ctx.author.id
-            except(Exception,):
-                user_id = queue_object.ctx.user.id
             noun_descriptor = "drawing" if image_count == 1 else f'{image_count} drawings'
             draw_time = '{0:.3f}'.format(end_time - start_time)
             message = f'my {noun_descriptor} of ``{queue_object.simple_prompt}`` took me ``{draw_time}`` seconds!'

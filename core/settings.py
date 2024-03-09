@@ -224,6 +224,16 @@ def dimensions_validator(size):
     return round(size / 8) * 8
 
 
+def fuzzy_get_id_name(ctx):
+    # should return the user id and name regardless of whether input is "ctx" or "interaction"
+    try:
+        user_id = ctx.author.id
+        user_name = ctx.author.name
+    except(Exception,):
+        user_id = ctx.user.id
+        user_name = ctx.user.name
+    return user_id, user_name
+
 def queue_check(author_compare):
     user_queue = 0
     for queue_object in queuehandler.GlobalQueue.queue:

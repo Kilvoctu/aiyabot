@@ -537,7 +537,8 @@ class DeleteView(View):
     async def delete(self, button, interaction):
         try:
             # check if the output is from the person who requested it
-            if interaction.user.id == self.input_tuple[0].author.id:
+            user_id, user_name = settings.fuzzy_get_id_name(self.input_tuple[0])
+            if interaction.user.id == user_id:
                 await interaction.message.delete()
             else:
                 await interaction.response.send_message("You can't delete other people's images!", ephemeral=True)
