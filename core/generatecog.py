@@ -22,13 +22,13 @@ class GenerateCog(commands.Cog):
 
     @commands.slash_command(name='generate', description='Generates a prompt from text', guild_only=True)
     @option(
-        'Text',
+        'text',
         str,
         description='Your text to produce the prompt.',
         required=True,
     )
     async def generate_handler(self, ctx: discord.ApplicationContext, *,
-                            prompt: Optional[str]):
+                            text: str):
 
         # set up the queue
         if queuehandler.GlobalQueue.generate_thread.is_alive():
