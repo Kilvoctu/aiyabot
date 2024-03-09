@@ -123,6 +123,7 @@ async def update_progress(event_loop, status_message_task, s, queue_object, trie
     event_loop.create_task(
         update_progress(event_loop, status_message_task, s, queue_object, tries + 1, any_job, 0, last_file))
 
+
 class StableCog(commands.Cog, name='Stable Diffusion', description='Create images from natural language.'):
     ctx_parse = discord.ApplicationContext
 
@@ -661,7 +662,6 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                 # increment seed for view when using batch
                 if count != len(image_data):
                     batch_seed = list(queue_object.view.input_tuple)
-                    batch_seed[10] += 1
                     new_tuple = tuple(batch_seed)
                     queue_object.view.input_tuple = new_tuple
 
