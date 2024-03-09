@@ -61,10 +61,10 @@ class IdentifyObject:
 
 # the queue object for generate
 class GenerateObject:
-    def __init__(self, cog, ctx, prompt):
+    def __init__(self, cog, ctx, text):
         self.cog = cog
         self.ctx = ctx
-        self.prompt = prompt
+        self.text = text
         
 
 # the queue object for posting to Discord
