@@ -22,21 +22,21 @@ class GenerateCog(commands.Cog):
 
     @commands.slash_command(name='generate', description='Generates a prompt from text', guild_only=True)
     @option(
-        'Text',
+        'text',
         str,
         description='Your text to produce the prompt.',
         required=True,
     )
     async def generate_handler(self, ctx: discord.ApplicationContext, *,
-                            prompt: Optional[str]):
+                            text: str):
 
         # set up the queue
         if queuehandler.GlobalQueue.generate_thread.is_alive():
-            queuehandler.GlobalQueue.generate_queue.append(queuehandler.GenerateObject(self, ctx, prompt))
+            queuehandler.GlobalQueue.generate_queue.append(queuehandler.GenerateObject(self, ctx, text))
         else:
-            await queuehandler.process_generate(self, queuehandler.GenerateObject(self, ctx, prompt))
+            await queuehandler.process_generate(self, queuehandler.GenerateObject(self, ctx, text))
 
-        await ctx.send_response(f"<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.generate_queue)}`` - Your text: ``{prompt}``")
+        await ctx.send_response(f"<@{ctx.author.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.generate_queue)}`` - Your text: ``{text}``")
 
     def post(self, event_loop: AbstractEventLoop, post_queue_object: queuehandler.PostObject):
         event_loop.create_task(
@@ -52,7 +52,7 @@ class GenerateCog(commands.Cog):
     def dream(self, event_loop: AbstractEventLoop, queue_object: queuehandler.GenerateObject):
         try:
             # generate the text
-            res = self.pipe(queue_object.prompt)
+            res = self.pipe(queue_object.text)
             generated_text = res[0]['generated_text']
 
             # Create an Embed object
