@@ -1,6 +1,7 @@
 import discord
 import random
 import re
+import requests
 import os
 from discord.ui import InputText, Modal, View
 
@@ -270,6 +271,7 @@ class DrawModal(Modal):
                 pen[13] = [1, 1]
 
             # the updated tuple to send to queue
+            pen[0] = interaction
             prompt_tuple = tuple(pen)
             draw_dream = stablecog.StableCog(self)
 
@@ -291,7 +293,7 @@ class DrawModal(Modal):
                 elif str(pen[18]) != str(self.input_tuple[18]):
                     prompt_output += f'\nNew extra network: ``{pen[18]}``'
 
-            print(f'Redraw -- {interaction.user.name}#{interaction.user.discriminator} -- Prompt: {pen[1]}')
+            print(f'Redraw -- {interaction.user.name} -- Prompt: {pen[1]}')
 
             # check queue again, but now we know user is not in queue
             if queuehandler.GlobalQueue.dream_thread.is_alive():
@@ -299,7 +301,47 @@ class DrawModal(Modal):
             else:
                 await queuehandler.process_dream(draw_dream, queuehandler.DrawObject(stablecog.StableCog(self), *prompt_tuple, DrawView(prompt_tuple)))
             await interaction.response.send_message(f'<@{interaction.user.id}>, {settings.messages()}\nQueue: ``{len(queuehandler.GlobalQueue.queue)}``{prompt_output}')
+# view that holds the interrupt button for progress
+class ProgressView(View):
+    def __init__(self):
+        super().__init__(timeout=None)
 
+    @discord.ui.button(
+        custom_id="button_interrupt",
+        emoji="❌")
+    async def button_interrupt(self, button, interaction):
+        try:
+            if str(interaction.user.id) not in interaction.message.content:
+                await interaction.response.send_message("Cannot interrupt other people's tasks!", ephemeral=True)
+                return
+            button.disabled = True
+            s = settings.authenticate_user()
+            s.post(url=f'{settings.global_var.url}/sdapi/v1/interrupt')
+            await interaction.response.edit_message(view=self)
+        except Exception as e:
+            button.disabled = True
+            await interaction.response.send_message("I have no idea why, but I broke. Either the request has fallen "
+                                                    "through "
+                                                    "or I no longer have the message in my cache.\n"
+                                                    f"Good luck:\n`{str(e)}`", ephemeral=True)
+    @discord.ui.button(
+        custom_id="button_skip",
+        emoji="➡️")
+    async def button_skip(self, button, interaction):
+        try:
+            if str(interaction.user.id) not in interaction.message.content:
+                await interaction.response.send_message("Cannot skip other people's tasks!", ephemeral=True)
+                return
+            button.disabled = True
+            s = settings.authenticate_user()
+            s.post(url=f'{settings.global_var.url}/sdapi/v1/skip')
+            await interaction.response.edit_message(view=self)
+        except Exception as e:
+            button.disabled = True
+            await interaction.response.send_message("I have no idea why, but I broke. Either the request has fallen "
+                                                    "through "
+                                                    "or I no longer have the message in my cache.\n"
+                                                    f"Good luck:\n`{str(e)}`", ephemeral=True)
 
 # creating the view that holds the buttons for /draw output
 class DrawView(View):
@@ -310,10 +352,10 @@ class DrawView(View):
             batch = input_tuple[13]
             batch_count = batch[0] * batch[1]
             if batch_count > 1:
-                download_menu = DownloadMenu(input_tuple[19], input_tuple[10], batch_count, input_tuple)
+                download_menu = DownloadMenu(input_tuple[20], input_tuple[10], batch_count, input_tuple)
                 download_menu.callback = download_menu.callback
                 self.add_item(download_menu)
-                upscale_menu = UpscaleMenu(input_tuple[19], input_tuple[10], batch_count, input_tuple)
+                upscale_menu = UpscaleMenu(input_tuple[20], input_tuple[10], batch_count, input_tuple)
                 upscale_menu.callback = upscale_menu.callback
                 self.add_item(upscale_menu)
 
@@ -361,13 +403,14 @@ class DrawView(View):
             if buttons_free:
                 # update the tuple with a new seed
                 new_seed = list(self.input_tuple)
+                new_seed[0] = interaction
                 new_seed[10] = random.randint(0, 0xFFFFFFFF)
                 # set batch to 1
                 if settings.global_var.batch_buttons == "False":
                     new_seed[13] = [1, 1]
                 seed_tuple = tuple(new_seed)
 
-                print(f'Reroll -- {interaction.user.name}#{interaction.user.discriminator} -- Prompt: {seed_tuple[1]}')
+                print(f'Reroll -- {interaction.user.name} -- Prompt: {seed_tuple[1]}')
 
                 # set up the draw dream and do queue code again for lack of a more elegant solution
                 draw_dream = stablecog.StableCog(self)
@@ -412,13 +455,13 @@ class DrawView(View):
                     await interaction.response.send_message("Use the drop down menu to upscale batch images!", ephemeral=True)  # tell user to use dropdown for upscaling
                 else:
                     init_image = self.message.attachments[0]
-                    ctx = self.input_tuple[0]
+                    ctx = interaction
                     channel = '% s' % ctx.channel.id
                     settings.check(channel)
                     upscaler_1 = settings.read(channel)['upscaler_1']
                     upscale_tuple = (ctx, '2.0', init_image, upscaler_1, "None", '0.5', '0.0', '0.0', False)  # Create defaults for upscale. If desired we can add options to the per channel upscale settings for this.
 
-                    print(f'Upscaling -- {interaction.user.name}#{interaction.user.discriminator}')
+                    print(f'Upscaling -- {interaction.user.name}')
 
                     # set up the draw dream and do queue code again for lack of a more elegant solution
                     draw_dream = upscalecog.UpscaleCog(self)
@@ -495,7 +538,8 @@ class DeleteView(View):
     async def delete(self, button, interaction):
         try:
             # check if the output is from the person who requested it
-            if interaction.user.id == self.input_tuple[0].author.id:
+            user_id, user_name = settings.fuzzy_get_id_name(self.input_tuple[0])
+            if interaction.user.id == user_id:
                 await interaction.message.delete()
             else:
                 await interaction.response.send_message("You can't delete other people's images!", ephemeral=True)
@@ -569,7 +613,7 @@ class UpscaleMenu(discord.ui.Select):
                 upscaler_1 = settings.read(channel)['upscaler_1']
                 upscale_tuple = (ctx, '2.0', init_image, upscaler_1, "None", '0.5', '0.0', '0.0', False)  # Create defaults for upscale. If desired we can add options to the per channel upscale settings for this.
 
-                print(f'Upscaling -- {interaction.user.name}#{interaction.user.discriminator}')
+                print(f'Upscaling -- {interaction.user.name}')
 
                 # set up the draw dream and do queue code again for lack of a more elegant solution
                 draw_dream = upscalecog.UpscaleCog(self)
