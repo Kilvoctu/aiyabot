@@ -358,15 +358,11 @@ def authenticate_user():
 
     # do a check to see if --gradio-auth is set
     if global_var.gradio_auth is None:
-        global_var.gradio_auth = False
-
         r = s.get(global_var.url + '/config')
-        response_data = r.json()
-        if global_var.backend == constants.BACKEND_WEBUI and response_data['gradio_auth']:
+        if r.status_code == 401:
             global_var.gradio_auth = True
-        # sdnext
-        elif global_var.backend == constants.BACKEND_SDNEXT and response_data['auth']:
-            global_var.gradio_auth = True
+        else:
+            global_var.gradio_auth = False
 
     if global_var.gradio_auth:
         login_payload = {
