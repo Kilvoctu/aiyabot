@@ -7,6 +7,7 @@ import requests
 import time
 import tomlkit
 from typing import Optional
+from . import constants
 
 from core import queuehandler
 
@@ -88,8 +89,10 @@ spoiler = false
 # role ID (not name)
 spoiler_role = ""
 live_preview = true
-"""
 
+### SD.Next specific settings ###
+full_quality_vae = true
+"""
 
 # initialize global variables here
 class GlobalVar:
@@ -110,6 +113,7 @@ class GlobalVar:
     sampler_names = []
     style_names = {}
     facefix_models = []
+    full_quality_vae = True
     embeddings_1 = []
     embeddings_2 = []
     hyper_names = []
@@ -129,6 +133,7 @@ class GlobalVar:
     spoiler = False
     spoiler_role = None
     preview_update_interval = 3
+    backend = constants.BACKEND_WEBUI
 
 
 global_var = GlobalVar()
@@ -292,6 +297,7 @@ def generate_template(template_pop, config):
     template_pop['style'] = config['style']
     template_pop['facefix'] = config['facefix']
     template_pop['highres_fix'] = config['highres_fix']
+    template_pop['full_quality_vae'] = config['full_quality_vae']
     template_pop['clip_skip'] = config['clip_skip']
     template_pop['hypernet'] = config['hypernet']
     template_pop['hyper_multi'] = config['hyper_multi']
@@ -529,6 +535,18 @@ def populate_global_vars():
     global_var.negative_prompt_prefix = [x for x in config['negative_prompt_prefix']]
     if config['live_preview_update_interval'] is not None:
         global_var.preview_update_interval = float(config['live_preview_update_interval'])
+    global_var.backend = config.get('backend')
+    if config.get('backend') is None:
+        # get backend type
+        try:
+            version_response = requests.get(global_var.url + '/sdapi/v1/version')
+            version_json = version_response.json()
+            if version_json['app'] == 'sd.next':
+                global_var.backend = constants.BACKEND_SDNEXT
+        except Exception as e:
+            # probably doesn't exist, just ignore
+            print('Could not get /sdapi/v1/version endpoint but that is expected if its not SD.Next...', str(e))
+            global_var.backend = constants.BACKEND_WEBUI
 
     # create persistent session since we'll need to do a few API calls
     s = authenticate_user()
@@ -568,6 +586,14 @@ def populate_global_vars():
         global_var.hyper_names.append(s5['name'])
     for s6 in r6.json():
         global_var.upscaler_names.append(s6['name'])
+
+    try:
+        r7 = s.get(global_var.url + "/sdapi/v1/loras")
+        for s7 in r7.json():
+            global_var.lora_names.append(s7['alias'])
+    except Exception as e:
+        print('Error fetching lora endpoint but this may be normal for older webui versions', str(e))
+
     if 'SwinIR_4x' in global_var.upscaler_names:
         template['upscaler_1'] = 'SwinIR_4x'
 
@@ -583,9 +609,12 @@ def populate_global_vars():
             for model in r.json():
                 norm_csv_path = os.path.normpath(row[1])
                 norm_api_path = os.path.normpath(model['filename'])
+                name = model.get('name')
+                if name is None:
+                    name = model.get('model_name')
                 if norm_csv_path.split(os.sep)[-1] == norm_api_path.split(os.sep)[-1] \
-                        or norm_csv_path.replace(os.sep, '_') == model['model_name']:
-                    global_var.model_info[row[0]] = model['title'], model['model_name'], model['hash'], row[2]
+                        or norm_csv_path.replace(os.sep, '_') == name:
+                    global_var.model_info[row[0]] = model['title'], name, model['hash'], row[2]
                     break
     # add "Default" if models.csv is on default, or if no model matches are found
     if not global_var.model_info:
@@ -598,7 +627,8 @@ def populate_global_vars():
         for c in old_config['components']:
             try:
                 if c['props']:
-                    if c['props']['elem_id'] == 'setting_sd_lora':
+                    # maintaining compatibility with older webui versions
+                    if c['props']['elem_id'] == 'setting_sd_lora' and len(global_var.lora_names) == 0:
                         global_var.lora_names = c['props']['choices']
                     if c['props']['elem_id'] == 'txt2img_hr_upscaler':
                         global_var.hires_upscaler_names = c['props']['choices']

@@ -17,6 +17,7 @@ from core import queuehandler
 from core import viewhandler
 from core import settings
 from core import settingscog
+from . import constants
 from threading import Thread
 
 debug_progress = False
@@ -222,6 +223,12 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
         autocomplete=discord.utils.basic_autocomplete(settingscog.SettingsCog.hires_autocomplete),
     )
     @option(
+        'full_quality_vae',
+        bool,
+        description='(SD.Next) Use full quality VAE to decode samples',
+        required=False,
+    )
+    @option(
         'clip_skip',
         int,
         description='Number of last layers of CLIP model to skip.',
@@ -269,6 +276,7 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                             extra_net: Optional[str] = None,
                             facefix: Optional[str] = None,
                             highres_fix: Optional[str] = None,
+                            full_quality_vae: Optional[str] = None,
                             clip_skip: Optional[int] = None,
                             strength: Optional[str] = None,
                             init_image: Optional[discord.Attachment] = None,
@@ -297,6 +305,8 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             facefix = settings.read(channel)['facefix']
         if highres_fix is None:
             highres_fix = settings.read(channel)['highres_fix']
+        if full_quality_vae is None:
+            full_quality_vae = settings.read(channel)['full_quality_vae']
         if clip_skip is None:
             clip_skip = settings.read(channel)['clip_skip']
         if strength is None:
@@ -448,14 +458,17 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
             bool_emoji = ':white_check_mark:' if derived_spoiler else ':negative_squared_cross_mark:'
             reply_adds += f'\nSpoiler: {bool_emoji}'
 
+
+        if full_quality_vae != settings.read(channel)['full_quality_vae']:
+            reply_adds += f'\nUse VAE: ``{full_quality_vae}``'
+
         epoch_time = int(time.time())
 
         # set up tuple of parameters to pass into the Discord view
         input_tuple = (
             ctx, simple_prompt, prompt, negative_prompt, data_model, steps, width, height, guidance_scale, sampler,
             seed, strength,
-            init_image, batch, styles, facefix, highres_fix, clip_skip, extra_net, derived_spoiler, epoch_time)
-
+            init_image, batch, styles, facefix, highres_fix, clip_skip, extra_net, derived_spoiler, epoch_time, full_quality_vae)
         view = viewhandler.DrawView(input_tuple)
         # setup the queue
         user_queue_limit = settings.queue_check(ctx.author)
@@ -534,6 +547,9 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
                     queue_object.styles
                 ]
             }
+
+            if settings.global_var.backend == constants.BACKEND_SDNEXT:
+                payload['full_quality'] = queue_object.full_quality_vae
 
             # update payload if init_img or init_url is used
             if queue_object.init_image is not None:

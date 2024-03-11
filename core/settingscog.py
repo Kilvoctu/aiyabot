@@ -142,6 +142,12 @@ class SettingsCog(commands.Cog):
         choices=settings.global_var.facefix_models,
     )
     @option(
+        'full_quality_vae',
+        bool,
+        description='(SD.Next) Use full quality VAE to decode samples',
+        required=False,
+    )
+    @option(
         'highres_fix',
         str,
         description='Set default highres fix model for the channel',
@@ -222,6 +228,7 @@ class SettingsCog(commands.Cog):
                                hypernet: Optional[str] = None,
                                lora: Optional[str] = None,
                                facefix: Optional[str] = None,
+                               full_quality_vae: Optional[bool] = None,
                                highres_fix: Optional[str] = None,
                                clip_skip: Optional[int] = None,
                                strength: Optional[str] = None,
@@ -314,6 +321,11 @@ class SettingsCog(commands.Cog):
             height = settings.dimensions_validator(height)
             settings.update(channel, 'height', height)
             new += f'\nHeight: ``"{height}"``'
+            set_new = True
+
+        if full_quality_vae is not None:
+            settings.update(channel, 'full_quality_vae', full_quality_vae)
+            new += f'\nFull Quality VAE: ``"{full_quality_vae}"``'
             set_new = True
 
         if guidance_scale is not None:
