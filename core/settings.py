@@ -2,6 +2,7 @@ import csv
 import discord
 import json
 import os
+import re
 import random
 import requests
 import time
@@ -201,10 +202,10 @@ def extra_net_check(prompt, extra_net, net_multi):
     # figure out what extra_net was used
     if extra_net is not None and extra_net != 'None':
         for network in global_var.hyper_names:
-            if extra_net == network:
+            if extra_net == network and f'<hypernet:{extra_net}' not in prompt:
                 prompt += f' <hypernet:{extra_net}:{str(net_multi)}>'
         for network in global_var.lora_names:
-            if extra_net == network:
+            if extra_net == network and f'<lora:{extra_net}' not in prompt:
                 prompt += f' <lora:{extra_net}:{str(net_multi)}>'
     return prompt, extra_net, net_multi
 
@@ -218,9 +219,22 @@ def extra_net_defaults(prompt, channel):
     # append channel default hypernet or lora to the prompt
     if hypernet != 'None' and hypernet not in prompt:
         prompt += f' <hypernet:{hypernet}:{hyper_multi}>'
-    if lora != 'None' and lora not in prompt:
+    if lora != 'None' and f'<lora:{lora}' not in prompt:
         prompt += f' <lora:{lora}:{lora_multi}>'
     return prompt
+
+def extra_net_dedup(prompt):
+    # ensures that if the same extra_net is found n+1 times in prompt
+    # then occurrences n > 1 are removed
+    cleanStr = prompt
+    found = []
+    for m in list(re.finditer(f'<(?:lora|hypernet):([^:]*):?.*?>', prompt)):
+        lora = m.group(1)
+        if lora in found:
+            cleanStr = cleanStr.replace(m.group(0), '')
+        else:
+            found.append(lora)
+    return cleanStr
 
 
 def dimensions_validator(size):

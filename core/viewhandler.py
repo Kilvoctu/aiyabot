@@ -105,7 +105,9 @@ class DrawModal(Modal):
     async def callback(self, interaction: discord.Interaction):
         # update the tuple with new prompts
         pen = list(self.input_tuple)
-        pen[2] = pen[2].replace(pen[1], self.children[0].value)
+        # dedup ensures that if user added lora/hypernet manually to edited prompt
+        # it is not duplicated from previous "non-simple" prompt on replacement
+        pen[2] = settings.extra_net_dedup(pen[2].replace(pen[1], self.children[0].value))
         pen[1] = self.children[0].value
         pen[3] = self.children[1].value
 
@@ -127,7 +129,7 @@ class DrawModal(Modal):
         # if extra network is used, find the multiplier
         if pen[18]:
             if pen[18] in pen[2]:
-                net_multi = re.search(f'{pen[18]}:(.*)>', pen[2]).group(1)
+                net_multi = re.search(f'<lora:{re.escape(pen[18])}:(.*?)>', pen[2]).group(1)
 
         # iterate through extended edit for any changes
         for line in self.children[3].value.split('\n'):
