@@ -677,10 +677,11 @@ class StableCog(commands.Cog, name='Stable Diffusion', description='Create image
 
                 settings.stats_count(1)
 
-                # increment seed for view when using batch
+                # increment epoch_time for view when using batch
                 if count != len(image_data):
-                    batch_seed = list(queue_object.view.input_tuple)
-                    new_tuple = tuple(batch_seed)
+                    new_epoch = list(queue_object.view.input_tuple)
+                    new_epoch[20] = int(time.time())
+                    new_tuple = tuple(new_epoch)
                     queue_object.view.input_tuple = new_tuple
 
             # set up discord message
