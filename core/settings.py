@@ -586,18 +586,53 @@ def populate_global_vars():
         global_var.style_names[s2['name']] = s2['prompt'], s2['negative_prompt']
     for s3 in r3.json():
         global_var.facefix_models.append(s3['name'])
-    for s4, shape in r4.json()['loaded'].items():
+    
+    # Normalize embeddings response to ensure dict format
+    def normalize_embeddings_response(embeddings_data):
+        """Convert embeddings API response to always use dict format."""
+        normalized = {'loaded': {}, 'skipped': {}}
+        
+        for key in ['loaded', 'skipped']:
+            if key not in embeddings_data:
+                continue
+                
+            data = embeddings_data[key]
+            if isinstance(data, dict):
+                # Already in expected format
+                normalized[key] = data
+            elif isinstance(data, list):
+                # Convert list to dict using embedding name as key
+                for item in data:
+                    if isinstance(item, dict) and 'name' in item:
+                        embedding_name = item['name']
+                        normalized[key][embedding_name] = item
+            else:
+                print(f"Warning: Unexpected embeddings format for {key}: {type(data)}")
+        
+        return normalized
+    
+    # Apply normalization and process embeddings
+    embeddings_data = normalize_embeddings_response(r4.json())
+    for s4, shape in embeddings_data['loaded'].items():
         if shape['shape'] == 768:
             global_var.embeddings_1.append(s4)
         if shape['shape'] == 1024:
             global_var.embeddings_2.append(s4)
-    for s4, shape in r4.json()['skipped'].items():
+    for s4, shape in embeddings_data['skipped'].items():
         if shape['shape'] == 768:
             global_var.embeddings_1.append(s4)
         if shape['shape'] == 1024:
             global_var.embeddings_2.append(s4)
-    for s5 in r5.json():
-        global_var.hyper_names.append(s5['name'])
+    # Handle hypernetworks API response (may be list or dict)
+    hypernetworks_data = r5.json()
+    if isinstance(hypernetworks_data, list):
+        for s5 in hypernetworks_data:
+            if isinstance(s5, dict) and 'name' in s5:
+                global_var.hyper_names.append(s5['name'])
+    elif isinstance(hypernetworks_data, dict):
+        for s5 in hypernetworks_data.values():
+            if isinstance(s5, dict) and 'name' in s5:
+                global_var.hyper_names.append(s5['name'])
     for s6 in r6.json():
         global_var.upscaler_names.append(s6['name'])
 
