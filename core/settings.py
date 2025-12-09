@@ -639,7 +639,11 @@ def populate_global_vars():
     try:
         r7 = s.get(global_var.url + "/sdapi/v1/loras")
         for s7 in r7.json():
-            global_var.lora_names.append(s7['alias'])
+            # Use 'name' field for SD.Next, 'alias' for older WebUI versions
+            if global_var.backend == constants.BACKEND_SDNEXT:
+                global_var.lora_names.append(s7['name'])
+            else:
+                global_var.lora_names.append(s7['alias'])
     except Exception as e:
         print('Error fetching lora endpoint but this may be normal for older webui versions', str(e))
 
