@@ -584,8 +584,12 @@ def populate_global_vars():
     global_var.style_names['None'] = ''
     for s2 in r2.json():
         global_var.style_names[s2['name']] = s2['prompt'], s2['negative_prompt']
-    for s3 in r3.json():
-        global_var.facefix_models.append(s3['name'])
+    face_restorers_data = r3.json()
+    for s3 in face_restorers_data:
+        if isinstance(s3, dict) and 'name' in s3:
+            global_var.facefix_models.append(s3['name'])
+        elif isinstance(s3, str):
+            global_var.facefix_models.append(s3)
     
     # Normalize embeddings response to ensure dict format
     def normalize_embeddings_response(embeddings_data):
