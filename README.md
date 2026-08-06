@@ -1,3 +1,5 @@
+Aug 2026 update: As fond as I am for this project, it was a lot of fun and I learned much, I don't think there's any reason for me to return. I've moved on to other ML adjacent projects since. Additionally, as we've been in the "vibecoding" era for a while now, anyone can easily fork the source and do whatever they want with it with no difficulty. So I'm gonna go ahead and archive the repo.
+
 # AIYA
 
 A Discord bot interface for Stable Diffusion
